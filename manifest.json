@@ -1,0 +1,10 @@
+{
+    "name": "Narrative HUD",
+    "description": "RPG-интерфейс, трекеры, система отношений и кастомные инфоблоки с поддержкой истории (Narrative Storage).",
+    "author": "Gromova-Olga",
+    "version": "1.0.0-beta",
+    "url": "https://github.com/Gromova-Olga/ST-Narrative-HUD",
+    "main": "index.js",
+    "assets": []
+    "auto_update": false
+}
