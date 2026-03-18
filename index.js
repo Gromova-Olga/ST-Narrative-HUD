@@ -45,6 +45,8 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
         charsArray.forEach(charData => {
             if (!charData.name || charData.name.toLowerCase() === userName.toLowerCase()) return;
             const name = charData.name.trim();
+            if (live.ignoredCharacters && live.ignoredCharacters.includes(name)) return;
+            
             if (!live.characters[name]) live.characters[name] = {};
             
             if (charData.outfit) live.characters[name].outfit = stripHtml(charData.outfit);
@@ -233,8 +235,20 @@ export function buildDynamicPrompt(settings) {
     const p = settings.prompts || {};
     const lang = p.language || "Russian";
     
+    // Проверяем, вшивается ли промпт в основной запрос
+    const isMain = settings.requestSettings?.sendWithMain && !settings.requestSettings?.lightMode;
+    
     // Собираем базовый промт
-    let prompt = (p.system || "") + "\n\n";
+    let prompt = "";
+    
+    if (isMain) {
+        // Если промпт летит вместе с сюжетом, просим не ломать RP
+        prompt += `[SYSTEM NOTE: Write your normal roleplay response FIRST. Then, at the very end of your message, append the following JSON block. DO NOT put your story inside the JSON.]\n\n`;
+    } else {
+        // Если это отдельный фоновый запрос, требуем ТОЛЬКО JSON
+        prompt += (p.system || "") + "\n\n";
+    }
+    
     prompt += "REQUIRED JSON FORMAT:\n```json\n{\n";
     
     // Модуль: Дата и время
@@ -462,7 +476,7 @@ export async function sendToAPI(manualTrigger = false) {
             });
             chatMessages.push({ role: 'user', content: dynamicPrompt });
 
-            rawText = await NarrativeApiService.generate(chatMessages, settings.activeProfile, settings.prompts.system, { max_tokens: rs.maxTokens, temperature: rs.temperature });
+            rawText = await NarrativeApiService.generate(chatMessages, settings.activeProfile, "", { max_tokens: rs.maxTokens, temperature: rs.temperature });
         } else {
             const { generateQuietPrompt } = await import('../../../../script.js');
             rawText = await generateQuietPrompt(dynamicPrompt, false, false) || "";
@@ -543,6 +557,7 @@ jQuery(async () => {
         UI.applyDesignTheme();
 
         let injectionDone = false;
+        let isChatLoading = false;
         eventSource.on(event_types.GENERATION_STARTED, async () => {
             if (injectionDone) return;
             injectionDone = true;
@@ -559,6 +574,7 @@ jQuery(async () => {
         });
 
         eventSource.on(event_types.MESSAGE_RECEIVED, () => {
+            if (isChatLoading) return;
             setTimeout(() => {
                 const settings = getSettings();
                 const ctx = getSTContext();
@@ -598,6 +614,9 @@ jQuery(async () => {
         });
 
         eventSource.on(event_types.CHAT_CHANGED, () => {
+            isChatLoading = true; 
+            setTimeout(() => { isChatLoading = false; }, 2000); // Снимаем блок через 2 секунды
+            
             setTimeout(() => {
                 const settings = getSettings();
                 settings.liveData = JSON.parse(JSON.stringify(defaultSettings.liveData));

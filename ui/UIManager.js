@@ -358,6 +358,11 @@ export function buildSettingsPanel() {
                     </div>
 
                     <div class="nhud-tab-content" data-tab="connection">
+                        <div id="nhud-proxy-instruction-btn" style="background:rgba(224, 82, 82, 0.15); border:1px solid #e05252; border-radius:4px; padding:10px; margin-bottom:15px; cursor:pointer; text-align:center; transition:0.2s;">
+                            <span style="color:#e05252; font-weight:bold; font-size:14px;">⚠️ ВАЖНО: ОЗНАКОМЬТЕСЬ С ИНСТРУКЦИЕЙ ПО ПРОКСИ!</span>
+                            <div style="font-size:11px; color:#d0d0a0; margin-top:4px;">Нажмите здесь, чтобы узнать, как правильно настроить профили OpenRouter и сторонних API</div>
+                        </div>
+                        
                         <div class="nhud-field-group">
                             <label>Профиль подключения</label>
                             <select id="nhud-settings-profile-select" class="nhud-select"></select>
@@ -563,6 +568,54 @@ export function buildSettingsPanel() {
         if (!confirm("⚠️ Очистить ВСЕ данные всех чатов?")) return;
         NarrativeStorage.purgeAllData(); updateHistoryButtons(); renderStorageStats();
         toastr.success("Все данные очищены");
+    }); // <--- ВОТ ЭТИ СКОБКИ ПОТЕРЯЛИСЬ!
+
+    // ОБРАБОТЧИК КЛИКА ПО ИНСТРУКЦИИ ПРОКСИ (СВОЕ КАСТОМНОЕ ОКНО)
+    $("#nhud-proxy-instruction-btn").hover(
+        function() { $(this).css("background", "rgba(224, 82, 82, 0.25)"); },
+        function() { $(this).css("background", "rgba(224, 82, 82, 0.15)"); }
+    ).on("click", () => {
+        // Удаляем старое окно, если оно вдруг осталось
+        $("#nhud-custom-proxy-modal").remove();
+
+        // Верстка нашего независимого всплывающего окна
+        const html = `
+            <div id="nhud-custom-proxy-modal" style="position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.85); z-index:2147483647; display:flex; align-items:center; justify-content:center; padding:15px; box-sizing:border-box; backdrop-filter:blur(3px);">
+                <div style="background:#151220; border:1px solid #e05252; border-radius:8px; padding:20px; max-width:500px; width:100%; max-height:85vh; overflow-y:auto; position:relative; box-shadow:0 10px 40px rgba(0,0,0,0.8);">
+                    <button id="nhud-close-proxy-modal" style="position:absolute; top:10px; right:15px; background:none; border:none; color:#a08080; font-size:22px; cursor:pointer; transition:0.2s;" onmouseover="this.style.color='#e05252'" onmouseout="this.style.color='#a08080'">✕</button>
+                    
+                    <h3 style="color:#e05252; margin-top:0; font-size:1.2em; padding-right:20px;">Настройка сторонних API</h3>
+                    <p style="font-size:0.95em; color:var(--nhud-text-main);">Из-за особенностей работы Таверны, для корректной маршрутизации запросов расширения необходимо создать отдельный профиль:</p>
+                    
+                    <ol style="padding-left:20px; color:#c0b0d8; font-size:0.95em; line-height:1.6;">
+                        <li style="margin-bottom:8px;">В главном меню API выберите <b>Chat Completion -> OpenAI</b></li>
+                        <li style="margin-bottom:8px;">Разверните вкладку <b>Прокси</b>. Назовите пресет, вставьте ссылку на прокси (обязательно с <code>/v1</code> на конце) и ваш ключ.</li>
+                        <li style="margin-bottom:8px; color:#52e0a3; font-weight:bold;">ОБЯЗАТЕЛЬНО: Нажмите иконку дискеты (💾) для СОХРАНЕНИЯ ПРЕСЕТА ПРОКСИ!</li>
+                        <li style="margin-bottom:8px;">Сверните вкладку Прокси.</li>
+                        <li style="margin-bottom:8px;">Поставьте галочку <b>«Показать "сторонние" модели (предоставленные API)»</b>.</li>
+                        <li style="margin-bottom:8px;">В списке моделей пролистайте вниз и выберите нужную модель вашего прокси.</li>
+                        <li style="margin-bottom:8px;">Сохраните сам профиль (кнопка сверху).</li>
+                    </ol>
+                    
+                    <p style="color:#52a8e0; font-weight:bold; text-align:center; margin-bottom:0; font-size:0.95em; background:rgba(82,168,224,0.1); padding:10px; border-radius:4px;">Вы великолепны! После этого пресет можно использовать в расширении!</p>
+                </div>
+            </div>
+        `;
+        
+        // Вставляем окно прямо поверх всего сайта
+        $("body").append(html);
+        
+        // Обработчик закрытия по крестику
+        $("#nhud-close-proxy-modal").on("click", () => {
+            $("#nhud-custom-proxy-modal").fadeOut(200, function() { $(this).remove(); });
+        });
+        
+        // Обработчик закрытия по клику на темный фон вокруг окна
+        $("#nhud-custom-proxy-modal").on("click", function(e) {
+            if (e.target === this) {
+                $(this).fadeOut(200, function() { $(this).remove(); });
+            }
+        });
     });
 
     renderSettingsTrackers();
@@ -682,6 +735,58 @@ export function renderSettingsCharacterAccordion() {
 
         body.append(addRow);
 
+        if (data.liveData?.ignoredCharacters && data.liveData.ignoredCharacters.length > 0) {
+            const unignoreRow = $(`
+                <div style="padding:8px; border-top:1px dashed #3a1525; margin-top:8px;">
+                    <div style="font-size:0.7em; color:#a08080; margin-bottom:6px;">В игноре (нажми, чтобы вернуть):</div>
+                    <div class="nhud-ignored-list" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+                </div>
+            `);
+            
+            const ignoredContainer = unignoreRow.find('.nhud-ignored-list');
+            
+            // Перебираем каждого призрака и создаем для него отдельную кнопку
+            data.liveData.ignoredCharacters.forEach(ignoredName => {
+                const badge = $(`
+                    <button class="nhud-unignore-single-btn" title="Вернуть ${ignoredName} в HUD" style="background:rgba(82, 168, 224, 0.15); border:1px solid #3a5a80; color:#80b0e0; border-radius:4px; padding:3px 8px; font-size:11px; cursor:pointer; display:flex; align-items:center; gap:4px; transition:0.2s;" onmouseover="this.style.background='rgba(82, 168, 224, 0.3)'" onmouseout="this.style.background='rgba(82, 168, 224, 0.15)'">
+                        👻 ${ignoredName}
+                    </button>
+                `);
+                
+                // Вешаем клик на конкретного персонажа
+                badge.on('click', function() {
+                    // 1. Вычищаем его из массива игнора
+                    data.liveData.ignoredCharacters = data.liveData.ignoredCharacters.filter(n => n !== ignoredName);
+                    
+                    // 2. Создаем пустую болванку, чтобы он МОМЕНТАЛЬНО появился в интерфейсе
+                    if (!data.liveData.characters) data.liveData.characters = {};
+                    data.liveData.characters[ignoredName] = { outfit: "", state: "", thoughts: "" };
+                    
+                    extension_settings[extensionName] = settings;
+                    saveSettingsDebounced();
+                    
+                    // 3. Обновляем глобальный стейт, если это текущий чат
+                    if (chatId === NarrativeStorage.getCurrentChatId()) {
+                        getSettings().liveData.ignoredCharacters = getSettings().liveData.ignoredCharacters.filter(n => n !== ignoredName);
+                        getSettings().liveData.characters[ignoredName] = { outfit: "", state: "", thoughts: "" };
+                        
+                        // Перерисовываем HUD
+                        renderCharacters();
+                        if (typeof renderRelationships === 'function') renderRelationships();
+                        if (typeof renderSettingsTrackers === 'function') renderSettingsTrackers();
+                    }
+                    
+                    // Перерисовываем гармошку настроек
+                    renderSettingsCharacterAccordion();
+                    toastr.success(`${ignoredName} возвращен из призраков!`);
+                });
+                
+                ignoredContainer.append(badge);
+            });
+
+            body.append(unignoreRow);
+        }
+
         accordion.find('.nhud-accordion-header').on('click', function() {
             body.toggle();
             accordion.find('.nhud-accordion-arrow').text(body.is(':visible') ? '▲' : '▼');
@@ -712,7 +817,8 @@ export function buildCharEditBlock(name, liveData, settings, chatId, data) {
                     ${liveData?.outfit ? `<div style="font-size:0.7em;color:#7070a0;">👗 ${liveData.outfit.substring(0,60)}${liveData.outfit.length>60?'…':''}</div>` : ''}
                     ${liveData?.state  ? `<div style="font-size:0.7em;color:#909090;">${liveData.state.substring(0,70)}${liveData.state.length>70?'…':''}</div>` : ''}
                 </div>
-                <button class="nhud-acc-delete-char nhud-s-delete" title="Удалить из чата" style="flex-shrink:0;margin-left:4px;">✕</button>
+                <button class="nhud-acc-ghost-char" title="Превратить в призрака 👻 (Добавить в Игнор)" style="flex-shrink:0; margin-left:4px; background:none; border:none; cursor:pointer; font-size:14px; opacity:0.7; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">👻</button>
+                <button class="nhud-acc-delete-char nhud-s-delete" title="Просто удалить из текущего кэша" style="flex-shrink:0;margin-left:4px;">✕</button>
             </div>
             <div class="nhud-accordion-char-avatar-edit">
                 <label style="font-size:0.72em;color:#505070;text-transform:uppercase;letter-spacing:0.05em;">Аватар</label>
@@ -731,14 +837,37 @@ export function buildCharEditBlock(name, liveData, settings, chatId, data) {
         </div>
     `);
 
+    // ЛОГИКА ОБЫЧНОГО УДАЛЕНИЯ (Без игнора)
     block.find('.nhud-acc-delete-char').on('click', () => {
-        if (!confirm(`Удалить ${name} из чата?`)) return;
+        if (!confirm(`Просто удалить ${name} из чата? (Он снова появится, если ИИ его упомянет)`)) return;
         delete data.liveData.characters[name];
         extension_settings[extensionName] = settings;
         saveSettingsDebounced();
         if (chatId === NarrativeStorage.getCurrentChatId()) {
             delete getSettings().liveData.characters[name];
             renderCharacters();
+        }
+        renderSettingsCharacterAccordion();
+    });
+
+    // ЛОГИКА ПРИЗРАКА (Игнор-лист)
+    block.find('.nhud-acc-ghost-char').on('click', () => {
+        if (!confirm(`Превратить ${name} в призрака 👻?\nМод навсегда перестанет замечать этого персонажа в этом чате.`)) return;
+        
+        delete data.liveData.characters[name];
+        
+        if (!data.liveData.ignoredCharacters) data.liveData.ignoredCharacters = [];
+        if (!data.liveData.ignoredCharacters.includes(name)) data.liveData.ignoredCharacters.push(name);
+        
+        extension_settings[extensionName] = settings;
+        saveSettingsDebounced();
+        
+        if (chatId === NarrativeStorage.getCurrentChatId()) {
+            delete getSettings().liveData.characters[name];
+            if (!getSettings().liveData.ignoredCharacters) getSettings().liveData.ignoredCharacters = [];
+            if (!getSettings().liveData.ignoredCharacters.includes(name)) getSettings().liveData.ignoredCharacters.push(name);
+            renderCharacters();
+            if (typeof renderRelationships === 'function') renderRelationships();
         }
         renderSettingsCharacterAccordion();
     });
@@ -1128,7 +1257,7 @@ export function renderRelationships() {
     container.empty();
     const userName = getUserName();
     const charNames = Object.keys(live.characters).filter(name => 
-        name.toLowerCase() !== userName.toLowerCase() && !name.toLowerCase().includes('system')
+        name.toLowerCase() !== userName.toLowerCase() && !name.toLowerCase().includes('system') && !live.characters[name].ignoreRelationship
     );
 
     if (!charNames.length) return;
@@ -1309,7 +1438,6 @@ export function renderSettingsTrackers() {
     trackers.forEach((tracker, idx) => {
         const currentVal = live.trackerValues[tracker.id] !== undefined ? live.trackerValues[tracker.id] : tracker.max;
         
-        // Скрываем выбор цвета, если включен градиент
         const colorPickerStyle = isDynamic ? 'display:none;' : 'display:block;';
 
         const row = $(`
@@ -1353,7 +1481,6 @@ export function renderSettingsTrackers() {
         list.append(row);
     });
 
-
     const placeholder = $("#nhud-settings-rel-container-placeholder");
     if (placeholder.length && placeholder.find("#nhud-settings-rel-container").length === 0) {
         placeholder.html(`
@@ -1380,7 +1507,6 @@ export function renderSettingsTrackers() {
             </div>
         `);
 
-        // ФИКС: Прячем кнопку безопасно через jQuery, если модуль отключен
         if (getSettings().modules.analytics === false) {
             $("#nhud-open-analytics-btn").hide();
         }
@@ -1450,6 +1576,7 @@ export function renderSettingsTrackers() {
                                 <span style="font-weight:bold; color:#e0d0a0; font-size:0.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</span>
                                 <div style="display:flex; gap:4px; align-items:center;">
                                     ${getSettings().modules.analytics !== false ? `<button class="nhud-s-rel-journal-btn" data-name="${name}" title="Открыть журнал связей" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 4px; transition:0.2s;">📜</button>` : ''}
+                                    <button class="nhud-s-rel-toggle-btn" data-name="${name}" title="Скрыть полоску из HUD" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 4px; transition:0.2s; filter: grayscale(${char.ignoreRelationship ? '100%' : '0'});">${char.ignoreRelationship ? '👁️‍🗨️' : '👁️'}</button>
                                     <input class="nhud-input nhud-s-rel-status" value="${status}" style="width:110px; padding:2px 4px; font-size:0.75em; text-align:right; color:#c0b0a0; border-color:#4a3030;" placeholder="Статус..." />
                                 </div>
                             </div>
@@ -1481,20 +1608,37 @@ export function renderSettingsTrackers() {
                 if (typeof openRelationshipJournal === 'function') {
                     openRelationshipJournal($(this).data('name'));
                 }
+            }); // <--- ВОТ ЭТА ПРОПУЩЕННАЯ СКОБКА
+
+            // ОБРАБОТЧИК КНОПКИ ТОГГЛА
+            card.find('.nhud-s-rel-toggle-btn').on('click', function(e) {
+                e.stopPropagation();
+                live.characters[name].ignoreRelationship = !live.characters[name].ignoreRelationship;
+                saveSettingsDebounced();
+                renderSettingsTrackers();
+                renderRelationships();
+                if (typeof renderMiniSims === 'function') renderMiniSims();
             });
 
             card.find('.nhud-s-rel-val').on('input', e => {
                 live.characters[name].relationship = Math.min(Math.max(0, parseInt(e.target.value) || 0), 100);
-                saveSettingsDebounced(); renderRelationships();
+                saveSettingsDebounced(); 
+                renderRelationships();
             });
+            
             card.find('.nhud-s-rel-status').on('input', e => {
-                live.characters[name].relationship_status = e.target.value; saveSettingsDebounced();
+                live.characters[name].relationship_status = e.target.value; 
+                saveSettingsDebounced();
             });
+            
             card.find('.nhud-s-rel-thoughts').on('input', e => {
-                live.characters[name].relationship_thoughts = e.target.value; saveSettingsDebounced();
+                live.characters[name].relationship_thoughts = e.target.value; 
+                saveSettingsDebounced();
             });
+            
             card.find('.nhud-s-rel-hint').on('input', e => {
-                live.characters[name].relationship_hint = e.target.value; saveSettingsDebounced();
+                live.characters[name].relationship_hint = e.target.value; 
+                saveSettingsDebounced();
             });
 
             relList.append(card);
@@ -2105,26 +2249,37 @@ export function updateGlobalSettingsPosition() {
     const chatEl = document.getElementById("chat");
     const panel = $("#nhud-global-settings");
     
+    if (!panel.length) return;
+
+    // 🔴 ГЛАВНЫЙ ФИКС: Вырываем окно из ловушки слоев и переносим в корень страницы!
+    if (panel.parent().prop("tagName") !== "BODY") {
+        panel.appendTo("body");
+    }
+    
     let rect = chatEl ? chatEl.getBoundingClientRect() : { width: 0, left: 0 };
     
     // Пороги: экран <= 1200px или чат стал уже 600px
     if (window.innerWidth <= 1200 || rect.width < 600) {
         panel.css({ 
+            position: "fixed",
             left: "2vw", 
             width: "96vw", 
-            top: "2vh",
-            height: "96vh", // Явная высота спасает от багов Firefox
+            top: "5vh",          
+            height: "90vh",      
             bottom: "auto",
-            zIndex: 2147483647 // Абсолютный максимум, перекроет всё
+            zIndex: 9500,        // 9500 - идеально: выше панелей Таверны, но ниже всплывающих алертов
+            display: "flex"      
         });
     } else {
         panel.css({ 
+            position: "fixed",
             left: rect.left + "px", 
             width: rect.width + "px", 
             top: "40px",
             height: "calc(100vh - 60px)",
             bottom: "auto",
-            zIndex: 2147483647 
+            zIndex: 9500,
+            display: "flex"
         });
     }
 }
@@ -2362,7 +2517,7 @@ export function renderMiniSims() {
     const relSettings = settings.relationshipSettings;
     const userName = getUserName();
     const charNames = Object.keys(live.characters).filter(name => 
-        name.toLowerCase() !== userName.toLowerCase() && !name.toLowerCase().includes('system')
+        name.toLowerCase() !== userName.toLowerCase() && !name.toLowerCase().includes('system') && !live.characters[name].ignoreRelationship
     );
 
     if (!charNames.length) {
@@ -2887,7 +3042,7 @@ export function startInteractiveTour() {
         },
         { 
             target: "#nhud-settings-rel-container", title: "Отношения (Статусы и Журнал)", 
-            text: "Кнопка 'Статусы' (🏷️) задает список статусов (Друг, Враг), из которых выбирает ИИ. А иконка свитка (📜) у самого персонажа открывает Журнал связей — историю изменения ваших отношений!" 
+            text: "Кнопка 'Статусы' (🏷️) задает список статусов (например: Друг, Враг, Коллега). ИИ строго использует их для оценки отношений! А иконка свитка (📜) у персонажа открывает Журнал связей — историю событий и причин изменения симпатии." 
         },
         { 
             target: "#nhud-open-analytics-btn", title: "Аналитика", 
@@ -2900,7 +3055,7 @@ export function startInteractiveTour() {
         },
         { 
             target: ".nhud-tab-content[data-tab='connection']", title: "Режимы отправки (Подключение)", 
-            text: "Здесь настраивается работа с API. 'Лайт-режим' ⚡ парсит данные тихо в фоне (экономит токены). 'Авто-отправка' дергает ИИ после каждого ответа бота.",
+            text: "Очень важный раздел! Здесь мы выбираем профиль API.\n⚡ 'Лайт-режим' — делает тихий фоновый запрос после ответа бота (экономит контекст).\n🔄 'Авто-отправка' — дергает ИИ обычным запросом.\n📦 'Вшивать в пресет' — склеивает ваш лор и запрос мода в один тяжелый, но надежный системный промпт.",
             action: () => { $('.nhud-tab[data-tab="connection"]').click(); }
         },
         { 

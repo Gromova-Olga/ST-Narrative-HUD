@@ -17,6 +17,7 @@ export function getSettings() {
     if (!s.liveData.characters)    s.liveData.characters    = {};
     if (!s.liveData.infoBlocks)    s.liveData.infoBlocks    = { ...defaultSettings.liveData.infoBlocks };
     if (!s.liveData.relHistory)    s.liveData.relHistory    = {};
+    if (!s.liveData.ignoredCharacters) s.liveData.ignoredCharacters = [];
     
     if (s.promptBlocks) {
         s.promptBlocks.forEach(block => {
@@ -27,7 +28,7 @@ export function getSettings() {
     }
     
     if (s.activeProfile === undefined) s.activeProfile = null;
-    if (s.useSTProfile === undefined)  s.useSTProfile  = true;
+    if (s.useSTProfile === undefined)  s.useSTProfile  = false;
     if (s.autoSend === undefined)  s.autoSend = false;
     if (!s.requestSettings) {
         s.requestSettings = { ...defaultSettings.requestSettings };
@@ -105,6 +106,8 @@ export function ensureCharInLive() {
     if (!charName || charName === userName) return;
     
     const live = getLive();
+    if (live.ignoredCharacters && live.ignoredCharacters.includes(charName)) return; 
+    
     const existingKey = findCharacterKey(live.characters, charName);
     
     if (!existingKey) {
