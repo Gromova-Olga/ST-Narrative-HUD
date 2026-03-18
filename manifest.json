@@ -4,6 +4,7 @@
     "requires": [],
     "optional": [],
     "js": "index.js",
+    "css": "style.css",
     "author": "Gromova-Olga",
     "version": "0.9.0-beta",
     "homePage": "https://github.com/Gromova-Olga/ST-Narrative-HUD",
