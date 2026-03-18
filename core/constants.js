@@ -1,7 +1,9 @@
 // core/constants.js
 
+const scriptPath = import.meta.url.split('/').slice(0, -2).join('/');
+
 export const extensionName = "narrative-hud";
-export const extensionFolderPath = `scripts/extensions/third-party/${extensionName}`;
+export const extensionFolderPath = scriptPath;
 
 export const defaultSettings = {
     ui: {
