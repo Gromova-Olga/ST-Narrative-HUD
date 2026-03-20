@@ -79,7 +79,7 @@ export const defaultSettings = {
         questsPrompt: "Did any quest change state? If YES: return JSON array 'quests' with objects {title(exact), desc, status('active'|'completed'|'failed')} for each changed quest only. If NO: omit the field entirely.",
         codexPrompt: "Was new lore, a faction, or a secret revealed? If YES: return JSON field 'codex_unlocked': {title, text}. If NO: omit the field entirely.",
         factionsPrompt: "Did the user's actions affect faction standing? If YES: return JSON field 'factions': {\"FactionName\": 0-100}. If NO: omit the field entirely.",
-        calendarPrompt: "Did a significant story event occur? If YES: return JSON field 'calendar_event': {date(DD.MM.YYYY), desc}. Date must be exactly DD.MM.YYYY, nothing else. If NO: omit the field entirely."
+        calendarPrompt: "Did a significant story event occur? If YES: return JSON field 'calendar_event': {date(DD.MM.YYYY), desc}. Date must be exactly DD.MM.YYYY, nothing else. If NO: omit the field entirely.",
         language: "Russian"
     },
     jsonParser: {
