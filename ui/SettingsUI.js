@@ -77,25 +77,26 @@ function initLeftPanelResize() {
     // Логика перетаскивания (ресайза)
     let isResizing = false, startX, startWidth;
 
-    $("#nhud-left-resize-handle").on("mousedown", function(e) {
+    $("#nhud-left-resize-handle").on("mousedown touchstart", function(e) {
         import('../core/StateManager.js').then(m => {
             if (m.getSettings().ui?.leftMode === "chat") return;
             isResizing = true; 
-            startX = e.clientX; 
+            startX = e.type.includes('touch') ? e.originalEvent.touches[0].clientX : e.clientX; 
             startWidth = panel.width();
             $("body").css("user-select", "none"); 
-            e.preventDefault();
+            if(!e.type.includes('touch')) e.preventDefault();
         });
     });
     
-    $(document).on("mousemove.nhudleftresize", function(e) {
+    $(document).on("mousemove.nhudleftresize touchmove.nhudleftresize", function(e) {
         if (!isResizing) return;
-        const newWidth = startWidth + (e.clientX - startX); // Тянем вправо - увеличиваем
+        const currentX = e.type.includes('touch') ? e.originalEvent.touches[0].clientX : e.clientX;
+        const newWidth = startWidth + (currentX - startX); // Тянем вправо - увеличиваем
         const finalWidth = Math.min(Math.max(220, newWidth), window.innerWidth / 1.5);
         panel.css("width", finalWidth + "px");
     });
     
-    $(document).on("mouseup.nhudleftresize", () => {
+    $(document).on("mouseup.nhudleftresize touchend.nhudleftresize", () => {
         if (isResizing) { 
             isResizing = false; 
             $("body").css("user-select", ""); 
