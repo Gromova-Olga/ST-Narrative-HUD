@@ -36,8 +36,8 @@
     position: fixed;
     left: -500px;
     top: 0;
+    bottom: 0;
     width: 480px;
-    height: 100vh;
     background: #0e0c1a;
     border-right: 1px solid #2a2040;
     z-index: 9950;
@@ -284,9 +284,9 @@
 #narrative-hud-sidebar {
     position: fixed;
     top: 48px;
+    bottom: 0;
     right: 0;
     width: 300px;
-    height: calc(100vh - 48px);
     background: rgba(10, 8, 18, 0.95);
     border-left: 1px solid #2a2040;
     padding: 10px;
@@ -909,3 +909,9 @@
 .nhud-chat-block.theme-diary .nhud-chat-block-header { color: #d0b070; background: linear-gradient(90deg, rgba(90, 74, 42, 0.5), transparent); }
 .nhud-chat-block.theme-skillchecks { border-color: #2a5a3a; }
 .nhud-chat-block.theme-skillchecks .nhud-chat-block-header { color: #70d090; background: linear-gradient(90deg, rgba(42, 90, 58, 0.5), transparent); }
+
+/* ИСПРАВЛЕНИЕ БАГА JQUERY FADETOGGLE */
+#narrative-hud-sidebar[style*="display: block"], 
+#nhud-settings-panel[style*="display: block"] {
+    display: flex !important;
+}
