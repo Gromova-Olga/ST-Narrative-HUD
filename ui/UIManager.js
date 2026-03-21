@@ -1774,53 +1774,6 @@ export function applyDesignTheme() {
             #nhud-widget .nhud-w-btn { font-size: var(--nhud-wid-text-size) !important; color: var(--nhud-wid-text) !important; }
             
             ${d.customCss || ''}
-
-           @media screen and (max-width: 1000px) {
-                /* ВИДЖЕТ ПОВЕРХ ВСЕГО: делаем максимальный z-index, чтобы ты всегда могла нажать на него и закрыть панели */
-                #nhud-widget { transform: scale(1.2); transform-origin: top left; z-index: 10010 !important; }
-
-                /* Правая панель (HUD) */
-                #narrative-hud-sidebar { 
-                    width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: 0 !important; top: 0 !important; height: 100dvh !important; border-left: none !important; z-index: 10001 !important; padding-top: 50px !important; padding-bottom: 20px !important; box-sizing: border-box !important; 
-                }
-                /* Перехватываем баг jQuery, который ломает верстку */
-                #narrative-hud-sidebar[style*="display: block"] { display: flex !important; }
-                
-                /* Левая панель (Настройки/Инвентарь) */
-                #nhud-settings-panel { 
-                    width: 100vw !important; max-width: 100vw !important; left: 0 !important; right: 0 !important; top: 0 !important; height: 100dvh !important; border-right: none !important; z-index: 10005 !important; padding-top: 50px !important; padding-bottom: 20px !important; box-sizing: border-box !important; transition: none !important; 
-                }
-                /* Перехватываем включение левой панели через класс или jQuery */
-                #nhud-settings-panel.open, #nhud-settings-panel[style*="display: block"] { display: flex !important; }
-                
-                /* Попапы (Окна редактирования и истории) */
-                #nhud-infoblock-popup, #nhud-analytics-popup, #nhud-rel-journal, #nhud-mini-sims, #nhud-mini-conn, #nhud-smart-cleaner-modal, #nhud-hero-sheet, #nhud-inventory-modal, #nhud-quest-log, #nhud-codex-modal, #nhud-calendar-modal { position: fixed !important; left: 2vw !important; width: 96vw !important; top: 5vh !important; max-height: 90vh !important; transform: none !important; box-sizing: border-box !important; margin: 0 !important; z-index: 10008 !important; }
-                #nhud-analytics-canvas { width: 100% !important; height: auto !important; }
-            }
-                
-                #nhud-analytics-canvas { width: 100% !important; height: auto !important; }
-                
-                /* Виджет: прибиваем к левому краю, чтобы не улетал при зуме */
-                #nhud-widget { transform: scale(1.2); transform-origin: top left; }
-                
-                #nhud-global-settings { width: 95vw !important; height: 90vh !important; top: 5vh !important; left: 2.5vw !important; transform: none !important; padding-bottom: 40px !important;}
-                #nhud-global-content div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; display: flex !important; flex-direction: column !important; gap: 8px !important; }
-                .nhud-g-tab { font-size: 11px !important; padding: 6px !important; flex-basis: 30% !important; flex-grow: 1; text-align: center; }
-            }
-    
-                /* Делаем инпуты удобнее для ввода с телефона */
-                .nhud-input, .nhud-textarea, .nhud-select {
-                    font-size: 14px !important; /* IOS Safari не будет зумить экран, если шрифт >= 16px, но 14px - хороший компромисс */
-                    padding: 8px !important;
-                }
-    
-                /* Увеличиваем кнопки закрытия модалок */
-                button[id$="-close"] {
-                    min-width: 38px !important;
-                    min-height: 38px !important;
-                    font-size: 20px !important;
-                }
-            }
         `;
 
         let styleTag = document.getElementById("nhud-dynamic-theme");
