@@ -752,6 +752,14 @@ export function buildGlobalSettingsModal() {
                         <textarea id="nhud-p-sys" class="nhud-textarea" rows="3" style="margin-top:4px;">${p.system}</textarea>
                     </div>
 
+                    <div style="background: rgba(208, 80, 112, 0.15); border: 1px solid var(--nhud-accent); border-radius: 6px; padding: 10px; margin: 10px 0; display: flex; gap: 12px; align-items: center;">
+                        <div style="font-size: 24px;">⚠️</div>
+                        <div style="font-size: 11px; line-height: 1.4; color: var(--nhud-cen-text);">
+                            <b style="color: var(--nhud-accent); text-transform: uppercase;">Важное примечание по языку:</b><br>
+                            Если ИИ выводит данные (мысли, локации, события) не на том языке, который вам нужен — обязательно добавьте уточнение <b>(in Russian)</b> или <b>любой другой язык</b> в конец каждого конкретного промпта ниже.
+                            </div>
+                    </div>
+                    
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         <div style="border:1px solid var(--nhud-border); padding:8px; border-radius:4px; background:var(--nhud-cen-inp, rgba(0,0,0,0.2));">
                             <label class="nhud-checkbox-group" style="color:#52a8e0;"><input type="checkbox" id="nhud-m-trackers" ${m.trackers?'checked':''}> 📊 Трекеры (Здоровье и др.)</label>
