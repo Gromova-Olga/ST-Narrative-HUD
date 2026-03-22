@@ -381,43 +381,35 @@ export function buildSettingsPanel() {
     $("#nhud-clear-all-btn").on("click", () => { if (!confirm("⚠️ Очистить ВСЕ данные всех чатов?")) return; NarrativeStorage.purgeAllData(); updateHistoryButtons(); renderStorageStats(); toastr.success("Все данные очищены"); });
 
     $("#nhud-factory-reset-btn").on("click", () => {
-        if (!confirm("⚠️ ПОЛНЫЙ СБРОС НАСТРОЕК?\n\nВсе промты, дизайн, модули и конфигурация будут сброшены до заводских.\nДанные чатов (персонажи, трекеры, квесты) НЕ удалятся.\n\nПродолжить?")) return;
-        
-        import('../core/constants.js').then(({ defaultSettings, extensionName }) => {
-            import('../../../../extensions.js').then(({ extension_settings }) => {
-                import('../../../../../script.js').then(({ saveSettingsDebounced }) => {
-                    // Сохраняем данные чатов
-                    const savedChatData = extension_settings[extensionName]?.chatData || {};
-                    
-                    // Полный сброс до дефолта
-                    extension_settings[extensionName] = JSON.parse(JSON.stringify(defaultSettings));
-                    
-                    // Возвращаем данные чатов
-                    extension_settings[extensionName].chatData = savedChatData;
-                    
-                    saveSettingsDebounced();
-                    
-                    toastr.success("✅ Настройки сброшены до заводских! Перезагрузи страницу.", "Сброс выполнен", { timeOut: 8000 });
-                    
-                    // Перерисовываем всё
-                    setTimeout(() => {
-                        import('./UIManager.js').then(m => {
-                            if (m.applyDesignTheme) m.applyDesignTheme();
-                        });
-                        renderSettingsTrackers();
-                        renderSettingsCharacterAccordion();
-                        renderSettingsProfileSelect();
-                        renderSettingsPrompts();
-                        renderPromptBlocks();
-                        renderParserSettings();
-                        renderSettingsFactions();
-                        renderSettingsHeroSheet();
-                        renderStorageStats();
-                    }, 300);
-                });
+    if (!confirm("⚠️ ПОЛНОЕ УНИЧТОЖЕНИЕ ВСЕХ ДАННЫХ МОДА?\n\nБудут удалены:\n— Все настройки (промпты, дизайн, модули)\n— Все данные чатов (персонажи, трекеры, квесты)\n— Весь прогресс во всех чатах\n\nВосстановление НЕВОЗМОЖНО.\n\nПродолжить?")) return;
+    if (!confirm("Вы точно уверены? Это нельзя отменить.")) return;
+
+    import('../core/constants.js').then(({ extensionName }) => {
+        import('../../../../extensions.js').then(({ extension_settings }) => {
+            import('../../../../../script.js').then(({ saveSettingsDebounced }) => {
+                // Полное уничтожение — удаляем весь объект расширения
+                delete extension_settings[extensionName];
+                
+                // Чистим localStorage на всякий случай
+                try {
+                    Object.keys(localStorage).forEach(key => {
+                        if (key.includes('narrative') || key.includes('nhud')) {
+                            localStorage.removeItem(key);
+                        }
+                    });
+                } catch(e) {}
+
+                // Сохраняем пустоту на диск
+                saveSettingsDebounced();
+
+                toastr.warning("Данные уничтожены. Перезагрузка...", "💥 Полный сброс", { timeOut: 2000 });
+
+                // Перезагружаем страницу через 2 секунды
+                setTimeout(() => location.reload(), 2000);
             });
         });
     });
+});
     
     $("#nhud-proxy-instruction-btn").hover(function() { $(this).css("background", "rgba(224, 82, 82, 0.25)"); }, function() { $(this).css("background", "rgba(224, 82, 82, 0.15)"); }).on("click", () => {
         $("#nhud-custom-proxy-modal").remove();
