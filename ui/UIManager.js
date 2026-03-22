@@ -1306,7 +1306,7 @@ export function renderInventory() {
             
             inv[key].forEach((item, idx) => {
                 html += `<div style="display:flex; justify-content:space-between; align-items:center; background:rgba(0,0,0,0.3); padding:4px 8px; border-radius:4px; border:1px solid #2a2040; font-size:12px; color:var(--nhud-text-main);">
-                    <span>${item}</span>
+                    <span>${typeof item === 'object' ? (item.name || JSON.stringify(item)) : item}</span>
                     <button class="nhud-inv-del nhud-s-delete" data-key="${key}" data-idx="${idx}" style="padding:2px 6px; font-size:10px; margin:0;">✕</button>
                 </div>`;
             });
@@ -1338,7 +1338,7 @@ export function renderInventory() {
             const key = $(this).data('key');
             const val = content.find(`#nhud-inv-add-val-${key}`).val().trim();
             if (val) {
-                inv[key].push(val);
+                inv[key].push(key === 'items' ? val : { name: val, desc: '', active: false });
                 saveSettingsDebounced(); renderInventory();
             }
         });
