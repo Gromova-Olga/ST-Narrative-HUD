@@ -214,7 +214,7 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
             
             if (updated) {
                 saveSettingsDebounced();
-                if (typeof UI.renderFactions === 'function') UI.renderFactions();
+                if (typeof SetUI.renderSettingsFactions === 'function') SetUI.renderSettingsFactions();;
             }
         });
     }
@@ -520,6 +520,16 @@ jQuery(async () => {
                 $("#nhud-widget").fadeToggle(200);
             });
         }, 500);
+
+        // ---> ДОБАВИТЬ ВОТ ЭТОТ БЛОК <---
+        // Глубокое слияние: если ключей нет (новый профиль), они подтянутся из defaultSettings
+        extension_settings[extensionName] = $.extend(
+            true, 
+            {}, 
+            defaultSettings, 
+            extension_settings[extensionName] || {}
+        );
+        // ---------------------------------
 
         getSettings();
         UI.buildTopbarIcon();
