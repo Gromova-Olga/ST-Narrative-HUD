@@ -69,7 +69,7 @@ export function buildSidebar() {
             <div class="nhud-divider" style="height:1px; background:var(--nhud-border, #3a1525); margin:5px 0;"></div>
             <div id="nhud-infoblock-buttons" style="padding:0 10px; display:flex; flex-wrap:wrap; gap:4px; justify-content:center;"></div>
             <div class="nhud-divider" style="height:1px; background:var(--nhud-border, #3a1525); margin:5px 0;"></div>
-            <div id="nhud-characters-section" style="padding:0 10px 10px 10px; flex:1; overflow-y:auto;"><div id="nhud-characters-list" style="display:flex; flex-direction:column; gap:8px;"></div></div>
+            <div id="nhud-characters-section" style="padding:0 10px 80px 10px; flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;">
             <div id="nhud-resize-handle" style="position:absolute; left:-4px; top:0; bottom:0; width:8px; cursor:ew-resize; z-index:10; background:transparent;"></div>
         </div>
         <div id="nhud-infoblock-popup" style="display:none; position:fixed; top:${settings.design?.promptPos?.top || '100px'}; left:${settings.design?.promptPos?.left || '100px'}; z-index:9995; background:var(--nhud-prompt-bg); border:var(--nhud-prompt-border); border-radius:8px; box-shadow:0 5px 20px rgba(0,0,0,0.9); width:var(--nhud-prompt-width); resize:both; overflow:hidden;">
@@ -511,7 +511,7 @@ export function buildFloatingWidget() {
                 <div class="nhud-w-btn" id="nhud-w-calendar" title="Календарь" style="background:#201015; color:#e080b0; border-radius:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; padding:4px 0; transition:0.2s;">📅</div>
                 <div class="nhud-w-btn" id="nhud-w-codex" title="Кодекс" style="background:#251a25; color:#b080e0; border-radius:4px; display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px; padding:4px 0; transition:0.2s;">📖</div>
             </div>
-            <button id="nhud-w-rotate" title="Сменить раскладку" style="background:rgba(0,0,0,0.5); border:1px solid var(--nhud-border); border-radius:10px; color:#a08080; font-size:10px; cursor:pointer; padding:2px; margin:0 auto; width:30px;">⟳</button>
+            <button id="nhud-w-rotate" title="Сменить раскладку" style="background:rgba(0,0,0,0.5); border:1px solid var(--nhud-border); border-radius:10px; color:#a08080; font-size:10px; cursor:pointer; padding:2px; margin:0 auto; width:30px; position:relative; z-index:10; flex-shrink:0;">⟳</button>
         </div>
     `);
     
@@ -1163,13 +1163,14 @@ export function showAchievementPopup(ach) {
     // Создаем невидимый контейнер-стек для уведомлений, если его еще нет
     let container = $("#nhud-popup-container");
     if (!container.length) {
-        $("body").append('<div id="nhud-popup-container" style="position:fixed; bottom:20px; right:20px; z-index:2147483647; display:flex; flex-direction:column; gap:10px; pointer-events:none;"></div>');
+        $("body").append('<div id="nhud-popup-container" style="position:fixed; bottom:20px; right:10px; left:10px; z-index:2147483647; display:flex; flex-direction:column; gap:10px; pointer-events:none; align-items:flex-end;"></div>');
         container = $("#nhud-popup-container");
     }
 
     const id = 'ach-' + Date.now() + Math.floor(Math.random() * 1000);
     const html = $(`
-        <div id="${id}" class="nhud-achievement-popup" style="position:relative !important; bottom:auto !important; right:auto !important; pointer-events:auto; box-shadow: 0 5px 15px rgba(0,0,0,0.8);">
+        <div id="${id}" class="nhud-achievement-popup" style="position:relative !important; bottom:auto !important; right:auto !important; pointer-events:auto; box-shadow: 0 5px 15px rgba(0,0,0,0.8); max-width:280px; width:100%; box-sizing:border-box;">
+            <button onclick="document.getElementById('${id}').remove()" style="position:absolute; top:4px; right:6px; background:none; border:none; color:#a08080; cursor:pointer; font-size:14px; line-height:1; padding:0;">✕</button>
             <div class="nhud-ach-icon">${ach.icon || '🏆'}</div>
             <div class="nhud-ach-text">
                 <div style="font-size:9px; color:var(--nhud-text-muted, #a08080); text-transform:uppercase; font-weight:bold; margin-bottom:2px;">УВЕДОМЛЕНИЕ HUD</div>
