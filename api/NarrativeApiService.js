@@ -64,6 +64,11 @@ export const NarrativeApiService = {
             use_sysprompt: false, // Отключаем, так как вшили сами
         };
 
+        // 4.1 Для Custom (OpenAI-compatible) нужен URL эндпоинта
+        if (profile['api-url']) {
+            generateData.custom_url = profile['api-url'];
+        }
+
         // Защита от пустых имен моделей
         if (profile.model && profile.model.trim() !== '') {
             generateData.model = profile.model;
