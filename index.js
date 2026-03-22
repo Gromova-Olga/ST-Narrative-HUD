@@ -523,9 +523,10 @@ jQuery(async () => {
 
         // ---> ДОБАВИТЬ ВОТ ЭТОТ БЛОК <---
         // Глубокое слияние: если ключей нет (новый профиль), они подтянутся из defaultSettings
+        // Глубокое слияние с жестким каркасом базовых объектов
         extension_settings[extensionName] = $.extend(
             true, 
-            {}, 
+            { chatData: {}, modules: {}, design: {}, ui: {}, prompts: {} }, 
             defaultSettings, 
             extension_settings[extensionName] || {}
         );
