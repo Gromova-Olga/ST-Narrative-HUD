@@ -27,8 +27,17 @@ export function buildTopbarIcon() {
     
     btn.on("click", () => {
         const sidebar = $("#narrative-hud-sidebar");
-        if (sidebar.is(":visible")) nhudHide(sidebar);
-        else nhudShow(sidebar);
+        if (sidebar.is(":visible")) {
+            nhudHide(sidebar);
+        } else {
+            nhudShow(sidebar);
+            // Перерендериваем содержимое при каждом открытии
+            renderTrackers();
+            renderCharacters();
+            renderInfoBlocks();
+            renderInfoBlockButtons();
+            renderProfileSelect();
+        }
     });
     
     $("#extensions-settings-button").before(btn);
@@ -43,7 +52,7 @@ export function buildSidebar() {
     const w = settings.ui.hudWidth || 300;
 
     $("body").append(`
-        <div id="narrative-hud-sidebar" style="position:fixed; top:40px; bottom:0; right:0; width:${w}px; z-index:9990; background:var(--nhud-bg, #151220); border-left:1px solid var(--nhud-border, #3a1525); display:flex; flex-direction:column; box-shadow:-5px 0 25px rgba(0,0,0,0.8); padding-top:30px; transition: width 0.3s ease;">
+        <div id="narrative-hud-sidebar" style="display:none; position:fixed; top:40px; bottom:0; right:0; width:${w}px; z-index:9990; background:var(--nhud-bg, #151220); border-left:1px solid var(--nhud-border, #3a1525); flex-direction:column; box-shadow:-5px 0 25px rgba(0,0,0,0.8); padding-top:30px; transition: width 0.3s ease;">
             <button id="nhud-mode-toggle" style="position:absolute; top:8px; left:8px; background:none; border:none; color:var(--nhud-accent, #d05070); font-size:16px; font-weight:bold; cursor:pointer; padding:0; z-index:100; transition:0.2s;">◧</button>
             
             <div style="position:absolute; top:8px; right:8px; z-index:100;">
@@ -179,7 +188,7 @@ export function buildSidebar() {
             // ---------------------------------
 
             $("#nhud-infoblock-popup-content").html(formatPopupText(live.infoBlocks[block]));
-            popup.attr("data-current", block).css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }, 150);
+            popup.attr("data-current", block).css({ display: "flex", opacity: 1 });
         }
     });
 
@@ -496,7 +505,7 @@ export function renderCharacters() {
                 $(".nhud-info-btn").removeClass("active"); $(this).addClass("active");
                 $("#nhud-infoblock-popup-title").text("Сводка мыслей");
                 $("#nhud-infoblock-popup-content").html(unifiedThoughtsContent);
-                popup.attr("data-current", "unified_thoughts").css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }, 150);
+                popup.attr("data-current", "unified_thoughts").css({ display: "flex", opacity: 1 });
             }
         });
         container.prepend(unifiedBtn);
@@ -555,7 +564,7 @@ export function buildFloatingWidget() {
     });
 
     $("#nhud-w-settings").on("click", (e) => { e.stopPropagation(); import('./SettingsUI.js').then(m => m.openSettingsPanel()); });
-    $("#nhud-w-hud").on("click", (e) => { e.stopPropagation(); const sb = $("#narrative-hud-sidebar"); if (sb.is(":visible")) nhudHide(sb); else nhudShow(sb); });
+    $("#nhud-w-hud").on("click", (e) => { e.stopPropagation(); const sb = $("#narrative-hud-sidebar"); if (sb.is(":visible")) { nhudHide(sb); } else { nhudShow(sb); renderTrackers(); renderCharacters(); renderInfoBlocks(); renderInfoBlockButtons(); renderProfileSelect(); } });
     $("#nhud-w-sims").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleMiniSims) m.toggleMiniSims(); }); });
     $("#nhud-w-conn").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleMiniConn) m.toggleMiniConn(); }); });
     $("#nhud-w-hero").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleHeroSheet) m.toggleHeroSheet(); }); });
@@ -992,7 +1001,7 @@ export function buildGlobalSettingsModal() {
         $(".nhud-g-tab").css({ color: "var(--nhud-text-muted, #a08080)", fontWeight: "normal" });
         $(this).css({ color: "var(--nhud-cen-text, #e0c0c0)", fontWeight: "bold" });
         $(".nhud-g-tab-content").hide();
-        $(`.nhud-g-tab-content[data-tab="${tab}"]`).css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }, 200);
+        $(`.nhud-g-tab-content[data-tab="${tab}"]`).css({ display: "flex", opacity: 1 });
     });
     
     $(document).off("click", "#nhud-global-close").on("click", "#nhud-global-close", closeGlobalSettings);
@@ -1645,11 +1654,11 @@ export function openGlobalSettings() {
         updateGlobalSettingsPosition();
 
         $(".nhud-g-tab-content").hide();
-        $(".nhud-g-tab-content[data-tab='visuals']").css("display", "flex").show();
+        $(".nhud-g-tab-content[data-tab='visuals']").css({ display: "flex", opacity: 1 });
         $(".nhud-g-tab").css({ color: "var(--nhud-text-muted, #a08080)", fontWeight: "normal" });
         $(".nhud-g-tab[data-tab='visuals']").css({ color: "var(--nhud-cen-text, #e0c0c0)", fontWeight: "bold" });
 
-        $("#nhud-global-settings").stop(true, true).css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }, 200);
+        nhudShow($("#nhud-global-settings"));
     });
 }
 
@@ -1890,13 +1899,13 @@ export function startInteractiveTour() {
             title: "🧊 Плавающий виджет (Кубик)", 
             text: "Это твой карманный пульт управления. Его можно свободно перетаскивать мышкой за края.<br><br>Здесь спрятаны кнопки быстрого доступа к мини-окошкам: Инвентарю, Журналу, Отношениям и Настройкам. Кнопка со стрелочками (⟳) внизу меняет форму виджета: квадрат, вертикальная полоса или горизонтальная панель.", 
             target: "#nhud-widget-container", 
-            before: () => $("#nhud-widget-container").css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }) 
+            before: () => $("#nhud-widget-container").css({ display: "flex", opacity: 1 }) 
         },
         { 
             title: "📊 Правое окно (HUD)", 
             text: "Главная информационная панель. Она показывает текущее состояние игры в реальном времени: статус твоего персонажа, окружающий мир и тех, кто находится рядом.", 
             target: "#narrative-hud-sidebar", 
-            before: () => { nhudShow($("#narrative-hud-sidebar")); } 
+            before: () => { nhudShow($("#narrative-hud-sidebar")); renderTrackers(); renderCharacters(); renderInfoBlocks(); renderInfoBlockButtons(); renderProfileSelect(); } 
         },
         { 
             title: "🌤️ Шапка, Погода и Кнопки", 
