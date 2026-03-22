@@ -164,7 +164,7 @@ export function buildSettingsPanel() {
                     <button class="nhud-tab" data-tab="storage" title="База Данных" style="padding:8px; background:none; border:none; color:var(--nhud-text-muted, #a08080); cursor:pointer;">🗄️ <span class="nhud-tab-text">База</span></button>
                 </div>
                 
-                <div id="nhud-settings-content" style="flex:1; overflow-y:auto; padding:15px; background:rgba(0,0,0,0.2);">
+                <div id="nhud-settings-content" style="flex:1; overflow-y:auto; padding:15px; padding-bottom:80px; background:rgba(0,0,0,0.2); -webkit-overflow-scrolling:touch;">
 
                     <div class="nhud-tab-content active-tab" data-tab="trackers">
                         <div id="nhud-settings-rel-container-placeholder"></div>
