@@ -19,7 +19,7 @@ export function updateSettingsPosition() {
         initLeftPanelResize();
     }
 
-    const topOffset = $('#top-bar').outerHeight() || 40; // Отступ от шапки ST
+    const topOffset = $('#top-bar').outerHeight() || 40;
     
     import('../core/StateManager.js').then(m => {
         const settings = m.getSettings();
@@ -27,29 +27,26 @@ export function updateSettingsPosition() {
         const mode = settings.ui.leftMode || "chat"; 
         const handle = $("#nhud-left-resize-handle");
 
-        if (panel.is(":visible")) {
-            panel.css({ top: topOffset + "px" });
-            
-            if (window.innerWidth <= 768) {
-                panel.css({ width: "100%" });
-                handle.hide();
-            } else {
-                if (mode === "screen") {
-                    // Режим 1: Ручная ширина (с ползунком)
-                    const w = settings.ui.leftWidth || 300;
-                    panel.css({ width: w + "px" });
-                    handle.show();
-                    $("#nhud-left-mode-toggle").html("◨").attr("title", "Привязать к границе чата");
-                } else {
-                    // Режим 2: Привязка к границе чата
-                    if (chatEl) {
-                        const rect = chatEl.getBoundingClientRect();
-                        panel.css({ width: Math.max(250, rect.left) + "px" });
-                    }
-                    handle.hide();
-                    $("#nhud-left-mode-toggle").html("◧").attr("title", "Ручная ширина");
-                }
+        // На мобиле CSS уже всё делает через @media, просто скрываем хэндл
+        if (window.innerWidth <= 768) {
+            handle.hide();
+            return;
+        }
+
+        panel.css({ top: topOffset + "px" });
+
+        if (mode === "screen") {
+            const w = settings.ui.leftWidth || 300;
+            panel.css({ width: w + "px" });
+            handle.show();
+            $("#nhud-left-mode-toggle").html("◨").attr("title", "Привязать к границе чата");
+        } else {
+            if (chatEl) {
+                const rect = chatEl.getBoundingClientRect();
+                panel.css({ width: Math.max(250, rect.left) + "px" });
             }
+            handle.hide();
+            $("#nhud-left-mode-toggle").html("◧").attr("title", "Ручная ширина");
         }
     });
 }
@@ -118,8 +115,9 @@ function initLeftPanelResize() {
 }
 
 export function openSettingsPanel() {
-    if (!$("#nhud-settings-panel").length) buildSettingsPanel();
-    else {
+    if (!$("#nhud-settings-panel").length) {
+        buildSettingsPanel();
+    } else {
         renderSettingsTrackers(); 
         renderSettingsCharacterAccordion();
         renderSettingsProfileSelect(); 
@@ -129,8 +127,10 @@ export function openSettingsPanel() {
         renderSettingsFactions();
         renderSettingsHeroSheet();
     }
-    updateSettingsPosition();
+    // Сначала показываем (иначе getBoundingClientRect возвращает 0 и позиция ломается)
     nhudShow($("#nhud-settings-panel"));
+    // Позиционируем после показа
+    setTimeout(() => updateSettingsPosition(), 0);
 }
 
 export function closeSettingsPanel() {
