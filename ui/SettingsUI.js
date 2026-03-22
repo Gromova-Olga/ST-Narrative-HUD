@@ -3,7 +3,7 @@ import { extension_settings } from "../../../../extensions.js";
 import { saveSettingsDebounced } from "../../../../../script.js";
 import { extensionName } from "../core/constants.js";
 import { NarrativeStorage } from "../storage/NarrativeStorage.js";
-import { getUserName, parseJsonFromMessage, getSTProfiles } from "../utils/helpers.js";
+import { getUserName, parseJsonFromMessage, getSTProfiles, nhudShow, nhudHide } from "../utils/helpers.js";
 import { getSettings, getLive, getChatTrackers, updateGlobalAvatar } from "../core/StateManager.js";
 import { openRelationshipJournal, openAnalyticsPopup, openSmartCleaner } from "./Modals.js";
 import { updateHistoryButtons } from "./MessageActions.js";
@@ -130,11 +130,11 @@ export function openSettingsPanel() {
         renderSettingsHeroSheet();
     }
     updateSettingsPosition();
-    $("#nhud-settings-panel").css("display", "flex").hide().fadeIn(200);
+    nhudShow($("#nhud-settings-panel"));
 }
 
 export function closeSettingsPanel() {
-    $("#nhud-settings-panel").fadeOut(200);
+    nhudHide($("#nhud-settings-panel"));
 }
 
 export function buildSettingsPanel() {
@@ -417,6 +417,16 @@ export function buildSettingsPanel() {
     const chatEl = document.getElementById("chat");
     if (chatEl) chatObserver.observe(chatEl);
     
+    // Закрытие левой панели свайпом влево на мобиле
+    let _swTouchX = 0;
+    const _swPanelEl = document.getElementById("nhud-settings-panel");
+    if (_swPanelEl) {
+        _swPanelEl.addEventListener("touchstart", e => { _swTouchX = e.touches[0].clientX; }, { passive: true });
+        _swPanelEl.addEventListener("touchend", e => {
+            if (e.changedTouches[0].clientX - _swTouchX < -80) nhudHide($("#nhud-settings-panel"));
+        }, { passive: true });
+    }
+
     updateSettingsPosition();
 }
 

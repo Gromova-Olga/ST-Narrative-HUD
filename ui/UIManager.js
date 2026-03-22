@@ -3,7 +3,7 @@ import { extension_settings } from "../../../../extensions.js";
 import { saveSettingsDebounced } from "../../../../../script.js";
 import { extensionName } from "../core/constants.js";
 import { NarrativeStorage } from "../storage/NarrativeStorage.js";
-import { getSTContext, getUserName, getCharName, showStatus, findCharacterKey, getSTProfiles, formatPopupText } from "../utils/helpers.js";
+import { getSTContext, getUserName, getCharName, showStatus, findCharacterKey, getSTProfiles, formatPopupText, nhudShow, nhudHide } from "../utils/helpers.js";
 import { getSettings, getLive, getChatTrackers, getTrackerValue, updateGlobalAvatar } from "../core/StateManager.js";
 import { openRelationshipJournal, openAnalyticsPopup } from "./Modals.js";
 
@@ -27,8 +27,8 @@ export function buildTopbarIcon() {
     
     btn.on("click", () => {
         const sidebar = $("#narrative-hud-sidebar");
-        if (sidebar.is(":visible")) sidebar.fadeOut(200);
-        else sidebar.fadeIn(200);
+        if (sidebar.is(":visible")) nhudHide(sidebar);
+        else nhudShow(sidebar);
     });
     
     $("#extensions-settings-button").before(btn);
@@ -162,7 +162,7 @@ export function buildSidebar() {
         popup.css({ top: sidebarRect.top + 50 + "px", left: (sidebarRect.left - parseInt(getComputedStyle(document.body).getPropertyValue('--nhud-prompt-width') || 300) - 10) + "px" });
 
         if (isSame) {
-            popup.fadeOut(150).removeAttr("data-current"); $(this).removeClass("active");
+            nhudHide(popup.removeAttr("data-current")); $(this).removeClass("active");
         } else {
             $(".nhud-info-btn").removeClass("active"); $(this).addClass("active");
             
@@ -179,7 +179,7 @@ export function buildSidebar() {
             // ---------------------------------
 
             $("#nhud-infoblock-popup-content").html(formatPopupText(live.infoBlocks[block]));
-            popup.attr("data-current", block).fadeIn(150);
+            popup.attr("data-current", block).css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }, 150);
         }
     });
 
@@ -190,11 +190,21 @@ export function buildSidebar() {
     $("#nhud-open-settings").on("click", () => { import('./SettingsUI.js').then(m => m.openSettingsPanel()); $("#nhud-sidebar-dropdown").fadeOut(150); });
     $("#nhud-open-global-settings").on("click", () => { openGlobalSettings(); $("#nhud-sidebar-dropdown").fadeOut(150); });
     $("#nhud-toggle-widget-btn").on("click", () => { $("#nhud-widget").fadeToggle(200); $("#nhud-sidebar-dropdown").fadeOut(150); });
-    $("#nhud-sidebar-close").on("click", () => { $("#narrative-hud-sidebar").fadeOut(200); $("#nhud-sidebar-dropdown").fadeOut(150); });
+    $("#nhud-sidebar-close").on("click", () => { nhudHide($("#narrative-hud-sidebar")); $("#nhud-sidebar-dropdown").fadeOut(150); });
 
     renderTrackers(); renderCharacters(); renderInfoBlocks();
     renderInfoBlockButtons(); renderProfileSelect();
     if (typeof makeWindowDraggable === "function") makeWindowDraggable("nhud-infoblock-popup", "nhud-infoblock-popup-header");
+
+    // Закрытие правой панели свайпом вправо на мобиле
+    let _swSbTouchX = 0;
+    const _swSbEl = document.getElementById("narrative-hud-sidebar");
+    if (_swSbEl) {
+        _swSbEl.addEventListener("touchstart", e => { _swSbTouchX = e.touches[0].clientX; }, { passive: true });
+        _swSbEl.addEventListener("touchend", e => {
+            if (e.changedTouches[0].clientX - _swSbTouchX > 80) nhudHide($("#narrative-hud-sidebar"));
+        }, { passive: true });
+    }
 }
 
 // ─── Info Blocks ────────────────────────────────────────────────────────
@@ -481,12 +491,12 @@ export function renderCharacters() {
             popup.css({ top: btnRect.top + "px", left: (sidebarRect.left - parseInt(getComputedStyle(document.body).getPropertyValue('--nhud-prompt-width') || 300) - 10) + "px" });
 
             if (isSame) {
-                popup.fadeOut(150).removeAttr("data-current"); $(".nhud-info-btn").removeClass("active");
+                nhudHide(popup.removeAttr("data-current")); $(".nhud-info-btn").removeClass("active");
             } else {
                 $(".nhud-info-btn").removeClass("active"); $(this).addClass("active");
                 $("#nhud-infoblock-popup-title").text("Сводка мыслей");
                 $("#nhud-infoblock-popup-content").html(unifiedThoughtsContent);
-                popup.attr("data-current", "unified_thoughts").fadeIn(150);
+                popup.attr("data-current", "unified_thoughts").css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }, 150);
             }
         });
         container.prepend(unifiedBtn);
@@ -545,7 +555,7 @@ export function buildFloatingWidget() {
     });
 
     $("#nhud-w-settings").on("click", (e) => { e.stopPropagation(); import('./SettingsUI.js').then(m => m.openSettingsPanel()); });
-    $("#nhud-w-hud").on("click", (e) => { e.stopPropagation(); $("#narrative-hud-sidebar").fadeToggle(200); });
+    $("#nhud-w-hud").on("click", (e) => { e.stopPropagation(); const sb = $("#narrative-hud-sidebar"); if (sb.is(":visible")) nhudHide(sb); else nhudShow(sb); });
     $("#nhud-w-sims").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleMiniSims) m.toggleMiniSims(); }); });
     $("#nhud-w-conn").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleMiniConn) m.toggleMiniConn(); }); });
     $("#nhud-w-hero").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleHeroSheet) m.toggleHeroSheet(); }); });
@@ -982,7 +992,7 @@ export function buildGlobalSettingsModal() {
         $(".nhud-g-tab").css({ color: "var(--nhud-text-muted, #a08080)", fontWeight: "normal" });
         $(this).css({ color: "var(--nhud-cen-text, #e0c0c0)", fontWeight: "bold" });
         $(".nhud-g-tab-content").hide();
-        $(`.nhud-g-tab-content[data-tab="${tab}"]`).css("display", "flex").hide().fadeIn(200);
+        $(`.nhud-g-tab-content[data-tab="${tab}"]`).css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }, 200);
     });
     
     $(document).off("click", "#nhud-global-close").on("click", "#nhud-global-close", closeGlobalSettings);
@@ -1005,11 +1015,11 @@ export function toggleMiniSims() {
             </div>
         `);
         makeWindowDraggable("nhud-mini-sims", "nhud-mini-sims-header");
-        $("#nhud-mini-sims-close").on("click", () => $("#nhud-mini-sims").fadeOut(150));
+        $("#nhud-mini-sims-close").on("click", () => nhudHide($("#nhud-mini-sims")));
         popup = $("#nhud-mini-sims");
     }
-    if (popup.is(":visible")) popup.fadeOut(150);
-    else { renderMiniSims(); popup.fadeIn(150); }
+    if (popup.is(":visible")) nhudHide(popup);
+    else { renderMiniSims(); nhudShow(popup); }
 }
 
 export function renderMiniSims() {
@@ -1139,7 +1149,7 @@ export function toggleMiniConn() {
             </div>
         `);
         makeWindowDraggable("nhud-mini-conn", "nhud-mini-conn-header");
-        $("#nhud-mini-conn-close").on("click", () => $("#nhud-mini-conn").fadeOut(150));
+        $("#nhud-mini-conn-close").on("click", () => nhudHide($("#nhud-mini-conn")));
         
         $("#nhud-mc-profile").on("change", function() {
             const settings = getSettings(); const val = $(this).val();
@@ -1151,8 +1161,8 @@ export function toggleMiniConn() {
         $("#nhud-mc-send").on("click", () => { import('../index.js').then(m => m.sendToAPI(true)); });
         popup = $("#nhud-mini-conn");
     }
-    if (popup.is(":visible")) popup.fadeOut(150);
-    else { renderMiniConn(); popup.fadeIn(150); }
+    if (popup.is(":visible")) nhudHide(popup);
+    else { renderMiniConn(); nhudShow(popup); }
 }
 
 export function renderMiniConn() {
@@ -1215,12 +1225,12 @@ export function toggleHeroSheet() {
             </div>
         `);
         makeWindowDraggable("nhud-hero-sheet", "nhud-hero-header");
-        $("#nhud-hero-close").on("click", () => $("#nhud-hero-sheet").fadeOut(150));
+        $("#nhud-hero-close").on("click", () => nhudHide($("#nhud-hero-sheet")));
         popup = $("#nhud-hero-sheet");
     }
     
-    if (popup.is(":visible")) popup.fadeOut(150);
-    else { renderHeroSheet(); popup.fadeIn(150); }
+    if (popup.is(":visible")) nhudHide(popup);
+    else { renderHeroSheet(); nhudShow(popup); }
 }
 
 export function renderHeroSheet() {
@@ -1284,12 +1294,12 @@ export function toggleInventory() {
             </div>
         `);
         makeWindowDraggable("nhud-inventory-modal", "nhud-inv-header");
-        $("#nhud-inv-close").on("click", () => $("#nhud-inventory-modal").fadeOut(150));
+        $("#nhud-inv-close").on("click", () => nhudHide($("#nhud-inventory-modal")));
         popup = $("#nhud-inventory-modal");
     }
     
-    if (popup.is(":visible")) popup.fadeOut(150);
-    else { renderInventory(); popup.fadeIn(150); }
+    if (popup.is(":visible")) nhudHide(popup);
+    else { renderInventory(); nhudShow(popup); }
 }
 
 export function renderInventory() {
@@ -1371,11 +1381,11 @@ export function toggleQuestLog() {
             </div>
         `);
         makeWindowDraggable("nhud-quest-log", "nhud-quest-header");
-        $("#nhud-quest-close").on("click", () => $("#nhud-quest-log").fadeOut(150));
+        $("#nhud-quest-close").on("click", () => nhudHide($("#nhud-quest-log")));
         popup = $("#nhud-quest-log");
     }
-    if (popup.is(":visible")) popup.fadeOut(150);
-    else { renderQuestLog(); popup.fadeIn(150); }
+    if (popup.is(":visible")) nhudHide(popup);
+    else { renderQuestLog(); nhudShow(popup); }
 }
 
 export function renderQuestLog() {
@@ -1480,11 +1490,11 @@ export function toggleCodex() {
             </div>
         `);
         makeWindowDraggable("nhud-codex-modal", "nhud-codex-header");
-        $("#nhud-codex-close").on("click", () => $("#nhud-codex-modal").fadeOut(150));
+        $("#nhud-codex-close").on("click", () => nhudHide($("#nhud-codex-modal")));
         popup = $("#nhud-codex-modal");
     }
-    if (popup.is(":visible")) popup.fadeOut(150);
-    else { renderCodex(); popup.fadeIn(150); }
+    if (popup.is(":visible")) nhudHide(popup);
+    else { renderCodex(); nhudShow(popup); }
 }
 
 export function renderCodex() {
@@ -1644,7 +1654,7 @@ export function openGlobalSettings() {
 }
 
 export function closeGlobalSettings() {
-    $("#nhud-global-settings").fadeOut(200);
+    nhudHide($("#nhud-global-settings"));
 }
 
 // === ДОБАВЛЕНЫ НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ CSS ===
@@ -1796,11 +1806,11 @@ export function toggleCalendar() {
             </div>
         `);
         makeWindowDraggable("nhud-calendar-modal", "nhud-calendar-header");
-        $("#nhud-calendar-close").on("click", () => $("#nhud-calendar-modal").fadeOut(150));
+        $("#nhud-calendar-close").on("click", () => nhudHide($("#nhud-calendar-modal")));
         popup = $("#nhud-calendar-modal");
     }
-    if (popup.is(":visible")) popup.fadeOut(150);
-    else { renderCalendar(); popup.fadeIn(150); }
+    if (popup.is(":visible")) nhudHide(popup);
+    else { renderCalendar(); nhudShow(popup); }
 }
 
 export function renderCalendar() {
@@ -1868,7 +1878,7 @@ export function startInteractiveTour() {
 
     $("#nhud-global-close").trigger("click");
     import('./SettingsUI.js').then(m => { if(m.closeSettingsPanel) m.closeSettingsPanel(); });
-    $("#narrative-hud-sidebar").fadeOut(100);
+    nhudHide($("#narrative-hud-sidebar"), 100);
 
     const steps = [
         { 
@@ -1880,13 +1890,13 @@ export function startInteractiveTour() {
             title: "🧊 Плавающий виджет (Кубик)", 
             text: "Это твой карманный пульт управления. Его можно свободно перетаскивать мышкой за края.<br><br>Здесь спрятаны кнопки быстрого доступа к мини-окошкам: Инвентарю, Журналу, Отношениям и Настройкам. Кнопка со стрелочками (⟳) внизу меняет форму виджета: квадрат, вертикальная полоса или горизонтальная панель.", 
             target: "#nhud-widget-container", 
-            before: () => $("#nhud-widget-container").fadeIn() 
+            before: () => $("#nhud-widget-container").css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }) 
         },
         { 
             title: "📊 Правое окно (HUD)", 
             text: "Главная информационная панель. Она показывает текущее состояние игры в реальном времени: статус твоего персонажа, окружающий мир и тех, кто находится рядом.", 
             target: "#narrative-hud-sidebar", 
-            before: () => { $("#narrative-hud-sidebar").fadeIn(); } 
+            before: () => { nhudShow($("#narrative-hud-sidebar")); } 
         },
         { 
             title: "🌤️ Шапка, Погода и Кнопки", 
