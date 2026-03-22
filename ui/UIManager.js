@@ -3,7 +3,7 @@ import { extension_settings } from "../../../../extensions.js";
 import { saveSettingsDebounced } from "../../../../../script.js";
 import { extensionName } from "../core/constants.js";
 import { NarrativeStorage } from "../storage/NarrativeStorage.js";
-import { getSTContext, getUserName, getCharName, showStatus, findCharacterKey, getSTProfiles, formatPopupText, nhudShow, nhudHide } from "../utils/helpers.js";
+import { getSTContext, getUserName, getCharName, showStatus, findCharacterKey, getSTProfiles, formatPopupText } from "../utils/helpers.js";
 import { getSettings, getLive, getChatTrackers, getTrackerValue, updateGlobalAvatar } from "../core/StateManager.js";
 import { openRelationshipJournal, openAnalyticsPopup } from "./Modals.js";
 
@@ -27,17 +27,8 @@ export function buildTopbarIcon() {
     
     btn.on("click", () => {
         const sidebar = $("#narrative-hud-sidebar");
-        if (sidebar.is(":visible")) {
-            nhudHide(sidebar);
-        } else {
-            nhudShow(sidebar);
-            // Перерендериваем содержимое при каждом открытии
-            renderTrackers();
-            renderCharacters();
-            renderInfoBlocks();
-            renderInfoBlockButtons();
-            renderProfileSelect();
-        }
+        if (sidebar.is(":visible")) sidebar.fadeOut(200);
+        else sidebar.fadeIn(200);
     });
     
     $("#extensions-settings-button").before(btn);
@@ -52,7 +43,7 @@ export function buildSidebar() {
     const w = settings.ui.hudWidth || 300;
 
     $("body").append(`
-        <div id="narrative-hud-sidebar" style="display:none; position:fixed; top:40px; bottom:0; right:0; width:${w}px; z-index:9990; background:var(--nhud-bg, #151220); border-left:1px solid var(--nhud-border, #3a1525); flex-direction:column; box-shadow:-5px 0 25px rgba(0,0,0,0.8); padding-top:30px; transition: width 0.3s ease;">
+        <div id="narrative-hud-sidebar" style="position:fixed; top:40px; bottom:0; right:0; width:${w}px; z-index:9990; background:var(--nhud-bg, #151220); border-left:1px solid var(--nhud-border, #3a1525); display:flex; flex-direction:column; box-shadow:-5px 0 25px rgba(0,0,0,0.8); padding-top:30px; transition: width 0.3s ease;">
             <button id="nhud-mode-toggle" style="position:absolute; top:8px; left:8px; background:none; border:none; color:var(--nhud-accent, #d05070); font-size:16px; font-weight:bold; cursor:pointer; padding:0; z-index:100; transition:0.2s;">◧</button>
             
             <div style="position:absolute; top:8px; right:8px; z-index:100;">
@@ -134,28 +125,22 @@ export function buildSidebar() {
     updateHudPosition();
 
     let isResizing = false, startX, startWidth;
-    
-    $("#nhud-resize-handle").on("mousedown touchstart", function(e) {
+    $("#nhud-resize-handle").on("mousedown", function(e) {
         if (getSettings().ui?.hudMode === "chat") return;
-        isResizing = true; 
-        startX = e.type.includes('touch') ? e.originalEvent.touches[0].clientX : e.clientX; 
-        startWidth = $("#narrative-hud-sidebar").width();
-        $("body").css("user-select", "none"); 
-        if(!e.type.includes('touch')) e.preventDefault();
+        isResizing = true; startX = e.clientX; startWidth = $("#narrative-hud-sidebar").width();
+        $("body").css("user-select", "none"); e.preventDefault();
     });
     
-    $(document).on("mousemove.nhudresize touchmove.nhudresize", function(e) {
+    $(document).on("mousemove.nhudresize", function(e) {
         if (!isResizing) return;
-        const currentX = e.type.includes('touch') ? e.originalEvent.touches[0].clientX : e.clientX;
-        const newWidth = startWidth + (startX - currentX);
+        const newWidth = startWidth + (startX - e.clientX);
         const finalWidth = Math.min(Math.max(220, newWidth), window.innerWidth / 1.5);
         $("#narrative-hud-sidebar").css("width", finalWidth + "px");
     });
     
-    $(document).on("mouseup.nhudresize touchend.nhudresize", () => {
+    $(document).on("mouseup.nhudresize", () => {
         if (isResizing) { 
-            isResizing = false; 
-            $("body").css("user-select", ""); 
+            isResizing = false; $("body").css("user-select", ""); 
             getSettings().ui.hudWidth = $("#narrative-hud-sidebar").width();
             import('../../../../../script.js').then(m => m.saveSettingsDebounced()); 
             if (typeof makeWindowDraggable === "function") makeWindowDraggable("nhud-infoblock-popup", "nhud-infoblock-popup-header");
@@ -171,7 +156,7 @@ export function buildSidebar() {
         popup.css({ top: sidebarRect.top + 50 + "px", left: (sidebarRect.left - parseInt(getComputedStyle(document.body).getPropertyValue('--nhud-prompt-width') || 300) - 10) + "px" });
 
         if (isSame) {
-            nhudHide(popup.removeAttr("data-current")); $(this).removeClass("active");
+            popup.fadeOut(150).removeAttr("data-current"); $(this).removeClass("active");
         } else {
             $(".nhud-info-btn").removeClass("active"); $(this).addClass("active");
             
@@ -188,7 +173,7 @@ export function buildSidebar() {
             // ---------------------------------
 
             $("#nhud-infoblock-popup-content").html(formatPopupText(live.infoBlocks[block]));
-            popup.attr("data-current", block).css({ display: "flex", opacity: 1 });
+            popup.attr("data-current", block).fadeIn(150);
         }
     });
 
@@ -199,21 +184,11 @@ export function buildSidebar() {
     $("#nhud-open-settings").on("click", () => { import('./SettingsUI.js').then(m => m.openSettingsPanel()); $("#nhud-sidebar-dropdown").fadeOut(150); });
     $("#nhud-open-global-settings").on("click", () => { openGlobalSettings(); $("#nhud-sidebar-dropdown").fadeOut(150); });
     $("#nhud-toggle-widget-btn").on("click", () => { $("#nhud-widget").fadeToggle(200); $("#nhud-sidebar-dropdown").fadeOut(150); });
-    $("#nhud-sidebar-close").on("click", () => { nhudHide($("#narrative-hud-sidebar")); $("#nhud-sidebar-dropdown").fadeOut(150); });
+    $("#nhud-sidebar-close").on("click", () => { $("#narrative-hud-sidebar").fadeOut(200); $("#nhud-sidebar-dropdown").fadeOut(150); });
 
     renderTrackers(); renderCharacters(); renderInfoBlocks();
     renderInfoBlockButtons(); renderProfileSelect();
     if (typeof makeWindowDraggable === "function") makeWindowDraggable("nhud-infoblock-popup", "nhud-infoblock-popup-header");
-
-    // Закрытие правой панели свайпом вправо на мобиле
-    let _swSbTouchX = 0;
-    const _swSbEl = document.getElementById("narrative-hud-sidebar");
-    if (_swSbEl) {
-        _swSbEl.addEventListener("touchstart", e => { _swSbTouchX = e.touches[0].clientX; }, { passive: true });
-        _swSbEl.addEventListener("touchend", e => {
-            if (e.changedTouches[0].clientX - _swSbTouchX > 80) nhudHide($("#narrative-hud-sidebar"));
-        }, { passive: true });
-    }
 }
 
 // ─── Info Blocks ────────────────────────────────────────────────────────
@@ -500,12 +475,12 @@ export function renderCharacters() {
             popup.css({ top: btnRect.top + "px", left: (sidebarRect.left - parseInt(getComputedStyle(document.body).getPropertyValue('--nhud-prompt-width') || 300) - 10) + "px" });
 
             if (isSame) {
-                nhudHide(popup.removeAttr("data-current")); $(".nhud-info-btn").removeClass("active");
+                popup.fadeOut(150).removeAttr("data-current"); $(".nhud-info-btn").removeClass("active");
             } else {
                 $(".nhud-info-btn").removeClass("active"); $(this).addClass("active");
                 $("#nhud-infoblock-popup-title").text("Сводка мыслей");
                 $("#nhud-infoblock-popup-content").html(unifiedThoughtsContent);
-                popup.attr("data-current", "unified_thoughts").css({ display: "flex", opacity: 1 });
+                popup.attr("data-current", "unified_thoughts").fadeIn(150);
             }
         });
         container.prepend(unifiedBtn);
@@ -564,7 +539,7 @@ export function buildFloatingWidget() {
     });
 
     $("#nhud-w-settings").on("click", (e) => { e.stopPropagation(); import('./SettingsUI.js').then(m => m.openSettingsPanel()); });
-    $("#nhud-w-hud").on("click", (e) => { e.stopPropagation(); const sb = $("#narrative-hud-sidebar"); if (sb.is(":visible")) { nhudHide(sb); } else { nhudShow(sb); renderTrackers(); renderCharacters(); renderInfoBlocks(); renderInfoBlockButtons(); renderProfileSelect(); } });
+    $("#nhud-w-hud").on("click", (e) => { e.stopPropagation(); $("#narrative-hud-sidebar").fadeToggle(200); });
     $("#nhud-w-sims").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleMiniSims) m.toggleMiniSims(); }); });
     $("#nhud-w-conn").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleMiniConn) m.toggleMiniConn(); }); });
     $("#nhud-w-hero").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleHeroSheet) m.toggleHeroSheet(); }); });
@@ -777,14 +752,6 @@ export function buildGlobalSettingsModal() {
                         <textarea id="nhud-p-sys" class="nhud-textarea" rows="3" style="margin-top:4px;">${p.system}</textarea>
                     </div>
 
-                    <div style="background: rgba(208, 80, 112, 0.15); border: 1px solid var(--nhud-accent); border-radius: 6px; padding: 10px; margin: 10px 0; display: flex; gap: 12px; align-items: center;">
-                        <div style="font-size: 24px;">⚠️</div>
-                        <div style="font-size: 11px; line-height: 1.4; color: var(--nhud-cen-text);">
-                            <b style="color: var(--nhud-accent); text-transform: uppercase;">Важное примечание по языку:</b><br>
-                            Если ИИ выводит данные (мысли, локации, события) не на том языке, который вам нужен — обязательно добавьте уточнение <b>(in Russian)</b> или <b>любой другой язык</b> в конец каждого конкретного промпта ниже.
-                            </div>
-                    </div>
-                    
                     <div style="display:flex; flex-direction:column; gap:8px;">
                         <div style="border:1px solid var(--nhud-border); padding:8px; border-radius:4px; background:var(--nhud-cen-inp, rgba(0,0,0,0.2));">
                             <label class="nhud-checkbox-group" style="color:#52a8e0;"><input type="checkbox" id="nhud-m-trackers" ${m.trackers?'checked':''}> 📊 Трекеры (Здоровье и др.)</label>
@@ -1001,7 +968,7 @@ export function buildGlobalSettingsModal() {
         $(".nhud-g-tab").css({ color: "var(--nhud-text-muted, #a08080)", fontWeight: "normal" });
         $(this).css({ color: "var(--nhud-cen-text, #e0c0c0)", fontWeight: "bold" });
         $(".nhud-g-tab-content").hide();
-        $(`.nhud-g-tab-content[data-tab="${tab}"]`).css({ display: "flex", opacity: 1 });
+        $(`.nhud-g-tab-content[data-tab="${tab}"]`).css("display", "flex").hide().fadeIn(200);
     });
     
     $(document).off("click", "#nhud-global-close").on("click", "#nhud-global-close", closeGlobalSettings);
@@ -1024,11 +991,11 @@ export function toggleMiniSims() {
             </div>
         `);
         makeWindowDraggable("nhud-mini-sims", "nhud-mini-sims-header");
-        $("#nhud-mini-sims-close").on("click", () => nhudHide($("#nhud-mini-sims")));
+        $("#nhud-mini-sims-close").on("click", () => $("#nhud-mini-sims").fadeOut(150));
         popup = $("#nhud-mini-sims");
     }
-    if (popup.is(":visible")) nhudHide(popup);
-    else { renderMiniSims(); nhudShow(popup); }
+    if (popup.is(":visible")) popup.fadeOut(150);
+    else { renderMiniSims(); popup.fadeIn(150); }
 }
 
 export function renderMiniSims() {
@@ -1158,7 +1125,7 @@ export function toggleMiniConn() {
             </div>
         `);
         makeWindowDraggable("nhud-mini-conn", "nhud-mini-conn-header");
-        $("#nhud-mini-conn-close").on("click", () => nhudHide($("#nhud-mini-conn")));
+        $("#nhud-mini-conn-close").on("click", () => $("#nhud-mini-conn").fadeOut(150));
         
         $("#nhud-mc-profile").on("change", function() {
             const settings = getSettings(); const val = $(this).val();
@@ -1170,8 +1137,8 @@ export function toggleMiniConn() {
         $("#nhud-mc-send").on("click", () => { import('../index.js').then(m => m.sendToAPI(true)); });
         popup = $("#nhud-mini-conn");
     }
-    if (popup.is(":visible")) nhudHide(popup);
-    else { renderMiniConn(); nhudShow(popup); }
+    if (popup.is(":visible")) popup.fadeOut(150);
+    else { renderMiniConn(); popup.fadeIn(150); }
 }
 
 export function renderMiniConn() {
@@ -1234,12 +1201,12 @@ export function toggleHeroSheet() {
             </div>
         `);
         makeWindowDraggable("nhud-hero-sheet", "nhud-hero-header");
-        $("#nhud-hero-close").on("click", () => nhudHide($("#nhud-hero-sheet")));
+        $("#nhud-hero-close").on("click", () => $("#nhud-hero-sheet").fadeOut(150));
         popup = $("#nhud-hero-sheet");
     }
     
-    if (popup.is(":visible")) nhudHide(popup);
-    else { renderHeroSheet(); nhudShow(popup); }
+    if (popup.is(":visible")) popup.fadeOut(150);
+    else { renderHeroSheet(); popup.fadeIn(150); }
 }
 
 export function renderHeroSheet() {
@@ -1303,12 +1270,12 @@ export function toggleInventory() {
             </div>
         `);
         makeWindowDraggable("nhud-inventory-modal", "nhud-inv-header");
-        $("#nhud-inv-close").on("click", () => nhudHide($("#nhud-inventory-modal")));
+        $("#nhud-inv-close").on("click", () => $("#nhud-inventory-modal").fadeOut(150));
         popup = $("#nhud-inventory-modal");
     }
     
-    if (popup.is(":visible")) nhudHide(popup);
-    else { renderInventory(); nhudShow(popup); }
+    if (popup.is(":visible")) popup.fadeOut(150);
+    else { renderInventory(); popup.fadeIn(150); }
 }
 
 export function renderInventory() {
@@ -1390,11 +1357,11 @@ export function toggleQuestLog() {
             </div>
         `);
         makeWindowDraggable("nhud-quest-log", "nhud-quest-header");
-        $("#nhud-quest-close").on("click", () => nhudHide($("#nhud-quest-log")));
+        $("#nhud-quest-close").on("click", () => $("#nhud-quest-log").fadeOut(150));
         popup = $("#nhud-quest-log");
     }
-    if (popup.is(":visible")) nhudHide(popup);
-    else { renderQuestLog(); nhudShow(popup); }
+    if (popup.is(":visible")) popup.fadeOut(150);
+    else { renderQuestLog(); popup.fadeIn(150); }
 }
 
 export function renderQuestLog() {
@@ -1499,11 +1466,11 @@ export function toggleCodex() {
             </div>
         `);
         makeWindowDraggable("nhud-codex-modal", "nhud-codex-header");
-        $("#nhud-codex-close").on("click", () => nhudHide($("#nhud-codex-modal")));
+        $("#nhud-codex-close").on("click", () => $("#nhud-codex-modal").fadeOut(150));
         popup = $("#nhud-codex-modal");
     }
-    if (popup.is(":visible")) nhudHide(popup);
-    else { renderCodex(); nhudShow(popup); }
+    if (popup.is(":visible")) popup.fadeOut(150);
+    else { renderCodex(); popup.fadeIn(150); }
 }
 
 export function renderCodex() {
@@ -1554,67 +1521,39 @@ export function makeWindowDraggable(elementId, handleId) {
 
     let isDragging = false, startX, startY, initX, initY;
 
-    const startDrag = (e) => {
+    handle.onmousedown = (e) => {
         if (['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT', 'A'].includes(e.target.tagName)) return;
-        isDragging = true; 
-        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
-        startX = clientX; 
-        startY = clientY;
+        isDragging = true; startX = e.clientX; startY = e.clientY;
         const rect = el.getBoundingClientRect();
-        initX = rect.left; 
-        initY = rect.top;
+        initX = rect.left; initY = rect.top;
+        handle.style.cursor = 'grabbing'; document.body.style.userSelect = 'none';
         
-        handle.style.cursor = 'grabbing'; 
-        document.body.style.userSelect = 'none';
+        document.onmousemove = (e) => {
+            if (!isDragging) return;
+            let newLeft = initX + (e.clientX - startX);
+            let newTop = initY + (e.clientY - startY);
+            newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - el.offsetWidth));
+            newTop = Math.max(0, Math.min(newTop, window.innerHeight - el.offsetHeight));
+            el.style.left = newLeft + 'px'; el.style.top = newTop + 'px';
+            el.style.right = 'auto'; el.style.bottom = 'auto'; el.style.transform = 'none';
+        };
+
+        document.onmouseup = () => {
+            if (!isDragging) return;
+            isDragging = false; handle.style.cursor = 'grab'; document.body.style.userSelect = '';
+            document.onmousemove = null; document.onmouseup = null;
+            import('../core/StateManager.js').then(m => {
+                const settings = m.getSettings();
+                if (elementId === 'nhud-infoblock-popup') settings.design.promptPos = { left: el.style.left, top: el.style.top };
+                else if (elementId === 'nhud-widget-container') {
+                    if (!settings.ui) settings.ui = {};
+                    settings.ui.widgetPos = { left: el.style.left, top: el.style.top };
+                }
+                else { if (!settings.ui) settings.ui = {}; settings.ui[elementId + 'Pos'] = { left: el.style.left, top: el.style.top }; }
+                import('../../../../../script.js').then(s => s.saveSettingsDebounced());
+            });
+        };
     };
-
-    const doDrag = (e) => {
-        if (!isDragging) return;
-        const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
-        const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
-
-        let newLeft = initX + (clientX - startX);
-        let newTop = initY + (clientY - startY);
-        
-        newLeft = Math.max(0, Math.min(newLeft, window.innerWidth - el.offsetWidth));
-        newTop = Math.max(0, Math.min(newTop, window.innerHeight - el.offsetHeight));
-        
-        el.style.left = newLeft + 'px'; 
-        el.style.top = newTop + 'px';
-        el.style.right = 'auto'; 
-        el.style.bottom = 'auto'; 
-        el.style.transform = 'none';
-    };
-
-    const stopDrag = () => {
-        if (!isDragging) return;
-        isDragging = false; 
-        handle.style.cursor = 'grab'; 
-        document.body.style.userSelect = '';
-        
-        import('../core/StateManager.js').then(m => {
-            const settings = m.getSettings();
-            if (elementId === 'nhud-infoblock-popup') settings.design.promptPos = { left: el.style.left, top: el.style.top };
-            else if (elementId === 'nhud-widget-container') {
-                if (!settings.ui) settings.ui = {};
-                settings.ui.widgetPos = { left: el.style.left, top: el.style.top };
-            }
-            else { 
-                if (!settings.ui) settings.ui = {}; 
-                settings.ui[elementId + 'Pos'] = { left: el.style.left, top: el.style.top }; 
-            }
-            import('../../../../../script.js').then(s => s.saveSettingsDebounced());
-        });
-    };
-
-    handle.addEventListener('mousedown', startDrag);
-    handle.addEventListener('touchstart', startDrag, { passive: true });
-    document.addEventListener('mousemove', doDrag);
-    document.addEventListener('touchmove', doDrag, { passive: true });
-    document.addEventListener('mouseup', stopDrag);
-    document.addEventListener('touchend', stopDrag);
 }
 
 // =========================================================================
@@ -1654,16 +1593,16 @@ export function openGlobalSettings() {
         updateGlobalSettingsPosition();
 
         $(".nhud-g-tab-content").hide();
-        $(".nhud-g-tab-content[data-tab='visuals']").css({ display: "flex", opacity: 1 });
+        $(".nhud-g-tab-content[data-tab='visuals']").css("display", "flex").show();
         $(".nhud-g-tab").css({ color: "var(--nhud-text-muted, #a08080)", fontWeight: "normal" });
         $(".nhud-g-tab[data-tab='visuals']").css({ color: "var(--nhud-cen-text, #e0c0c0)", fontWeight: "bold" });
 
-        nhudShow($("#nhud-global-settings"));
+        $("#nhud-global-settings").stop(true, true).css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }, 200);
     });
 }
 
 export function closeGlobalSettings() {
-    nhudHide($("#nhud-global-settings"));
+    $("#nhud-global-settings").fadeOut(200);
 }
 
 // === ДОБАВЛЕНЫ НОВЫЕ ПЕРЕМЕННЫЕ ДЛЯ CSS ===
@@ -1767,20 +1706,20 @@ export function applyDesignTheme() {
             ${tabsCss}
             ${hideModulesCss}
             
-            /* ПРИМЕНЕНИЕ НОВЫХ ШРИФТОВ И ЦВЕТОВ (ИСПРАВЛЕНО ДЛЯ МОБИЛОК) */
-            #narrative-hud-sidebar { background: var(--nhud-hud-bg) !important; color: var(--nhud-hud-text) !important; font-size: var(--nhud-hud-text-size); }
+            /* ПРИМЕНЕНИЕ НОВЫХ ШРИФТОВ И ЦВЕТОВ */
+            #narrative-hud-sidebar { background: var(--nhud-hud-bg) !important; color: var(--nhud-hud-text) !important; font-size: var(--nhud-hud-text-size); background-blend-mode: overlay; }
             #narrative-hud-sidebar .nhud-char-name, #narrative-hud-sidebar .nhud-tracker-label { color: var(--nhud-hud-text) !important; }
             #narrative-hud-sidebar .nhud-input, #narrative-hud-sidebar .nhud-textarea { background-color: var(--nhud-hud-inp) !important; color: var(--nhud-hud-text) !important; }
 
-            #nhud-settings-panel { background: var(--nhud-left-bg) !important; color: var(--nhud-left-text) !important; font-size: var(--nhud-left-text-size); }
+            #nhud-settings-panel { background: var(--nhud-left-bg) !important; color: var(--nhud-left-text) !important; font-size: var(--nhud-left-text-size); background-blend-mode: overlay; }
             #nhud-settings-panel .nhud-input, #nhud-settings-panel .nhud-textarea, #nhud-settings-panel .nhud-select, #nhud-settings-panel .nhud-settings-tracker-row { background-color: var(--nhud-left-inp) !important; color: var(--nhud-left-text) !important; }
             #nhud-settings-panel details summary, #nhud-settings-panel .nhud-accordion-header { background: var(--nhud-left-head-bg) !important; font-size: var(--nhud-left-head-size) !important; color: var(--nhud-left-head-text) !important; }
 
-            #nhud-global-settings { background: var(--nhud-cen-bg) !important; color: var(--nhud-cen-text) !important; font-size: var(--nhud-cen-text-size); }
+            #nhud-global-settings { background: var(--nhud-cen-bg) !important; color: var(--nhud-cen-text) !important; font-size: var(--nhud-cen-text-size); background-blend-mode: overlay; }
             #nhud-global-settings .nhud-input, #nhud-global-settings .nhud-textarea, #nhud-global-settings .nhud-select { background-color: var(--nhud-cen-inp) !important; color: var(--nhud-cen-text) !important; }
             #nhud-global-settings details summary, #nhud-global-settings .nhud-cen-head { background: var(--nhud-cen-head-bg) !important; font-size: var(--nhud-cen-head-size) !important; color: var(--nhud-cen-head-text) !important; }
 
-            #nhud-infoblock-popup, #nhud-analytics-popup, #nhud-rel-journal, #nhud-mini-sims, #nhud-mini-conn, #nhud-hero-sheet, #nhud-inventory-modal, #nhud-quest-log, #nhud-codex-modal { background: var(--nhud-prompt-bg) !important; color: var(--nhud-prompt-text-color) !important; font-size: var(--nhud-prompt-font-size); }
+            #nhud-infoblock-popup, #nhud-analytics-popup, #nhud-rel-journal, #nhud-mini-sims, #nhud-mini-conn, #nhud-hero-sheet, #nhud-inventory-modal, #nhud-quest-log, #nhud-codex-modal { background: var(--nhud-prompt-bg) !important; color: var(--nhud-prompt-text-color) !important; font-size: var(--nhud-prompt-font-size); background-blend-mode: overlay; }
             .nhud-json-editor-textarea { background: var(--nhud-pop-inp) !important; color: var(--nhud-prompt-text-color) !important; border: 1px solid var(--nhud-border) !important; }
 
             #nhud-infoblock-popup .nhud-input, #nhud-infoblock-popup .nhud-textarea, 
@@ -1789,10 +1728,22 @@ export function applyDesignTheme() {
             #nhud-codex-modal .nhud-input, #nhud-codex-modal .nhud-textarea,
             #nhud-mini-sims .nhud-input { background-color: var(--nhud-pop-inp) !important; color: var(--nhud-prompt-text-color) !important; border-color: var(--nhud-border) !important; }
 
-            #nhud-widget { background: ${widBg} !important; border-color: var(--nhud-border) !important; }
+            #nhud-widget { background: ${widBg} !important; border-color: var(--nhud-border) !important; background-blend-mode: overlay; }
             #nhud-widget .nhud-w-btn { font-size: var(--nhud-wid-text-size) !important; color: var(--nhud-wid-text) !important; }
             
             ${d.customCss || ''}
+
+           @media screen and (max-width: 1000px) {
+                #narrative-hud-sidebar { width: 100% !important; max-width: 100vw !important; left: 0 !important; right: 0 !important; border-left: none !important; z-index: 10001 !important; }
+                #nhud-infoblock-popup, #nhud-analytics-popup, #nhud-rel-journal, #nhud-mini-sims, #nhud-mini-conn, #nhud-smart-cleaner-modal { position: fixed !important; left: 2vw !important; width: 96vw !important; top: 5vh !important; max-height: 90vh !important; transform: none !important; box-sizing: border-box !important; margin: 0 !important; z-index: 10005 !important; }
+                #nhud-analytics-canvas { width: 100% !important; height: auto !important; }
+                #nhud-widget { transform: scale(1.2); }
+                #nhud-settings-panel { width: 100% !important; max-width: 100vw !important; left: 0 !important; border-right: none !important; z-index: 10001 !important; }
+                
+                #nhud-global-settings { width: 95vw !important; height: 90vh !important; top: 5vh !important; left: 2.5vw !important; transform: none !important; }
+                #nhud-global-content div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; display: flex !important; flex-direction: column !important; gap: 8px !important; }
+                .nhud-g-tab { font-size: 11px !important; padding: 6px !important; flex-basis: 30% !important; flex-grow: 1; text-align: center; }
+            }
         `;
 
         let styleTag = document.getElementById("nhud-dynamic-theme");
@@ -1815,11 +1766,11 @@ export function toggleCalendar() {
             </div>
         `);
         makeWindowDraggable("nhud-calendar-modal", "nhud-calendar-header");
-        $("#nhud-calendar-close").on("click", () => nhudHide($("#nhud-calendar-modal")));
+        $("#nhud-calendar-close").on("click", () => $("#nhud-calendar-modal").fadeOut(150));
         popup = $("#nhud-calendar-modal");
     }
-    if (popup.is(":visible")) nhudHide(popup);
-    else { renderCalendar(); nhudShow(popup); }
+    if (popup.is(":visible")) popup.fadeOut(150);
+    else { renderCalendar(); popup.fadeIn(150); }
 }
 
 export function renderCalendar() {
@@ -1887,7 +1838,7 @@ export function startInteractiveTour() {
 
     $("#nhud-global-close").trigger("click");
     import('./SettingsUI.js').then(m => { if(m.closeSettingsPanel) m.closeSettingsPanel(); });
-    nhudHide($("#narrative-hud-sidebar"), 100);
+    $("#narrative-hud-sidebar").fadeOut(100);
 
     const steps = [
         { 
@@ -1899,13 +1850,13 @@ export function startInteractiveTour() {
             title: "🧊 Плавающий виджет (Кубик)", 
             text: "Это твой карманный пульт управления. Его можно свободно перетаскивать мышкой за края.<br><br>Здесь спрятаны кнопки быстрого доступа к мини-окошкам: Инвентарю, Журналу, Отношениям и Настройкам. Кнопка со стрелочками (⟳) внизу меняет форму виджета: квадрат, вертикальная полоса или горизонтальная панель.", 
             target: "#nhud-widget-container", 
-            before: () => $("#nhud-widget-container").css({ display: "flex", opacity: 1 }) 
+            before: () => $("#nhud-widget-container").fadeIn() 
         },
         { 
             title: "📊 Правое окно (HUD)", 
             text: "Главная информационная панель. Она показывает текущее состояние игры в реальном времени: статус твоего персонажа, окружающий мир и тех, кто находится рядом.", 
             target: "#narrative-hud-sidebar", 
-            before: () => { nhudShow($("#narrative-hud-sidebar")); renderTrackers(); renderCharacters(); renderInfoBlocks(); renderInfoBlockButtons(); renderProfileSelect(); } 
+            before: () => { $("#narrative-hud-sidebar").fadeIn(); } 
         },
         { 
             title: "🌤️ Шапка, Погода и Кнопки", 

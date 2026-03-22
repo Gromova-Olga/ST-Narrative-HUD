@@ -3,7 +3,7 @@ import { extension_settings } from "../../../../extensions.js";
 import { saveSettingsDebounced } from "../../../../../script.js";
 import { extensionName } from "../core/constants.js";
 import { NarrativeStorage } from "../storage/NarrativeStorage.js";
-import { getUserName, parseJsonFromMessage, getSTProfiles, nhudShow, nhudHide } from "../utils/helpers.js";
+import { getUserName, parseJsonFromMessage, getSTProfiles } from "../utils/helpers.js";
 import { getSettings, getLive, getChatTrackers, updateGlobalAvatar } from "../core/StateManager.js";
 import { openRelationshipJournal, openAnalyticsPopup, openSmartCleaner } from "./Modals.js";
 import { updateHistoryButtons } from "./MessageActions.js";
@@ -19,7 +19,7 @@ export function updateSettingsPosition() {
         initLeftPanelResize();
     }
 
-    const topOffset = $('#top-bar').outerHeight() || 40;
+    const topOffset = $('#top-bar').outerHeight() || 40; // Отступ от шапки ST
     
     import('../core/StateManager.js').then(m => {
         const settings = m.getSettings();
@@ -27,26 +27,29 @@ export function updateSettingsPosition() {
         const mode = settings.ui.leftMode || "chat"; 
         const handle = $("#nhud-left-resize-handle");
 
-        // На мобиле CSS уже всё делает через @media, просто скрываем хэндл
-        if (window.innerWidth <= 768) {
-            handle.hide();
-            return;
-        }
-
-        panel.css({ top: topOffset + "px" });
-
-        if (mode === "screen") {
-            const w = settings.ui.leftWidth || 300;
-            panel.css({ width: w + "px" });
-            handle.show();
-            $("#nhud-left-mode-toggle").html("◨").attr("title", "Привязать к границе чата");
-        } else {
-            if (chatEl) {
-                const rect = chatEl.getBoundingClientRect();
-                panel.css({ width: Math.max(250, rect.left) + "px" });
+        if (panel.is(":visible")) {
+            panel.css({ top: topOffset + "px" });
+            
+            if (window.innerWidth <= 768) {
+                panel.css({ width: "100%" });
+                handle.hide();
+            } else {
+                if (mode === "screen") {
+                    // Режим 1: Ручная ширина (с ползунком)
+                    const w = settings.ui.leftWidth || 300;
+                    panel.css({ width: w + "px" });
+                    handle.show();
+                    $("#nhud-left-mode-toggle").html("◨").attr("title", "Привязать к границе чата");
+                } else {
+                    // Режим 2: Привязка к границе чата
+                    if (chatEl) {
+                        const rect = chatEl.getBoundingClientRect();
+                        panel.css({ width: Math.max(250, rect.left) + "px" });
+                    }
+                    handle.hide();
+                    $("#nhud-left-mode-toggle").html("◧").attr("title", "Ручная ширина");
+                }
             }
-            handle.hide();
-            $("#nhud-left-mode-toggle").html("◧").attr("title", "Ручная ширина");
         }
     });
 }
@@ -74,26 +77,25 @@ function initLeftPanelResize() {
     // Логика перетаскивания (ресайза)
     let isResizing = false, startX, startWidth;
 
-    $("#nhud-left-resize-handle").on("mousedown touchstart", function(e) {
+    $("#nhud-left-resize-handle").on("mousedown", function(e) {
         import('../core/StateManager.js').then(m => {
             if (m.getSettings().ui?.leftMode === "chat") return;
             isResizing = true; 
-            startX = e.type.includes('touch') ? e.originalEvent.touches[0].clientX : e.clientX; 
+            startX = e.clientX; 
             startWidth = panel.width();
             $("body").css("user-select", "none"); 
-            if(!e.type.includes('touch')) e.preventDefault();
+            e.preventDefault();
         });
     });
     
-    $(document).on("mousemove.nhudleftresize touchmove.nhudleftresize", function(e) {
+    $(document).on("mousemove.nhudleftresize", function(e) {
         if (!isResizing) return;
-        const currentX = e.type.includes('touch') ? e.originalEvent.touches[0].clientX : e.clientX;
-        const newWidth = startWidth + (currentX - startX); // Тянем вправо - увеличиваем
+        const newWidth = startWidth + (e.clientX - startX); // Тянем вправо - увеличиваем
         const finalWidth = Math.min(Math.max(220, newWidth), window.innerWidth / 1.5);
         panel.css("width", finalWidth + "px");
     });
     
-    $(document).on("mouseup.nhudleftresize touchend.nhudleftresize", () => {
+    $(document).on("mouseup.nhudleftresize", () => {
         if (isResizing) { 
             isResizing = false; 
             $("body").css("user-select", ""); 
@@ -115,9 +117,8 @@ function initLeftPanelResize() {
 }
 
 export function openSettingsPanel() {
-    if (!$("#nhud-settings-panel").length) {
-        buildSettingsPanel();
-    } else {
+    if (!$("#nhud-settings-panel").length) buildSettingsPanel();
+    else {
         renderSettingsTrackers(); 
         renderSettingsCharacterAccordion();
         renderSettingsProfileSelect(); 
@@ -127,14 +128,12 @@ export function openSettingsPanel() {
         renderSettingsFactions();
         renderSettingsHeroSheet();
     }
-    // Сначала показываем (иначе getBoundingClientRect возвращает 0 и позиция ломается)
-    nhudShow($("#nhud-settings-panel"));
-    // Позиционируем после показа
-    setTimeout(() => updateSettingsPosition(), 0);
+    updateSettingsPosition();
+    $("#nhud-settings-panel").css("display", "flex").hide().fadeIn(200);
 }
 
 export function closeSettingsPanel() {
-    nhudHide($("#nhud-settings-panel"));
+    $("#nhud-settings-panel").fadeOut(200);
 }
 
 export function buildSettingsPanel() {
@@ -417,16 +416,6 @@ export function buildSettingsPanel() {
     const chatEl = document.getElementById("chat");
     if (chatEl) chatObserver.observe(chatEl);
     
-    // Закрытие левой панели свайпом влево на мобиле
-    let _swTouchX = 0;
-    const _swPanelEl = document.getElementById("nhud-settings-panel");
-    if (_swPanelEl) {
-        _swPanelEl.addEventListener("touchstart", e => { _swTouchX = e.touches[0].clientX; }, { passive: true });
-        _swPanelEl.addEventListener("touchend", e => {
-            if (e.changedTouches[0].clientX - _swTouchX < -80) nhudHide($("#nhud-settings-panel"));
-        }, { passive: true });
-    }
-
     updateSettingsPosition();
 }
 

@@ -141,16 +141,3 @@ export function formatPopupText(text) {
         }</div>`)
         .join('');
 }
-
-export function nhudShow($el, duration = 200) {
-    // Останавливаем любую текущую анимацию, сразу показываем как flex
-    $el.stop(true, true).css({ display: 'flex', opacity: 1 });
-}
- 
-/**
- * Скрыть панель (аналог fadeOut, совместим с nhudShow)
- */
-export function nhudHide($el, duration = 200) {
-    // Мгновенно скрываем — без анимации opacity, чтобы не было зависания
-    $el.stop(true, true).css({ display: 'none', opacity: 1 });
-}
