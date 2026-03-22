@@ -1163,14 +1163,14 @@ export function showAchievementPopup(ach) {
     // Создаем невидимый контейнер-стек для уведомлений, если его еще нет
     let container = $("#nhud-popup-container");
     if (!container.length) {
-        $("body").append('<div id="nhud-popup-container" style="position:fixed; bottom:20px; right:10px; left:10px; z-index:2147483647; display:flex; flex-direction:column; gap:10px; pointer-events:none; align-items:flex-end;"></div>');
+        $("body").append('<div id="nhud-popup-container" style="position:fixed; bottom:20px; right:20px; z-index:2147483647; display:flex; flex-direction:column; gap:10px; pointer-events:none;"></div>');
         container = $("#nhud-popup-container");
     }
 
     const id = 'ach-' + Date.now() + Math.floor(Math.random() * 1000);
     const html = $(`
-        <div id="${id}" class="nhud-achievement-popup" style="position:relative !important; bottom:auto !important; right:auto !important; pointer-events:auto; box-shadow: 0 5px 15px rgba(0,0,0,0.8); max-width:280px; width:100%; box-sizing:border-box;">
-            <button onclick="document.getElementById('${id}').remove()" style="position:absolute; top:4px; right:6px; background:none; border:none; color:#a08080; cursor:pointer; font-size:14px; line-height:1; padding:0;">✕</button>
+        <div id="${id}" class="nhud-achievement-popup" style="pointer-events:auto; box-shadow: 0 5px 15px rgba(0,0,0,0.8);">
+            <button onclick="document.getElementById('${id}').remove()" style="position:absolute; top:4px; right:6px; background:none; border:none; color:#a08080; cursor:pointer; font-size:14px; line-height:1; padding:0; z-index:1;">✕</button>
             <div class="nhud-ach-icon">${ach.icon || '🏆'}</div>
             <div class="nhud-ach-text">
                 <div style="font-size:9px; color:var(--nhud-text-muted, #a08080); text-transform:uppercase; font-weight:bold; margin-bottom:2px;">УВЕДОМЛЕНИЕ HUD</div>
