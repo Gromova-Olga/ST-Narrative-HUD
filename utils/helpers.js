@@ -78,18 +78,30 @@ export function removeTagsFromMessage(text, openTag, closeTag) {
     return cleaned;
 }
 
+const _translitMap = {'а':'a','б':'b','в':'v','г':'g','д':'d','е':'e','ё':'e','ж':'zh','з':'z','и':'i','й':'y','к':'k','л':'l','м':'m','н':'n','о':'o','п':'p','р':'r','с':'s','т':'t','у':'u','ф':'f','х':'h','ц':'ts','ч':'ch','ш':'sh','щ':'sch','ъ':'','ы':'y','ь':'','э':'e','ю':'yu','я':'ya'};
+function _transliterate(str) {
+    return str.toLowerCase().split('').map(c => _translitMap[c] ?? c).join('');
+}
+
 export function findCharacterKey(characters, targetName) {
     if (characters[targetName]) return targetName;
     const targetLower = targetName.toLowerCase();
+    const targetTranslit = _transliterate(targetName);
     for (const key of Object.keys(characters)) {
         if (key.toLowerCase() === targetLower) return key;
+        // Сравниваем транслитерацию — ловит "Серафина" vs "Seraphina"
+        if (_transliterate(key) === targetTranslit && targetTranslit.length > 3) return key;
+        if (_transliterate(key) === targetLower && targetLower.length > 3) return key;
+        if (key.toLowerCase() === targetTranslit && targetTranslit.length > 3) return key;
     }
     const targetFirstName = targetLower.split(/\s+/)[0];
+    const targetFirstTranslit = _transliterate(targetFirstName);
     for (const key of Object.keys(characters)) {
         const keyFirstName = key.toLowerCase().split(/\s+/)[0];
-        if (targetFirstName === keyFirstName && targetFirstName.length > 3) {
-            return key;
-        }
+        if (targetFirstName === keyFirstName && targetFirstName.length > 3) return key;
+        if (_transliterate(keyFirstName) === targetFirstTranslit && targetFirstTranslit.length > 3) return key;
+        if (_transliterate(keyFirstName) === targetFirstName && targetFirstName.length > 3) return key;
+        if (keyFirstName === targetFirstTranslit && targetFirstTranslit.length > 3) return key;
     }
     return null;
 }
