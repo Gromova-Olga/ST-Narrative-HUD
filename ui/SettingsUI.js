@@ -1144,7 +1144,9 @@ export function renderHallOfFame() {
 
 export function renderPropertyCards(type) { // type = 'estate' или 'vehicles'
     const chatId = NarrativeStorage.getCurrentChatId();
-    const chatData = getSettings().chatData[chatId];
+    const settings = getSettings();
+    if (!settings || !settings.chatData) return;
+    const chatData = settings.chatData[chatId];
     if (!chatData) return;
     
     if (!chatData.inventory) chatData.inventory = { money: 0, currency: "Золото", items: [], estate: [], vehicles: [] };
@@ -1247,7 +1249,9 @@ export function renderPropertyCards(type) { // type = 'estate' или 'vehicles'
 
 export function renderSettingsProperty() {
     const chatId = NarrativeStorage.getCurrentChatId();
-    const chatData = getSettings().chatData[chatId];
+    const settings = getSettings();
+    if (!settings || !settings.chatData) return;
+    const chatData = settings.chatData[chatId];
     if (!chatData) return;
     if (!chatData.inventory) chatData.inventory = { money: 0, currency: "Золото", items: [], estate: [], vehicles: [] };
     const inv = chatData.inventory;
@@ -1297,7 +1301,9 @@ export function renderSettingsFactions() {
     container.empty();
 
     const chatId = NarrativeStorage.getCurrentChatId();
-    const chatData = getSettings().chatData[chatId];
+    const settings = getSettings();
+    if (!settings || !settings.chatData) return;
+    const chatData = settings.chatData[chatId];
     if (!chatData) return;
     
     if (!chatData.factions) chatData.factions = [];
@@ -1379,7 +1385,9 @@ export function renderSettingsFactions() {
 
 export function renderSettingsHeroSheet() {
     const chatId = NarrativeStorage.getCurrentChatId();
-    const chatData = getSettings().chatData[chatId];
+    const settings = getSettings();
+    if (!settings || !settings.chatData) return;
+    const chatData = settings.chatData[chatId];
     if (!chatData) return;
     
     if (!chatData.heroSheet) chatData.heroSheet = { level: 1, xp: 0, points: 0, stats: { "💪 Сила": 1, "🏃 Ловкость": 1, "🧠 Интеллект": 1, "🗣️ Харизма": 1, "🛡️ Выносливость": 1 } };
@@ -1457,7 +1465,9 @@ export function renderSettingsHeroSheet() {
 
 export function renderSettingsQuests() {
     const chatId = NarrativeStorage.getCurrentChatId();
-    const chatData = getSettings().chatData[chatId];
+    const settings = getSettings();
+    if (!settings || !settings.chatData) return;
+    const chatData = settings.chatData[chatId];
     if (!chatData) return;
     if (!chatData.quests) chatData.quests = [];
     const quests = chatData.quests;
@@ -1528,7 +1538,9 @@ export function renderSettingsQuests() {
 
 export function renderSettingsCodex() {
     const chatId = NarrativeStorage.getCurrentChatId();
-    const chatData = getSettings().chatData[chatId];
+    const settings = getSettings();
+    if (!settings || !settings.chatData) return;
+    const chatData = settings.chatData[chatId];
     if (!chatData) return;
     if (!chatData.codex) chatData.codex = [];
     
@@ -1735,4 +1747,4 @@ export function renderSettingsCalendar(forceYear = null, forceMonth = null) {
             renderEventsForDate(date);
         });
     });
-}
+} // <-- Это должна быть последняя строчка в файле! Всё что ниже - удалить.
