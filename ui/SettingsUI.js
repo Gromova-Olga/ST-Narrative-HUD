@@ -747,6 +747,7 @@ export function renderPromptBlocks() {
         row.find(".nhud-pb-id").on("input", e => {
             settings.promptBlocks[idx].id = e.target.value;
             saveSettingsDebounced();
+            renderInfoBlockButtons();
         });
         row.find(".nhud-pb-prompt").on("input", e => {
             settings.promptBlocks[idx].prompt = e.target.value;
