@@ -967,8 +967,10 @@
         transform: none !important;
         margin: 0 !important;
         background: var(--nhud-bg, #151220) !important;
+        opacity: 1 !important;
         overflow-y: auto !important;
         flex-direction: column !important;
+        transition: none !important;
     }
 
     /* Ресайз-хэндл правой панели не нужен на мобиле */
@@ -993,6 +995,7 @@
         margin: 0 !important;
         background: var(--nhud-left-bg, #151220) !important;
         box-sizing: border-box !important;
+        opacity: 1 !important;
         transition: none !important;
         flex-direction: column !important;
     }
