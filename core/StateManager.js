@@ -10,8 +10,14 @@ export function getSettings() {
     extension_settings[extensionName] = extension_settings[extensionName] || {};
     const s = extension_settings[extensionName];
     
+    // ---> ДОБАВИТЬ ЭТИ ДВЕ СТРОКИ (Инициализация баз) <---
+    if (!s.chatData) s.chatData = {};
+    if (!s.modules)  s.modules = defaultSettings.modules ? { ...defaultSettings.modules } : {};
+    // -------------------------------------------------------
+
     if (!s.trackers)          s.trackers        = JSON.parse(JSON.stringify(defaultSettings.trackers));
     if (!s.characters)        s.characters      = [];
+    // ... дальше идет твой старый код ...
     if (!s.liveData)          s.liveData        = JSON.parse(JSON.stringify(defaultSettings.liveData));
     if (!s.liveData.trackerValues) s.liveData.trackerValues = {};
     if (!s.liveData.characters)    s.liveData.characters    = {};
