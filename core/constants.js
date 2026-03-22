@@ -41,7 +41,8 @@ export const defaultSettings = {
         calendar: true,
         factions: true,
         codex: true,
-        inventory: true
+        inventory: true,
+        loreInjection: true
     },
     trackers: [
         { id: "health",  label: "Здоровье", max: 100, color: "#e05252" },
@@ -64,7 +65,7 @@ export const defaultSettings = {
         contextMessages: 10,
         maxTokens: 2000,
         temperature: 0.7,
-        sendWithMain: false,
+        sendWithMain: true,
         lightMode: false,
         relHistory: {},
     },
