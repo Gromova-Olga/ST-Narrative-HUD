@@ -69,7 +69,7 @@ export function buildSidebar() {
             <div class="nhud-divider" style="height:1px; background:var(--nhud-border, #3a1525); margin:5px 0;"></div>
             <div id="nhud-infoblock-buttons" style="padding:0 10px; display:flex; flex-wrap:wrap; gap:4px; justify-content:center;"></div>
             <div class="nhud-divider" style="height:1px; background:var(--nhud-border, #3a1525); margin:5px 0;"></div>
-            <div id="nhud-characters-section" style="padding:0 10px 80px 10px; flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch;">
+            <div id="nhud-settings-content" style="flex:1; overflow-y:auto; padding:15px; background:rgba(0,0,0,0.2);">
             <div id="nhud-resize-handle" style="position:absolute; left:-4px; top:0; bottom:0; width:8px; cursor:ew-resize; z-index:10; background:transparent;"></div>
         </div>
         <div id="nhud-infoblock-popup" style="display:none; position:fixed; top:${settings.design?.promptPos?.top || '100px'}; left:${settings.design?.promptPos?.left || '100px'}; z-index:9995; background:var(--nhud-prompt-bg); border:var(--nhud-prompt-border); border-radius:8px; box-shadow:0 5px 20px rgba(0,0,0,0.9); width:var(--nhud-prompt-width); resize:both; overflow:hidden;">
