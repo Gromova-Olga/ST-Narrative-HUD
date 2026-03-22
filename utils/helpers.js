@@ -141,3 +141,14 @@ export function formatPopupText(text) {
         }</div>`)
         .join('');
 }
+
+export function nhudShow($el, duration = 200) {
+    $el.css({ display: 'flex', opacity: 0 }).animate({ opacity: 1 }, duration);
+}
+ 
+/**
+ * Скрыть панель (аналог fadeOut, совместим с nhudShow)
+ */
+export function nhudHide($el, duration = 200) {
+    $el.animate({ opacity: 0 }, duration, () => $el.css('display', 'none'));
+}
