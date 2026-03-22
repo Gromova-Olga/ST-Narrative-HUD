@@ -162,8 +162,16 @@ export function restoreLiveData() {
     const saved = NarrativeStorage.loadLiveData();
     if (saved) {
         if (saved.trackerValues) settings.liveData.trackerValues = saved.trackerValues;
-        if (saved.characters)    settings.liveData.characters    = saved.characters;
-        if (saved.relHistory)    settings.liveData.relHistory    = saved.relHistory;
+        // Мёрджим персонажей — не перезаписываем полностью, чтобы не потерять тех, кто был раньше
+        if (saved.characters) {
+            if (!settings.liveData.characters) settings.liveData.characters = {};
+            Object.entries(saved.characters).forEach(([k, v]) => {
+                settings.liveData.characters[k] = { ...(settings.liveData.characters[k] || {}), ...v };
+            });
+        }
+        if (saved.relHistory) settings.liveData.relHistory = saved.relHistory;
+        // Восстанавливаем список призраков — без этого игнор сбрасывается при переключении чата
+        if (saved.ignoredCharacters) settings.liveData.ignoredCharacters = saved.ignoredCharacters;
         saveSettingsDebounced();
     }
 }

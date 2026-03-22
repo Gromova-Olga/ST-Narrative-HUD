@@ -1,5 +1,3 @@
-// core/constants.js
-
 const scriptPath = import.meta.url.split('/').slice(0, -2).join('/');
 
 export const extensionName = "narrative-hud";
@@ -8,20 +6,22 @@ export const extensionFolderPath = scriptPath;
 export const defaultSettings = {
     ui: {
         widgetPos: { left: "20px", top: "80px" },
-        hudMode: "screen", // "screen" - к краю экрана, "chat" - к чату
-        hudWidth: 300,      // ширина панели
-        tabsMode: "top-text"
+        hudMode: "screen", 
+        hudWidth: 300,      
+        tabsMode: "top-text",
+        leftMode: "chat",
+        leftWidth: 300
     },
     design: {
         hudBgColor: "#140a0f", hudBgOpacity: 0.95, hudBgImage: "",
         setBgColor: "#140a0f", setBgOpacity: 0.95, setBgImage: "",
         widBgColor: "#140a0f", widBgOpacity: 0.95, widBgImage: "",
-        cenBgColor: "#151220", cenBgOpacity: 0.98, cenBgImage: "", // Центр. окно
+        cenBgColor: "#151220", cenBgOpacity: 0.98, cenBgImage: "", 
         promptBgColor: "#1a0a10", promptHeaderBg: "#2a101a", promptBgImage: "", promptWidth: 300, promptMerged: false, showStatusEmojis: true,
-        promptTextColor: "#e0b0b0", promptFontSize: 14, // Настройка текста
-        promptPos: { top: "100px", left: "100px" },    // Позиция окна
-        barColorStart: "#52e0a3", barColorEnd: "#e05252", barDynamic: true, // Градиент баров
-        inputBgColor: "#000000", inputBgOpacity: 0.3,              // Плашки и поля
+        promptTextColor: "#e0b0b0", promptFontSize: 14, 
+        promptPos: { top: "100px", left: "100px" },    
+        barColorStart: "#52e0a3", barColorEnd: "#e05252", barDynamic: true, 
+        inputBgColor: "#000000", inputBgOpacity: 0.3,              
         borderColor: "#4a1525",
         textMain: "#e0b0b0",
         textMuted: "#a08080",
@@ -29,14 +29,17 @@ export const defaultSettings = {
         customCss: ""
     },
     modules: {
-        trackers: true,       // Трекеры здоровья и т.д.
-        relationships: true,  // Симс-система
-        characters: true,     // Одежда, состояние персонажей
-        thoughts: true,       // Мысли персонажей
-        customBlocks: true,   // Кастомные блоки (монолог и т.д.)
-        datetime: true,        // Время и погода
+        trackers: true,       
+        relationships: true,  
+        characters: true,     
+        thoughts: true,       
+        customBlocks: true,   
+        datetime: true,        
         achievements: true,
         hero: true,
+        quests: true,
+        calendar: true,
+        factions: true
     },
     trackers: [
         { id: "health",  label: "Здоровье", max: 100, color: "#e05252" },

@@ -66,30 +66,36 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
 
         charsArray.forEach(charData => {
             if (!charData.name || charData.name.toLowerCase() === userName.toLowerCase()) return;
-            const name = charData.name.trim();
-            if (live.ignoredCharacters && live.ignoredCharacters.includes(name)) return;
-            
+            const rawName = charData.name.trim();
+            if (live.ignoredCharacters && live.ignoredCharacters.includes(rawName)) return;
+
+            // Ищем существующий ключ без учёта регистра — предотвращаем дубли
+            let existingKey = null;
+            for (const key of Object.keys(live.characters)) {
+                if (key.toLowerCase().trim() === rawName.toLowerCase().trim()) { existingKey = key; break; }
+                const kFirst = key.toLowerCase().split(/\s+/)[0];
+                const rFirst = rawName.toLowerCase().split(/\s+/)[0];
+                if (kFirst === rFirst && kFirst.length > 3) { existingKey = key; break; }
+            }
+            const name = existingKey || rawName;
+
             if (!live.characters[name]) live.characters[name] = {};
-            
-            if (charData.outfit) live.characters[name].outfit = stripHtml(charData.outfit);
-            if (charData.state) live.characters[name].state = stripHtml(charData.state);
-            if (charData.thoughts) live.characters[name].thoughts = stripHtml(charData.thoughts);
-            
+
+            if (charData.outfit !== undefined && charData.outfit !== '') live.characters[name].outfit = stripHtml(charData.outfit);
+            if (charData.state !== undefined && charData.state !== '')   live.characters[name].state  = stripHtml(charData.state);
+            if (charData.thoughts !== undefined && charData.thoughts !== '') live.characters[name].thoughts = stripHtml(charData.thoughts);
+
             if (charData.relationship !== undefined) {
                 const newVal = Math.min(100, Math.max(0, parseInt(charData.relationship) || 50));
                 let oldVal = live.characters[name].relationship;
-                
                 if (oldVal === undefined) oldVal = 50;
-                
+
                 if (newVal !== oldVal) {
                     if (!live.relHistory) live.relHistory = {};
                     if (!live.relHistory[name]) live.relHistory[name] = [];
-                    
                     live.relHistory[name] = live.relHistory[name].filter(e => String(e.messageId) !== String(messageId));
-                    
                     const delta = newVal - oldVal;
                     const reason = stripHtml(charData.relationship_change_reason || "Действия повлияли на отношение");
-                    
                     live.relHistory[name].push({
                         messageId: messageId,
                         delta: delta,
@@ -101,16 +107,27 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
                 live.characters[name].relationship = newVal;
             }
 
-            if (charData.relationship_status) live.characters[name].relationship_status = stripHtml(charData.relationship_status);
-            if (charData.relationship_thoughts) live.characters[name].relationship_thoughts = stripHtml(charData.relationship_thoughts);
-            if (charData.relationship_hint) live.characters[name].relationship_hint = stripHtml(charData.relationship_hint);
+            if (charData.relationship_status)        live.characters[name].relationship_status        = stripHtml(charData.relationship_status);
+            if (charData.relationship_thoughts)      live.characters[name].relationship_thoughts      = stripHtml(charData.relationship_thoughts);
+            if (charData.relationship_hint)          live.characters[name].relationship_hint          = stripHtml(charData.relationship_hint);
             if (charData.relationship_change_reason) live.characters[name].relationship_change_reason = stripHtml(charData.relationship_change_reason);
         });
-        
+
+        // Персистим всех персонажей в chatData, чтобы они не пропадали между сценами
+        const chatId = NarrativeStorage.getCurrentChatId();
+        if (chatId) {
+            const s = getSettings();
+            if (!s.chatData[chatId]) s.chatData[chatId] = { blocks: {}, metadata: { createdAt: Date.now(), lastAccessed: Date.now() } };
+            if (!s.chatData[chatId].liveData) s.chatData[chatId].liveData = { trackerValues: {}, characters: {}, relHistory: {}, ignoredCharacters: [] };
+            Object.entries(live.characters).forEach(([k, v]) => {
+                s.chatData[chatId].liveData.characters[k] = { ...(s.chatData[chatId].liveData.characters[k] || {}), ...v };
+            });
+        }
+
         UI.renderCharacters();
         SetUI.renderSettingsCharacterAccordion();
         UI.renderRelationships();
-        SetUI.renderSettingsTrackers(); 
+        SetUI.renderSettingsTrackers();
     }
     
     settings.promptBlocks.forEach(block => {
@@ -153,6 +170,7 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
         }
     }
 
+    // Ачивка одиночная
     if (jsonData.achievement && jsonData.achievement.title) {
         import('./core/StateManager.js').then(m => {
             const isNew = m.unlockAchievement(jsonData.achievement);
@@ -162,12 +180,29 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
             }
         });
     }
+    // Ачивки массивом
+    if (jsonData.achievements && !jsonData.achievement) {
+        const achList = Array.isArray(jsonData.achievements) ? jsonData.achievements : [jsonData.achievements];
+        achList.forEach(ach => {
+            if (ach && ach.title) {
+                import('./core/StateManager.js').then(m => {
+                    const isNew = m.unlockAchievement(ach);
+                    if (isNew) {
+                        UI.showAchievementPopup(ach);
+                        if (typeof SetUI.renderHallOfFame === 'function') SetUI.renderHallOfFame();
+                    }
+                });
+            }
+        });
+    }
 
-    if (jsonData.codex_unlocked && jsonData.codex_unlocked.title) {
+    // Кодекс — поддерживаем codex_unlocked и codex[]
+    const codexEntry = jsonData.codex_unlocked || (Array.isArray(jsonData.codex) ? jsonData.codex[0] : null);
+    if (codexEntry && codexEntry.title) {
         import('./core/StateManager.js').then(m => {
-            const isNew = m.unlockCodexEntry(jsonData.codex_unlocked);
+            const isNew = m.unlockCodexEntry(codexEntry);
             if (isNew) {
-                UI.showAchievementPopup({ title: "ЗАПИСЬ В КОДЕКСЕ", desc: jsonData.codex_unlocked.title, icon: "📖" });
+                UI.showAchievementPopup({ title: "ЗАПИСЬ В КОДЕКСЕ", desc: codexEntry.title, icon: "📖" });
                 if (typeof UI.renderCodex === 'function') UI.renderCodex();
             }
         });
@@ -197,24 +232,36 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
         });
     }
 
+    // Фракции — объект { "Имя": rep } и массив [{ name, rep }]
     if (jsonData.factions) {
         import('./core/StateManager.js').then(m => {
             const factions = m.getFactions();
             let updated = false;
-            
-            Object.entries(jsonData.factions).forEach(([name, rep]) => {
+            let factionPairs = [];
+            if (Array.isArray(jsonData.factions)) {
+                factionPairs = jsonData.factions.filter(f => f && f.name !== undefined).map(f => [f.name, parseInt(f.rep) || 0]);
+            } else if (typeof jsonData.factions === 'object') {
+                factionPairs = Object.entries(jsonData.factions).map(([name, rep]) => [name, parseInt(rep) || 0]);
+            }
+            factionPairs.forEach(([name, rep]) => {
+                rep = Math.min(100, Math.max(0, rep));
                 const existing = factions.find(f => f.name.toLowerCase() === name.toLowerCase());
-                if (existing && existing.rep !== rep) {
-                    const delta = rep - existing.rep;
-                    existing.rep = rep;
+                if (existing) {
+                    if (existing.rep !== rep) {
+                        const delta = rep - existing.rep;
+                        existing.rep = rep;
+                        updated = true;
+                        UI.showAchievementPopup({ title: "Репутация изменена", desc: `${name}: ${delta > 0 ? '+' : ''}${delta}`, icon: delta > 0 ? "📈" : "📉" });
+                    }
+                } else {
+                    factions.push({ name, rep, desc: "", descActive: false });
                     updated = true;
-                    UI.showAchievementPopup({ title: "Репутация изменена", desc: `${name}: ${delta > 0 ? '+' : ''}${delta}`, icon: delta > 0 ? "📈" : "📉" });
+                    UI.showAchievementPopup({ title: "Новая фракция", desc: name, icon: "⚑" });
                 }
             });
-            
             if (updated) {
                 saveSettingsDebounced();
-                if (typeof SetUI.renderSettingsFactions === 'function') SetUI.renderSettingsFactions();;
+                if (typeof SetUI.renderSettingsFactions === 'function') SetUI.renderSettingsFactions();
             }
         });
     }
@@ -373,10 +420,6 @@ export function injectPromptIntoRequest() {
     const settings = getSettings();
     let finalPrompt = "";
 
-    if (settings.modules?.loreInjection) {
-        finalPrompt += buildMemoryInjectionBlock();
-    }
-
     if (settings.requestSettings?.sendWithMain && !settings.requestSettings?.lightMode) {
         finalPrompt += buildDynamicPrompt(settings);
     }
@@ -384,6 +427,7 @@ export function injectPromptIntoRequest() {
     try {
         setExtensionPrompt('narrative-hud-parser', finalPrompt ? finalPrompt : '', extension_prompt_types.IN_CHAT, 1, false, extension_prompt_roles.SYSTEM);
         
+        // Динамическая память — только в отдельный слот, не дублируем в parser
         let lorePrompt = "";
         if (settings.modules?.loreInjection) {
             lorePrompt = buildMemoryInjectionBlock();
@@ -412,92 +456,134 @@ export function injectPromptIntoRequest() {
 }
 
 export function buildDynamicPrompt(settings) {
+    const lang = settings.prompts.language || 'Russian';
     let finalPrompt = settings.prompts.system + "\n\n";
 
-    if (settings.modules.trackers) finalPrompt += settings.prompts.trackersPrompt + "\n";
-    if (settings.modules.characters) finalPrompt += settings.prompts.charsPrompt + "\n";
-    if (settings.modules.datetime) finalPrompt += settings.prompts.datetimePrompt + "\n";
-    if (settings.modules?.codex && settings.prompts?.codexPrompt) finalPrompt += "\n" + settings.prompts.codexPrompt + "\n";
-    if (settings.modules?.quests && settings.prompts?.questsPrompt) finalPrompt += "\n" + settings.prompts.questsPrompt + "\n";
+    if (settings.modules?.trackers !== false) {
+        finalPrompt += settings.prompts.trackersPrompt + "\n";
+        const live = getLive();
+        const trackers = getChatTrackers();
+        if (trackers && trackers.length > 0) {
+            const currentVals = trackers.map(t => `${t.label}: ${live.trackerValues[t.id] ?? t.max}/${t.max}`).join(', ');
+            finalPrompt += `Current tracker values: ${currentVals}\n`;
+        }
+    }
+    if (settings.modules?.characters !== false) finalPrompt += settings.prompts.charsPrompt + "\n";
+    if (settings.modules?.datetime !== false)   finalPrompt += settings.prompts.datetimePrompt + "\n";
+    if (settings.modules?.codex && settings.prompts?.codexPrompt)               finalPrompt += "\n" + settings.prompts.codexPrompt + "\n";
+    if (settings.modules?.quests && settings.prompts?.questsPrompt)             finalPrompt += "\n" + settings.prompts.questsPrompt + "\n";
     if (settings.modules?.achievements && settings.prompts?.achievementsPrompt) finalPrompt += "\n" + settings.prompts.achievementsPrompt + "\n";
-    if (settings.modules?.hero && settings.prompts?.heroPrompt) finalPrompt += "\n" + settings.prompts.heroPrompt + "\n";
-    if (settings.modules?.timeline !== false && settings.prompts?.calendarPrompt) finalPrompt += "\n" + settings.prompts.calendarPrompt + "\n";
+    if (settings.modules?.hero && settings.prompts?.heroPrompt)                 finalPrompt += "\n" + settings.prompts.heroPrompt + "\n";
+    if (settings.modules?.factions && settings.prompts?.factionsPrompt)         finalPrompt += "\n" + settings.prompts.factionsPrompt + "\n";
 
-    settings.promptBlocks.filter(b => b.enabled).forEach(block => {
-        finalPrompt += `For the JSON field "${block.id}": ${block.prompt}\n`;
-    });
+    // Кастомные инфоблоки — только b.enabled
+    if (settings.promptBlocks && settings.promptBlocks.length > 0) {
+        settings.promptBlocks.filter(b => b.enabled).forEach(block => {
+            finalPrompt += `For the JSON field "${block.id}": ${block.prompt}\n`;
+        });
+    }
 
     const chatId = NarrativeStorage.getCurrentChatId();
     if (chatId && settings.chatData && settings.chatData[chatId]) {
+        const chatData = settings.chatData[chatId];
+
         if (settings.modules?.calendar !== false) {
-        if (settings.prompts?.calendarPrompt) {
-            finalPrompt += "\n" + settings.prompts.calendarPrompt + "\n";
+            if (settings.prompts?.calendarPrompt) finalPrompt += "\n" + settings.prompts.calendarPrompt + "\n";
+            const activeEvents = (chatData.calendar || []).filter(e => e.active !== false);
+            if (activeEvents.length > 0) {
+                finalPrompt += `\n[Timeline / Calendar Events]\n`;
+                activeEvents.forEach(ev => { finalPrompt += `- [${ev.date}]: ${ev.desc}\n`; });
+                finalPrompt += `[End Timeline]\n`;
+            }
         }
-        
-        // Вшиваем активные события в промпт
-        const calendar = settings.chatData[chatId]?.calendar || [];
-        const activeEvents = calendar.filter(e => e.active !== false); // Проверка глазика
-        if (activeEvents.length > 0) {
-            finalPrompt += `\n[Timeline / Calendar Events]\n`;
-            activeEvents.forEach(ev => { finalPrompt += `- [${ev.date}]: ${ev.desc}\n`; });
-            finalPrompt += `[End Timeline]\n`;
-        }
-    }
         if (settings.modules?.hero) {
-            const sheet = settings.chatData[chatId].heroSheet;
+            const sheet = chatData.heroSheet;
             if (sheet) {
-                finalPrompt += `\n[User Character Stats: Level ${sheet.level} | ` + Object.entries(sheet.stats).map(([k,v]) => `${k.replace(/[^а-яА-Яa-zA-Z]/g, '').trim()}: ${v}`).join(', ') + `. Take these stats into account during physical/social action outcomes.]\n`;
+                finalPrompt += `\n[User Character Stats: Level ${sheet.level} | ` +
+                    Object.entries(sheet.stats).map(([k, v]) => `${k.replace(/[^а-яА-Яa-zA-Z\s]/g, '').trim()}: ${v}`).join(', ') +
+                    `. Take these into account for action outcomes.]\n`;
             }
         }
         if (settings.modules?.codex) {
-            const codex = settings.chatData[chatId].codex;
-            if (codex && codex.length > 0) {
-                const activeCodex = codex.filter(c => c.active !== false);
-                if (activeCodex.length > 0) {
-                    finalPrompt += `\n[Unlocked Codex Entries]\n`;
-                    activeCodex.forEach(c => { finalPrompt += `- ${c.title}: ${c.text}\n`; });
-                    finalPrompt += `[End Codex]\n`;
-                }
+            const activeCodex = (chatData.codex || []).filter(c => c.active !== false);
+            if (activeCodex.length > 0) {
+                finalPrompt += `\n[Unlocked Codex Entries]\n`;
+                activeCodex.forEach(c => { finalPrompt += `- ${c.title}: ${c.text}\n`; });
+                finalPrompt += `[End Codex]\n`;
             }
         }
         if (settings.modules?.inventory !== false) {
-            const inv = settings.chatData[chatId].inventory;
+            const inv = chatData.inventory;
             if (inv) {
                 let invText = `\n[User Inventory & Assets]\nMoney: ${inv.money} ${inv.currency}\n`;
                 if (inv.items && inv.items.length) invText += `Items: ${inv.items.join(', ')}\n`;
                 const actVeh = (inv.vehicles || []).filter(v => v.active);
-                if (actVeh.length > 0) invText += `Vehicles: ${actVeh.map(v => `${v.name}${v.desc ? ` (${v.desc})` : ''}`).join(', ')}\n`;
+                if (actVeh.length) invText += `Vehicles: ${actVeh.map(v => `${v.name}${v.desc ? ` (${v.desc})` : ''}`).join(', ')}\n`;
                 const actEst = (inv.estate || []).filter(e => e.active);
-                if (actEst.length > 0) invText += `Real Estate: ${actEst.map(e => `${e.name}${e.desc ? ` (${e.desc})` : ''}`).join(', ')}\n`;
-                invText += `[End Inventory]\n`;
-                finalPrompt += invText;
+                if (actEst.length) invText += `Real Estate: ${actEst.map(e => `${e.name}${e.desc ? ` (${e.desc})` : ''}`).join(', ')}\n`;
+                finalPrompt += invText + `[End Inventory]\n`;
             }
         }
         if (settings.modules?.factions !== false) {
-            const factions = settings.chatData[chatId].factions;
+            const factions = chatData.factions;
             if (factions && factions.length > 0) {
-                finalPrompt += `\n[Factions Reputation]\n` + factions.map(f => {
-                    let fStr = `${f.name}: ${f.rep}/100`;
-                    if (f.descActive && f.desc) fStr += ` (${f.desc})`;
-                    return fStr;
-                }).join('\n') + `\n[End Factions]\n`;
+                finalPrompt += `\n[Factions Reputation]\n` +
+                    factions.map(f => `${f.name}: ${f.rep}/100${f.descActive && f.desc ? ` (${f.desc})` : ''}`).join('\n') +
+                    `\n[End Factions]\n`;
             }
         }
         if (settings.modules?.quests !== false) {
-            const quests = settings.chatData[chatId].quests;
-            if (quests && quests.length > 0) {
-                const activeQuests = quests.filter(q => q.status === 'active').map(q => `- ${q.title}: ${q.desc}`);
-                if (activeQuests.length > 0) {
-                    finalPrompt += `\n[Active Quests]\n${activeQuests.join('\n')}\n[End Quests]\n`;
-                }
+            const activeQuests = (chatData.quests || []).filter(q => q.status === 'active').map(q => `- ${q.title}: ${q.desc}`);
+            if (activeQuests.length > 0) {
+                finalPrompt += `\n[Active Quests]\n${activeQuests.join('\n')}\n[End Quests]\n`;
             }
         }
     }
 
-    // 💥 ЖЕСТКАЯ ПРИВЯЗКА К РУССКОМУ ЯЗЫКУ
-    const lang = settings.prompts.language || 'Russian';
     finalPrompt += `\n\nCRITICAL: All text values inside the JSON MUST be written in ${lang}.`;
-    finalPrompt += "\nReturn ONLY valid JSON.";
+
+    // JSON-скелет
+    let jsonSkeleton = `{\n  "characters": [\n    {\n      "name": "ИмяПерсонажа",\n      "state": "текущее состояние на ${lang}",\n      "outfit": "одежда на ${lang}",\n      "thoughts": "мысли о пользователе на ${lang}",\n      "relationship": 50,\n      "relationship_status": "статус на ${lang}",\n      "relationship_thoughts": "что думает о пользователе на ${lang}",\n      "relationship_hint": "подсказка/цель на ${lang}",\n      "relationship_change_reason": "причина изменения отношений на ${lang}"\n    }\n  ]`;
+
+    if (settings.modules?.trackers !== false) {
+        const trackers = getChatTrackers();
+        if (trackers && trackers.length > 0) {
+            const ex = {};
+            trackers.forEach(t => { ex[t.id] = t.max; });
+            jsonSkeleton += `,\n  "trackers": ${JSON.stringify(ex)}`;
+        } else {
+            jsonSkeleton += `,\n  "trackers": { "health": 100, "energy": 100 }`;
+        }
+    }
+    if (settings.modules?.datetime !== false) {
+        jsonSkeleton += `,\n  "datetime": "дата и время на ${lang}",\n  "location": "локация на ${lang}",\n  "weather": "погода на ${lang}"`;
+    }
+    if (settings.modules?.quests !== false)       jsonSkeleton += `,\n  "quests": [ { "title": "Название квеста", "desc": "Описание", "status": "active|completed|failed" } ]`;
+    if (settings.modules?.codex !== false)         jsonSkeleton += `,\n  "codex_unlocked": { "title": "Название записи", "text": "Текст лора на ${lang}" }`;
+    if (settings.modules?.factions !== false)      jsonSkeleton += `,\n  "factions": { "НазваниеФракции": 50 }`;
+    if (settings.modules?.calendar !== false)      jsonSkeleton += `,\n  "calendar_event": { "date": "DD.MM.YYYY", "desc": "Описание события на ${lang}" }`;
+    if (settings.modules?.achievements !== false)  jsonSkeleton += `,\n  "achievement": { "title": "Название ачивки", "desc": "Описание", "icon": "🏆" }`;
+    if (settings.modules?.hero !== false)          jsonSkeleton += `,\n  "xp_gained": "small|medium|large"`;
+
+    if (settings.promptBlocks && settings.promptBlocks.length > 0) {
+        settings.promptBlocks.filter(b => b.enabled).forEach(block => {
+            if (block.id === 'comments')     jsonSkeleton += `,\n  "comments": [ "комментарий 1", "комментарий 2" ]`;
+            else if (block.id === 'monologue')    jsonSkeleton += `,\n  "monologue": "текст внутреннего монолога на ${lang}"`;
+            else if (block.id === 'diary')        jsonSkeleton += `,\n  "diary": [ { "author": "Имя", "text": "запись на ${lang}" } ]`;
+            else if (block.id === 'skillchecks')  jsonSkeleton += `,\n  "skillchecks": [ { "skill": "Навык", "difficulty": "Сложность", "outcome": "Успех/Провал", "text": "Описание на ${lang}" } ]`;
+            else jsonSkeleton += `,\n  "${block.id}": "текст на ${lang}"`;
+        });
+    }
+
+    jsonSkeleton += `\n}`;
+
+    finalPrompt += `\n\nYou MUST return a JSON object. Only include fields that actually changed or were triggered. DO NOT invent new root keys. Use EXACTLY this structure:\n${jsonSkeleton}`;
+
+    if (settings.requestSettings?.sendWithMain && !settings.requestSettings?.lightMode) {
+        finalPrompt += "\n\nWrite your normal roleplay response first, then append the JSON block at the very end, after all narrative text.";
+    } else {
+        finalPrompt += "\n\nReturn ONLY valid JSON. No prose, no markdown, no code blocks. Raw JSON only.";
+    }
 
     return finalPrompt;
 }
@@ -523,10 +609,9 @@ jQuery(async () => {
 
         // ---> ДОБАВИТЬ ВОТ ЭТОТ БЛОК <---
         // Глубокое слияние: если ключей нет (новый профиль), они подтянутся из defaultSettings
-        // Глубокое слияние с жестким каркасом базовых объектов
         extension_settings[extensionName] = $.extend(
             true, 
-            { chatData: {}, modules: {}, design: {}, ui: {}, prompts: {} }, 
+            {}, 
             defaultSettings, 
             extension_settings[extensionName] || {}
         );

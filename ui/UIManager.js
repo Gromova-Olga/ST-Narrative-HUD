@@ -871,13 +871,14 @@ export function buildGlobalSettingsModal() {
     function saveAndApply() { saveSettingsDebounced(); applyDesignTheme(); updateGlobalTokenTracker(); }
     updateGlobalTokenTracker(); // Запускаем при открытии
 
-    const modBinds = { trackers: '#nhud-m-trackers', relationships: '#nhud-m-rel', characters: '#nhud-m-chars', thoughts: '#nhud-m-thoughts', customBlocks: '#nhud-m-blocks', datetime: '#nhud-m-date', analytics: '#nhud-m-analytics', loreInjection: '#nhud-m-lore', achievements: '#nhud-m-achievements', hero: '#nhud-m-hero', inventory: '#nhud-m-inv', quests: '#nhud-m-quests', codex: '#nhud-m-codex', factions: '#nhud-m-factions', calendarPrompt: '#nhud-p-calendar' };
+    const modBinds = { trackers: '#nhud-m-trackers', relationships: '#nhud-m-rel', characters: '#nhud-m-chars', thoughts: '#nhud-m-thoughts', customBlocks: '#nhud-m-blocks', datetime: '#nhud-m-date', analytics: '#nhud-m-analytics', loreInjection: '#nhud-m-lore', achievements: '#nhud-m-achievements', hero: '#nhud-m-hero', inventory: '#nhud-m-inv', quests: '#nhud-m-quests', codex: '#nhud-m-codex', factions: '#nhud-m-factions', calendar: '#nhud-m-calendar' };
     for (const [key, id] of Object.entries(modBinds)) {
         $(id).on("change", e => { getSettings().modules[key] = e.target.checked; saveAndApply(); });
     }
 
     $("#nhud-p-lang").on("input", e => { getSettings().prompts.language = e.target.value; saveAndApply(); }); 
     $("#nhud-p-sys").on("input", e => { getSettings().prompts.system = e.target.value; saveAndApply(); });
+    $("#nhud-p-trackers").on("input", e => { getSettings().prompts.trackersPrompt = e.target.value; saveAndApply(); });
     $("#nhud-p-chars").on("input", e => { getSettings().prompts.charsPrompt = e.target.value; saveAndApply(); });
     $("#nhud-p-date").on("input", e => { getSettings().prompts.datetimePrompt = e.target.value; saveAndApply(); });
     $("#nhud-p-ach").on("input", e => { getSettings().prompts.achievementsPrompt = e.target.value; saveAndApply(); });

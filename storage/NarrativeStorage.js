@@ -295,6 +295,7 @@ export const NarrativeStorage = {
         trackerValues: liveData.trackerValues || {},
         characters: liveData.characters || {},
         relHistory: liveData.relHistory || {},
+        ignoredCharacters: liveData.ignoredCharacters || [],
     };
     extension_settings[extensionName] = settings;
     saveSettingsDebounced();
