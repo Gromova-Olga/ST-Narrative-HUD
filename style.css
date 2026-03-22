@@ -840,9 +840,6 @@
     z-index: 10000;
     transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     pointer-events: none;
-    max-width: 90vw;
-    box-sizing: border-box;
-    white-space: normal;
 }
 .nhud-achievement-popup.show {
     bottom: 40px;
