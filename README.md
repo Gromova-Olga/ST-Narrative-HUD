@@ -6,7 +6,7 @@
 <img width="1920" height="1080" alt="изображение" src="https://github.com/user-attachments/assets/6303872b-2707-4e86-8cea-c4cb6110caf7" />
 
 <details>
-  <summary>🚀 Что нового в версии 1.3</summary>
+  <summary><b>🚀 Что нового в версии 1.3</b></summary>
 
  * Исправления подключения. Теперь профили Custom в подключении можно использовать свободно и не будет ошибки 502.
  * Мелкие правки визуала.
