@@ -24,7 +24,7 @@ export const NarrativeApiService = {
     if (apiName === 'google') return chat_completion_sources.MAKERSUITE;
     if (apiName === 'claude') return chat_completion_sources.CLAUDE;
     if (apiName === 'openrouter') return chat_completion_sources.OPENROUTER;
-    if (apiName === 'custom') return chat_completion_sources.CUSTOM;
+    if (apiName === 'custom') return chat_completion_sources.OPENAI; // custom идёт через openai-совместимый эндпоинт
     return apiName;
 },
 
@@ -34,7 +34,7 @@ export const NarrativeApiService = {
     async generate(messages, profileName, systemPrompt, options = {}) {
         const {
             temperature = 0.7,
-            max_tokens = 2000,
+            max_tokens = 3000,
             stream = false,
         } = options;
 
@@ -75,13 +75,14 @@ export const NarrativeApiService = {
 
         // 5. Добавляем прокси если нужно
         const proxy_preset = proxies.find(p => p.name === profile.proxy);
-        if (proxy_preset) {
+        if (proxy_preset && proxy_preset.url) {
             generateData.reverse_proxy = proxy_preset.url;
             generateData.proxy_password = proxy_preset.password;
         }
         // Для Custom (OpenAI-compatible) — берём api-url из профиля
         if (profile.api === 'custom' && profile['api-url']) {
             generateData.reverse_proxy = profile['api-url'];
+            generateData.custom_url = profile['api-url'];
         }
 
         // 6. Отправляем запрос
