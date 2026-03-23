@@ -256,6 +256,54 @@ export function processLastMessage() {
     }
 }
 
+export async function runLightModeUpdate(messageId, messageText) {
+    const settings = getSettings();
+    try {
+        const dynamicPrompt = buildDynamicPrompt(settings);
+        const rs = settings.requestSettings;
+        let rawText = "";
+
+        if (settings.useSTProfile && settings.activeProfile) {
+            const chatMessages = [];
+            const mesElements = document.querySelectorAll('.mes');
+            Array.from(mesElements).slice(-Math.min(rs.contextMessages || 10, 6)).forEach(mes => {
+                const isUser = mes.getAttribute('is_user') === 'true';
+                const textEl = mes.querySelector('.mes_text');
+                if (!textEl) return;
+                const clone = textEl.cloneNode(true);
+                clone.querySelectorAll('details').forEach(el => el.remove());
+                const text = clone.textContent.trim();
+                if (text) chatMessages.push({ role: isUser ? 'user' : 'assistant', content: text });
+            });
+            chatMessages.push({ role: 'user', content: dynamicPrompt });
+            rawText = await NarrativeApiService.generate(chatMessages, settings.activeProfile, "", { max_tokens: rs.maxTokens || 2000, temperature: rs.temperature || 0.7 });
+        } else {
+            const { generateQuietPrompt } = await import('../../../../script.js');
+            rawText = await generateQuietPrompt(dynamicPrompt, false, false) || "";
+        }
+
+        if (!rawText) { showStatus("⚠️ Лайт: пустой ответ", "error"); return; }
+
+        const { openTag, closeTag } = settings.jsonParser;
+        let jsonData = parseJsonFromMessage(rawText, openTag, closeTag);
+        if (!jsonData) {
+            const cleaned = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```json|```/gi, '').trim();
+            const m = cleaned.match(/\{[\s\S]*\}/);
+            if (m) { try { jsonData = JSON.parse(m[0]); } catch(e) {} }
+        }
+
+        if (jsonData) {
+            const swipeId = getCurrentSwipeId(messageId);
+            applyJsonUpdate(jsonData, messageId, swipeId);
+            showStatus("✅ Лайт: обновлено", "success");
+        } else {
+            showStatus("⚠️ Лайт: JSON не найден", "error");
+        }
+    } catch(err) {
+        showStatus(`❌ Лайт: ${err.message}`, "error");
+    }
+}
+
 export async function sendToAPI(manualTrigger = false) {
     const settings = getSettings();
     showStatus("⏳ Генерирую...", "loading");
