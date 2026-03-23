@@ -715,7 +715,50 @@ jQuery(async () => {
 
         eventSource.on(event_types.MESSAGE_DELETED, (messageId) => {
             NarrativeStorage.deleteMessageBlocks(String(messageId));
-            MsgUI.updateHistoryButtons(); MsgUI.updateAllJsonEditButtons();
+
+            // Откатываем состояние к предыдущему сообщению
+            setTimeout(() => {
+                const ctx = getSTContext();
+                const settings = getSettings();
+                if (!ctx?.chat?.length) return;
+
+                // Ищем последнее сообщение бота после удаления
+                let lastBotIndex = -1;
+                for (let i = ctx.chat.length - 1; i >= 0; i--) {
+                    if (!ctx.chat[i].is_user && !ctx.chat[i].is_system) {
+                        lastBotIndex = i;
+                        break;
+                    }
+                }
+
+                if (lastBotIndex === -1) {
+                    // Нет сообщений бота — сбрасываем всё
+                    settings.liveData.trackerValues = {};
+                    settings.liveData.characters = {};
+                    settings.liveData.infoBlocks = { ...defaultSettings.liveData.infoBlocks };
+                    settings.promptBlocks?.forEach(b => { settings.liveData.infoBlocks[b.id] = ""; });
+                } else {
+                    const swipeId = getCurrentSwipeId(lastBotIndex);
+                    const swipeData = NarrativeStorage.loadSwipeData(`${lastBotIndex}_${swipeId}`);
+                    const messageBlocks = NarrativeStorage.getMessageBlocks(String(lastBotIndex));
+
+                    if (swipeData) {
+                        if (swipeData.trackerValues) settings.liveData.trackerValues = swipeData.trackerValues;
+                        if (swipeData.characters)    settings.liveData.characters    = swipeData.characters;
+                        if (swipeData.relHistory)    settings.liveData.relHistory    = JSON.parse(JSON.stringify(swipeData.relHistory));
+                        settings.liveData.infoBlocks = { ...messageBlocks, ...(swipeData.infoBlocks || {}) };
+                    }
+                }
+
+                saveSettingsDebounced();
+                UI.renderTrackers();
+                UI.renderCharacters();
+                UI.renderRelationships();
+                UI.renderInfoBlocks();
+                MsgUI.updateHistoryButtons();
+                MsgUI.updateAllJsonEditButtons();
+                showStatus("🗑️ Откат к предыдущему состоянию", "info");
+            }, 300);
         });
 
         eventSource.on(event_types.MESSAGE_SWIPED, (mesId) => {
