@@ -63,7 +63,7 @@ export const defaultSettings = {
     autoSend: false,
     requestSettings: {
         contextMessages: 10,
-        maxTokens: 2000,
+        maxTokens: 4000,
         temperature: 0.7,
         sendWithMain: true,
         lightMode: false,
