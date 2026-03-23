@@ -21,11 +21,12 @@ export const NarrativeApiService = {
      * Правильно маппит API в chat_completion_source
      */
     getChatCompletionSource(apiName) {
-        if (apiName === 'google') return chat_completion_sources.MAKERSUITE;
-        if (apiName === 'claude') return chat_completion_sources.CLAUDE;
-        if (apiName === 'openrouter') return chat_completion_sources.OPENROUTER;
-        return apiName; // 'openai', 'textgenerationwebui', etc.
-    },
+    if (apiName === 'google') return chat_completion_sources.MAKERSUITE;
+    if (apiName === 'claude') return chat_completion_sources.CLAUDE;
+    if (apiName === 'openrouter') return chat_completion_sources.OPENROUTER;
+    if (apiName === 'custom') return chat_completion_sources.CUSTOM;
+    return apiName;
+},
 
     /**
      * Основной метод генерации
@@ -77,6 +78,10 @@ export const NarrativeApiService = {
         if (proxy_preset) {
             generateData.reverse_proxy = proxy_preset.url;
             generateData.proxy_password = proxy_preset.password;
+        }
+        // Для Custom (OpenAI-compatible) — берём api-url из профиля
+        if (profile.api === 'custom' && profile['api-url']) {
+            generateData.reverse_proxy = profile['api-url'];
         }
 
         // 6. Отправляем запрос
