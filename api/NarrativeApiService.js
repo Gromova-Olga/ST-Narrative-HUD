@@ -24,10 +24,8 @@ export const NarrativeApiService = {
     if (apiName === 'google') return chat_completion_sources.MAKERSUITE;
     if (apiName === 'claude') return chat_completion_sources.CLAUDE;
     if (apiName === 'openrouter') return chat_completion_sources.OPENROUTER;
-    if (apiName === 'custom') return chat_completion_sources.OPENAI; // custom идёт через openai-совместимый эндпоинт
-    return apiName;
+    return apiName; // для 'custom', 'openai' и всех остальных возвращаем строку как есть
 },
-
     /**
      * Основной метод генерации
      */
@@ -81,8 +79,8 @@ export const NarrativeApiService = {
         }
         // Для Custom (OpenAI-compatible) — берём api-url из профиля
         if (profile.api === 'custom' && profile['api-url']) {
-            generateData.reverse_proxy = profile['api-url'];
             generateData.custom_url = profile['api-url'];
+            generateData.reverse_proxy = profile['api-url'];
         }
 
         // 6. Отправляем запрос
