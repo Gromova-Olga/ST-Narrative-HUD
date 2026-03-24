@@ -1528,6 +1528,7 @@ export function makeWindowDraggable(elementId, handleId) {
 
     const onPointerDown = (e) => {
         if (['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT', 'A'].includes(e.target.tagName)) return;
+        if (e.target.closest('.nhud-w-btn, button, a, input, select, textarea')) return;
         // Только левая кнопка мыши или тач
         if (e.pointerType === 'mouse' && e.button !== 0) return;
 
