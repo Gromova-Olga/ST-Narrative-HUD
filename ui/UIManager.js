@@ -538,7 +538,7 @@ export function buildFloatingWidget() {
         import('../../../../../script.js').then(m => m.saveSettingsDebounced());
     });
 
-    $("#nhud-w-settings").on("click", (e) => { e.stopPropagation(); import('./SettingsUI.js').then(m => m.openSettingsPanel()); });
+    $("#nhud-w-settings").on("click", (e) => { e.stopPropagation(); import('./SettingsUI.js').then(m => $("#nhud-settings-panel").is(":visible") ? m.closeSettingsPanel?.() : m.openSettingsPanel?.()); });
     $("#nhud-w-hud").on("click", (e) => { e.stopPropagation(); $("#narrative-hud-sidebar").fadeToggle(200); });
     $("#nhud-w-sims").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleMiniSims) m.toggleMiniSims(); }); });
     $("#nhud-w-conn").on("click", (e) => { e.stopPropagation(); import('./UIManager.js').then(m => { if(m.toggleMiniConn) m.toggleMiniConn(); }); });
