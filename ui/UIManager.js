@@ -1524,30 +1524,46 @@ export function makeWindowDraggable(elementId, handleId) {
     handle.onmousedown = null;
     handle.onpointerdown = null;
 
-    let isDragging = false, startX, startY, initX, initY, pointerId;
+    // ДОБАВИЛИ переменную hasMoved
+    let isDragging = false, hasMoved = false, startX, startY, initX, initY, pointerId;
 
     const onPointerDown = (e) => {
+        // Оставляем только базовые теги. СТРОКУ КЛОДА УДАЛЯЕМ, иначе кубик не за что схватить!
         if (['INPUT', 'TEXTAREA', 'BUTTON', 'SELECT', 'A'].includes(e.target.tagName)) return;
-        if (e.target.closest('.nhud-w-btn, button, a, input, select, textarea')) return;
+        
         // Только левая кнопка мыши или тач
         if (e.pointerType === 'mouse' && e.button !== 0) return;
 
         isDragging = true;
+        hasMoved = false; // Сбрасываем флаг движения
         pointerId = e.pointerId;
         startX = e.clientX;
         startY = e.clientY;
+        
         const rect = el.getBoundingClientRect();
         initX = rect.left;
         initY = rect.top;
 
-        handle.setPointerCapture(e.pointerId);
-        handle.style.cursor = 'grabbing';
-        document.body.style.userSelect = 'none';
-        e.preventDefault();
+        // ВАЖНО: Мы больше не вызываем setPointerCapture и preventDefault здесь.
+        // Даем шанс браузеру зарегистрировать обычный клик, если палец не сдвинется.
     };
 
     const onPointerMove = (e) => {
         if (!isDragging || e.pointerId !== pointerId) return;
+
+        // Если мы еще не начали тащить, проверяем, сдвинулся ли палец/мышь (порог 4 пикселя)
+        if (!hasMoved) {
+            if (Math.abs(e.clientX - startX) > 4 || Math.abs(e.clientY - startY) > 4) {
+                hasMoved = true;
+                handle.setPointerCapture(e.pointerId); // Теперь жестко захватываем курсор для перетаскивания
+                handle.style.cursor = 'grabbing';
+                document.body.style.userSelect = 'none';
+            } else {
+                return; // Ждем, пока сдвинется сильнее, чтобы не дергать окно от дрожания пальца
+            }
+        }
+
+        // Логика самого перетаскивания
         let newLeft = initX + (e.clientX - startX);
         let newTop  = initY + (e.clientY - startY);
         newLeft = Math.max(0, Math.min(newLeft, window.innerWidth  - el.offsetWidth));
@@ -1562,22 +1578,28 @@ export function makeWindowDraggable(elementId, handleId) {
     const onPointerUp = (e) => {
         if (!isDragging || e.pointerId !== pointerId) return;
         isDragging = false;
-        handle.style.cursor = 'grab';
-        document.body.style.userSelect = '';
+        
+        // Очищаем стили и сохраняем позицию, ТОЛЬКО если мы реально тащили окно
+        if (hasMoved) {
+            handle.releasePointerCapture(e.pointerId); // Отпускаем курсор
+            handle.style.cursor = 'grab';
+            document.body.style.userSelect = '';
 
-        import('../core/StateManager.js').then(m => {
-            const settings = m.getSettings();
-            if (elementId === 'nhud-infoblock-popup') {
-                settings.design.promptPos = { left: el.style.left, top: el.style.top };
-            } else if (elementId === 'nhud-widget-container') {
-                if (!settings.ui) settings.ui = {};
-                settings.ui.widgetPos = { left: el.style.left, top: el.style.top };
-            } else {
-                if (!settings.ui) settings.ui = {};
-                settings.ui[elementId + 'Pos'] = { left: el.style.left, top: el.style.top };
-            }
-            import('../../../../../script.js').then(s => s.saveSettingsDebounced());
-        });
+            import('../core/StateManager.js').then(m => {
+                const settings = m.getSettings();
+                if (elementId === 'nhud-infoblock-popup') {
+                    settings.design.promptPos = { left: el.style.left, top: el.style.top };
+                } else if (elementId === 'nhud-widget-container') {
+                    if (!settings.ui) settings.ui = {};
+                    settings.ui.widgetPos = { left: el.style.left, top: el.style.top };
+                } else {
+                    if (!settings.ui) settings.ui = {};
+                    settings.ui[elementId + 'Pos'] = { left: el.style.left, top: el.style.top };
+                }
+                import('../../../../../script.js').then(s => s.saveSettingsDebounced());
+            });
+        }
+        hasMoved = false;
     };
 
     handle.addEventListener('pointerdown', onPointerDown, { passive: false });
