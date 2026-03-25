@@ -442,8 +442,19 @@ export function buildDynamicPrompt(settings) {
             finalPrompt += `Current tracker values: ${currentVals}\n`;
         }
     }
+    
     if (settings.modules?.characters !== false) finalPrompt += settings.prompts.charsPrompt + "\n";
-    if (settings.modules?.datetime !== false)   finalPrompt += settings.prompts.datetimePrompt + "\n";
+    
+    // --- НОВЫЙ БЛОК ДЛЯ ВРЕМЕНИ И ЛОКАЦИИ ---
+    if (settings.modules?.datetime !== false) {
+        finalPrompt += settings.prompts.datetimePrompt + "\n";
+        const live = getLive(); 
+        if (live.infoBlocks.datetime) finalPrompt += `Current In-Game Date & Time: ${live.infoBlocks.datetime}\n`;
+        if (live.infoBlocks.location) finalPrompt += `Current Location: ${live.infoBlocks.location}\n`;
+        if (live.infoBlocks.weather) finalPrompt += `Current Weather: ${live.infoBlocks.weather}\n`;
+    }
+    // ----------------------------------------
+
     if (settings.modules?.codex !== false && settings.prompts?.codexPrompt)               finalPrompt += "\n" + settings.prompts.codexPrompt + "\n";
     if (settings.modules?.quests && settings.prompts?.questsPrompt)             finalPrompt += "\n" + settings.prompts.questsPrompt + "\n";
     if (settings.modules?.achievements && settings.prompts?.achievementsPrompt) finalPrompt += "\n" + settings.prompts.achievementsPrompt + "\n";
