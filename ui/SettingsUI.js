@@ -632,6 +632,7 @@ export function buildCharEditBlock(name, liveData, settings, chatId, data) {
                     ${liveData?.outfit ? `<div style="font-size:0.7em;color:#7070a0;">👗 ${liveData.outfit.substring(0,60)}${liveData.outfit.length>60?'…':''}</div>` : ''}
                     ${liveData?.state  ? `<div style="font-size:0.7em;color:#909090;">${liveData.state.substring(0,70)}${liveData.state.length>70?'…':''}</div>` : ''}
                 </div>
+                ${liveData?.isHiddenFromScene ? `<button class="nhud-acc-return-scene" title="Вернуть персонажа в сцену (на экраны)" style="flex-shrink:0; margin-left:4px; background:none; border:none; cursor:pointer; font-size:14px;">🏃</button>` : ''}
                 <button class="nhud-acc-ghost-char" title="Превратить в призрака 👻 (Добавить в Игнор)" style="flex-shrink:0; margin-left:4px; background:none; border:none; cursor:pointer; font-size:14px; opacity:0.7; transition:0.2s;" onmouseover="this.style.opacity='1'" onmouseout="this.style.opacity='0.7'">👻</button>
                 <button class="nhud-acc-delete-char nhud-s-delete" title="Просто удалить из текущего кэша" style="flex-shrink:0;margin-left:4px;">✕</button>
             </div>
@@ -660,6 +661,19 @@ export function buildCharEditBlock(name, liveData, settings, chatId, data) {
         if (chatId === NarrativeStorage.getCurrentChatId()) {
             delete getSettings().liveData.characters[name];
             renderCharacters();
+        }
+        renderSettingsCharacterAccordion();
+    });
+
+    block.find('.nhud-acc-return-scene').on('click', () => {
+        liveData.isHiddenFromScene = false;
+        extension_settings[extensionName] = settings;
+        saveSettingsDebounced();
+        if (chatId === NarrativeStorage.getCurrentChatId()) {
+            getSettings().liveData.characters[name].isHiddenFromScene = false;
+            renderCharacters();
+            if (typeof renderRelationships === 'function') renderRelationships();
+            if (typeof renderSettingsTrackers === 'function') renderSettingsTrackers();
         }
         renderSettingsCharacterAccordion();
     });
@@ -903,7 +917,7 @@ export function renderSettingsTrackers() {
 
     const userName = getUserName();
     const charNames = Object.keys(live.characters).filter(name => 
-        name.toLowerCase() !== userName.toLowerCase() && !name.toLowerCase().includes('system')
+        name.toLowerCase() !== userName.toLowerCase() && !name.toLowerCase().includes('system') && !live.characters[name].isHiddenFromScene
     );
 
     if (charNames.length === 0) {
@@ -938,6 +952,7 @@ export function renderSettingsTrackers() {
                                 <span style="font-weight:bold; color:#e0d0a0; font-size:0.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</span>
                                 <div style="display:flex; gap:4px; align-items:center;">
                                     ${getSettings().modules.analytics !== false ? `<button class="nhud-s-rel-journal-btn" data-name="${name}" title="Открыть журнал связей" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 4px; transition:0.2s;">📜</button>` : ''}
+                                    <button class="nhud-s-rel-hide-scene-btn" data-name="${name}" title="Убрать из текущей сцены (сохранится во вкладке Персонажи)" style="background:none; border:none; color:#e05252; cursor:pointer; font-size:14px; padding:0 4px; transition:0.2s;">✕</button>
                                     <button class="nhud-s-rel-toggle-btn" data-name="${name}" title="Скрыть полоску из HUD" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 4px; transition:0.2s; filter: grayscale(${char.ignoreRelationship ? '100%' : '0'});">${char.ignoreRelationship ? '👁️‍🗨️' : '👁️'}</button>
                                     <input class="nhud-input nhud-s-rel-status" value="${status}" style="width:110px; padding:2px 4px; font-size:0.75em; text-align:right; color:#c0b0a0; border-color:#4a3030;" placeholder="Статус..." />
                                 </div>
@@ -963,6 +978,16 @@ export function renderSettingsTrackers() {
                     </div>` : ''}
                 </div>
             `);
+
+            card.find('.nhud-s-rel-hide-scene-btn').on('click', function(e) {
+                e.stopPropagation();
+                live.characters[name].isHiddenFromScene = true;
+                saveSettingsDebounced();
+                renderSettingsTrackers();
+                renderCharacters();
+                renderRelationships();
+                renderSettingsCharacterAccordion(); 
+            });
 
             card.find('.nhud-s-rel-journal-btn').on('click', function(e) {
                 e.stopPropagation();

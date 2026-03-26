@@ -339,7 +339,10 @@ export function renderRelationships() {
     container.empty();
     const userName = getUserName();
     const charNames = Object.keys(live.characters).filter(name => 
-        name.toLowerCase() !== userName.toLowerCase() && !name.toLowerCase().includes('system') && !live.characters[name].ignoreRelationship
+        name.toLowerCase() !== userName.toLowerCase() && 
+        !name.toLowerCase().includes('system') && 
+        !live.characters[name].ignoreRelationship &&
+        !live.characters[name].isHiddenFromScene
     );
 
     if (!charNames.length) return;
@@ -396,7 +399,9 @@ export function renderCharacters() {
     }
 
     const charNames = Object.keys(live.characters).filter(name => 
-        name.toLowerCase() !== userName.toLowerCase() && !name.toLowerCase().includes('system')
+        name.toLowerCase() !== userName.toLowerCase() && 
+        !name.toLowerCase().includes('system') &&
+        !live.characters[name].isHiddenFromScene
     );
 
     if (!charNames.length) {
@@ -1008,7 +1013,10 @@ export function renderMiniSims() {
     const relSettings = settings.relationshipSettings;
     const userName = getUserName();
     const charNames = Object.keys(live.characters).filter(name => 
-        name.toLowerCase() !== userName.toLowerCase() && !name.toLowerCase().includes('system') && !live.characters[name].ignoreRelationship
+        name.toLowerCase() !== userName.toLowerCase() && 
+        !name.toLowerCase().includes('system') && 
+        !live.characters[name].ignoreRelationship &&
+        !live.characters[name].isHiddenFromScene
     );
 
     if (!charNames.length) {
