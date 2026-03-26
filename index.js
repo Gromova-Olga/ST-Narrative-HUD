@@ -79,6 +79,7 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
             const name = existingKey || rawName;
 
             if (!live.characters[name]) live.characters[name] = {};
+            live.characters[name].isHiddenFromScene = false;
             if (charData.outfit !== undefined && charData.outfit !== '') live.characters[name].outfit = stripHtml(charData.outfit);
             if (charData.state !== undefined && charData.state !== '')   live.characters[name].state  = stripHtml(charData.state);
             if (charData.thoughts !== undefined && charData.thoughts !== '') live.characters[name].thoughts = stripHtml(charData.thoughts);
@@ -370,7 +371,7 @@ export function buildMemoryInjectionBlock() {
     let hasData = false;
     
     for (const [charName, charData] of Object.entries(live.characters)) {
-        if (charData.ignored || (live.ignoredCharacters && live.ignoredCharacters.includes(charName))) continue;
+        if (charData.ignored || charData.isHiddenFromScene || (live.ignoredCharacters && live.ignoredCharacters.includes(charName))) continue;
 
         let charBlock = `- ${charName}: `;
         const details = [];
