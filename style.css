@@ -4747,3 +4747,22 @@ input[type="number"].nhud-rel-val-input {
         z-index: 100000 !important; /* Выводим поверх всего интерфейса Таверны */
     }
 }
+
+/* ==========================================================================
+   📱 ФИКС НОВЫХ ВСПЛЫВАЮЩИХ ОКОН (Карта и Уведомления)
+   ========================================================================== */
+@media screen and (max-width: 1000px) {
+    #nhud-notif-panel,
+    #nhud-map-container {
+        position: fixed !important;
+        left: 2vw !important;
+        width: 96vw !important;
+        /* Отступаем сверху минимум на высоту шапки Tavern (60px) или 10% экрана */
+        top: max(60px, 10dvh) !important; 
+        max-height: 85dvh !important; /* Чтобы окно не улетало за нижний край */
+        transform: none !important;
+        box-sizing: border-box !important;
+        margin: 0 !important;
+        z-index: 10005 !important; /* Поверх всех остальных панелей */
+    }
+}
