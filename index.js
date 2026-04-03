@@ -1116,19 +1116,22 @@ jQuery(async () => {
             $('<style id="nhud-notif-styles">').text(NOTIF_CSS).appendTo('head');
             $('body').append(`
                 <div id="nhud-notif-container"></div>
-                <div id="nhud-notif-panel">
-                    <div id="nhud-notif-panel-header">
-                        <span>📨 Уведомления</span>
-                        <button id="nhud-notif-panel-close">✕</button>
-                    </div>
-                    <div id="nhud-notif-panel-body">
-                        <div id="nhud-notif-panel-empty">Нет уведомлений</div>
-                    </div>
+                <div id="nhud-notif-panel" style="display:none;">
+                <div id="nhud-notif-panel-header">
+                    <span>📨 Уведомления</span>
+                    <button id="nhud-notif-panel-close">✕</button>
                 </div>
-            `);
-            $('#nhud-notif-panel-close').on('click', () => $('#nhud-notif-panel').fadeOut(200));
-            notifStylesInjected = true;
-        }
+                <div id="nhud-notif-panel-body">
+                    <div id="nhud-notif-panel-empty">Нет уведомлений</div>
+                </div>
+            </div>
+        `);
+        $('#nhud-notif-panel-close').on('click', () => $('#nhud-notif-panel').fadeOut(200));
+        if (typeof makeWindowDraggable === "function") {
+        makeWindowDraggable("nhud-notif-panel", "nhud-notif-panel-header");
+    }
+        notifStylesInjected = true;
+    }
 
         // Загружаем историю уведомлений из chatData
         try {

@@ -563,17 +563,8 @@ export function buildFloatingWidget() {
     $("#nhud-w-inv").on("click", (e) => { e.stopPropagation(); toggleInventory(); });
     $("#nhud-w-quests").on("click", (e) => { e.stopPropagation(); toggleQuestLog(); });
     $("#nhud-w-codex").on("click", (e) => { e.stopPropagation(); toggleCodex(); });
-    $("#nhud-w-notifs").on("click", (e) => { 
-    e.stopPropagation(); 
-    $("#nhud-notif-panel").fadeToggle(200); 
-    
-    // Как только панель показывается, накидываем на неё функцию перетаскивания
-    if (typeof makeWindowDraggable === "function") {
-        makeWindowDraggable("nhud-notif-panel", "nhud-notif-panel-header");
-    }
-});
-    $("#nhud-w-calendar").on("click", (e) => { e.stopPropagation(); toggleCalendar(); });
-    
+    $("#nhud-w-notifs").on("click", (e) => { e.stopPropagation(); $("#nhud-notif-panel").fadeToggle(200); });
+
     makeWindowDraggable("nhud-widget-container", "nhud-widget-container");
 }
 
