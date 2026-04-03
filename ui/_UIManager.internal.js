@@ -1680,18 +1680,19 @@ export function updateGlobalSettingsPosition() {
 }
 
 export function openGlobalSettings() {
-    $("#nhud-global-settings").remove(); // Жестко убиваем кэш окна
-    import('./UIManager.js').then(m => {
-        if (m.buildGlobalSettingsModal) m.buildGlobalSettingsModal();
-        updateGlobalSettingsPosition();
+    $("#nhud-global-settings").remove(); 
+    
+    // Вызываем напрямую без import, чтобы мобилки не давились
+    buildGlobalSettingsModal();
+    updateGlobalSettingsPosition();
 
-        $(".nhud-g-tab-content").hide();
-        $(".nhud-g-tab-content[data-tab='visuals']").css("display", "flex").show();
-        $(".nhud-g-tab").css({ color: "var(--nhud-text-muted, #a08080)", fontWeight: "normal" });
-        $(".nhud-g-tab[data-tab='visuals']").css({ color: "var(--nhud-cen-text, #e0c0c0)", fontWeight: "bold" });
+    $(".nhud-g-tab-content").hide();
+    $(".nhud-g-tab-content[data-tab='visuals']").css("display", "flex").show();
+    $(".nhud-g-tab").css({ color: "var(--nhud-text-muted, #a08080)", fontWeight: "normal" });
+    $(".nhud-g-tab[data-tab='visuals']").css({ color: "var(--nhud-cen-text, #e0c0c0)", fontWeight: "bold" });
 
-        $("#nhud-global-settings").stop(true, true).css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }, 200);
-    });
+    // Жестко гарантируем flexbox
+    $("#nhud-global-settings").css({ display: "flex", opacity: 0 }).animate({ opacity: 1 }, 200);
 }
 
 export function closeGlobalSettings() {
@@ -1831,9 +1832,9 @@ export function applyDesignTheme() {
                 #nhud-infoblock-popup, #nhud-analytics-popup, #nhud-rel-journal, #nhud-mini-sims, #nhud-mini-conn, #nhud-smart-cleaner-modal { position: fixed !important; left: 2vw !important; width: 96vw !important; top: 5vh !important; max-height: 90vh !important; transform: none !important; box-sizing: border-box !important; margin: 0 !important; z-index: 10005 !important; }
                 #nhud-analytics-canvas { width: 100% !important; height: auto !important; }
                 #nhud-widget { transform: scale(1.2); }
-                #nhud-settings-panel { width: 100% !important; max-width: 100vw !important; left: 0 !important; border-right: none !important; z-index: 10001 !important; }
+                #nhud-settings-panel { width: 100% !important; max-width: 100vw !important; left: 0 !important; top: 0 !important; bottom: 0 !important; height: 100dvh !important; border-right: none !important; z-index: 10001 !important; display: flex !important; flex-direction: column !important; }
                 
-                #nhud-global-settings { width: 95vw !important; height: 90vh !important; top: 5vh !important; left: 2.5vw !important; transform: none !important; }
+                #nhud-global-settings { width: 100vw !important; height: 100dvh !important; top: 0 !important; bottom: 0 !important; left: 0 !important; right: 0 !important; transform: none !important; display: flex !important; border-radius: 0 !important; }
                 #nhud-global-content div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; display: flex !important; flex-direction: column !important; gap: 8px !important; }
                 .nhud-g-tab { font-size: 11px !important; padding: 6px !important; flex-basis: 30% !important; flex-grow: 1; text-align: center; }
             }

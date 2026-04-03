@@ -153,7 +153,8 @@ export function openSettingsPanel() {
         renderSettingsHeroSheet();
     }
     updateSettingsPosition();
-    $("#nhud-settings-panel").css("display", "flex").hide().fadeIn(200);
+    // ИСПРАВЛЕНИЕ: Гарантируем, что display останется flex
+    $("#nhud-settings-panel").css({ opacity: 0, display: "flex" }).animate({ opacity: 1 }, 200);
 }
 
 export function closeSettingsPanel() {
