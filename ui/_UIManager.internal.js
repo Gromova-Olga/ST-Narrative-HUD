@@ -1519,6 +1519,26 @@ export function renderCodex() {
     });
 }
 
+// В файле Modules.js
+export function toggleNotifs() {
+    let popup = $("#nhud-notif-panel");
+    
+    // Если окна еще нет на странице - создаем его
+    if (!popup.length) {
+        $("body").append(`
+            <div id="nhud-notif-panel" style="display:none; /* ВАШ ОСТАЛЬНОЙ СТИЛЬ И HTML */ ">
+                <div id="nhud-notif-panel-header">Шапка уведомлений</div>
+                </div>
+        `);
+        
+        // Сразу же привязываем перетаскивание!
+        makeWindowDraggable("nhud-notif-panel", "nhud-notif-panel-header");
+    }
+    
+    // Показываем или скрываем
+    $("#nhud-notif-panel").fadeToggle(200);
+}
+
 // =========================================================================
 // УТИЛИТЫ ДЛЯ ПЕРЕТАСКИВАНИЯ ОКОН (DRAG & DROP)
 // =========================================================================

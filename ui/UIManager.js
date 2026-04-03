@@ -9,7 +9,7 @@ import { openRelationshipJournal, openAnalyticsPopup } from "./Modals.js";
 import { showAchievementPopup, makeWindowDraggable } from "./Popups.js";
 import { applyDesignTheme } from "./Design.js";
 import { startInteractiveTour } from "./Tour.js";
-import { toggleMiniSims, toggleMiniConn, toggleHeroSheet, toggleInventory, toggleQuestLog, toggleCodex, toggleCalendar } from "./_UIManager.internal.js";
+import { toggleMiniSims, toggleMiniConn, toggleHeroSheet, toggleInventory, toggleQuestLog, toggleCodex, toggleCalendar, toggleNotifs } from "./_UIManager.internal.js";
 
 // Re-export для обратной совместимости (index.js импортирует * as UI)
 export { showAchievementPopup, makeWindowDraggable, applyDesignTheme, startInteractiveTour };
