@@ -4699,3 +4699,51 @@ input[type="number"].nhud-rel-val-input {
 #nhud-notif-panel-header:active {
     cursor: grabbing !important; /* Курсор "сжатая рука" при перетаскивании */
 }
+/* ==========================================================================
+   📱 ЖЕЛЕЗОБЕТОННЫЙ МОБИЛЬНЫЙ ФИКС (Восстановление старой логики)
+   ========================================================================== */
+
+/* 1. Спасаем Flexbox от jQuery. 
+   Это хитрый селектор: он возвращает display: flex ВСЕГДА, 
+   КРОМЕ тех случаев, когда скрипт прячет окно (display: none). 
+   Так окна не сломаются и смогут нормально закрываться. */
+#nhud-settings-panel:not([style*="none"]),
+#nhud-global-settings:not([style*="none"]) {
+    display: flex !important;
+}
+
+/* 2. Жесткие мобильные размеры (замена старой функции updateGlobalSettingsPosition) */
+@media screen and (max-width: 768px) {
+    
+    /* Левое окно (Настройки) */
+    #nhud-settings-panel {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        top: 0 !important; /* Прибиваем к потолку */
+        bottom: 0 !important; /* Прибиваем к полу, чтобы тело не схлопнулось */
+        height: 100dvh !important; /* Используем dvh для обхода шторки сафари/хрома */
+        border-right: none !important;
+    }
+    
+    /* Заставляем "тело" левого окна растягиваться на оставшееся место */
+    #nhud-settings-body {
+        flex: 1 !important;
+        overflow-y: auto !important;
+        height: 100% !important;
+    }
+
+    /* Среднее окно (Глобальные настройки - возвращаем его из невидимости) */
+    #nhud-global-settings {
+        width: 95vw !important;
+        max-width: 95vw !important;
+        height: 90dvh !important;
+        top: 5vh !important; /* Отступ сверху */
+        bottom: auto !important;
+        left: 2.5vw !important; /* Центрируем (100 - 95) / 2 */
+        right: auto !important;
+        transform: none !important; /* Убиваем десктопное центрирование, которое всё ломало */
+        margin: 0 !important;
+        border-radius: 8px !important;
+        z-index: 100000 !important; /* Выводим поверх всего интерфейса Таверны */
+    }
+}
