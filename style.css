@@ -4680,3 +4680,21 @@ input[type="number"].nhud-input,
 input[type="number"].nhud-rel-val-input {
     -moz-appearance: textfield !important;
 }
+
+/* ==========================================================================
+   🛠️ ФИКС: Растягивание и курсор для панели уведомлений
+   ========================================================================== */
+
+#nhud-notif-panel {
+    resize: both !important; /* Включает тот самый уголок в правом нижнем углу */
+    overflow: hidden !important; /* Необходим для работы resize, сам контент внутри должен скроллиться отдельно */
+    /* Если после этого контент перестанет скроллиться, поменяйте hidden на auto */
+}
+
+#nhud-notif-panel-header {
+    cursor: grab !important; /* Курсор "открытая рука" */
+}
+
+#nhud-notif-panel-header:active {
+    cursor: grabbing !important; /* Курсор "сжатая рука" при перетаскивании */
+}
