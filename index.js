@@ -1116,6 +1116,7 @@ jQuery(async () => {
             $('<style id="nhud-notif-styles">').text(NOTIF_CSS).appendTo('head');
             $('body').append(`
                 <div id="nhud-notif-container"></div>
+                <div id="nhud-notif-panel" style="display:none;">
                 <div id="nhud-notif-panel">
                     <div id="nhud-notif-panel-header">
                         <span>📨 Уведомления</span>
