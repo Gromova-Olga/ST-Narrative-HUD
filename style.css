@@ -1,22 +1,169 @@
 /* ═══════════════════════════════════════
-   NARRATIVE HUD — Main Styles
+   NARRATIVE HUD - Main Styles
 ═══════════════════════════════════════ */
+/* ────────────────────────────────────────
+   CSS ПЕРЕМЕННЫЕ - Дизайн-система
+   Все значения дублируют текущий вид для обратной совместимости
+   ──────────────────────────────────────── */
+   @import url('https://fonts.googleapis.com/css2?family=Philosopher:ital,wght@0,400;0,700;1,400;1,700&display=swap');
+   @import url('https://fonts.googleapis.com/css2?family=Chakra+Petch:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+   @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Rajdhani:wght@500;600;700&display=swap');
+
+:root {
+    /* ── Цвета ── */
+    --nhud-bg-base: #0e0c1a;
+    --nhud-bg-panel: #0a0814;
+    --nhud-bg-overlay: rgba(0,0,0,0.5);
+    --nhud-bg-input: #1a1628;
+    --nhud-bg-input-focus: #1a1628;
+    --nhud-bg-section: rgba(255,255,255,0.03);
+    --nhud-bg-section-hover: rgba(255,255,255,0.08);
+    --nhud-bg-section-active: rgba(100,80,160,0.25);
+    --nhud-bg-sidebar: rgba(10,8,18,0.95);
+    --nhud-bg-popup: rgba(10,8,20,0.98);
+    --nhud-bg-thoughts-popup: rgba(15,10,30,0.97);
+    --nhud-bg-achievement-popup: linear-gradient(135deg, #1a1628, #2a101a);
+    --nhud-bg-chat-block: rgba(15,10,15,0.6);
+    --nhud-bg-chat-block-header: transparent; /* переопределяется в темах */
+
+    --nhud-border-base: #2a2040;
+    --nhud-border-input: #3a3050;
+    --nhud-border-input-focus: #6050a0;
+    --nhud-border-section: #2a2040;
+    --nhud-border-sidebar: #2a2040;
+    --nhud-border-popup: #3a3050;
+    --nhud-border-thoughts-popup: #4a3068;
+    --nhud-border-achievement-popup: var(--nhud-accent-color);
+    --nhud-border-chat-block: #3a1525;
+
+    --nhud-text-primary: #c0b0d8;
+    --nhud-text-secondary: #a090c0;
+    --nhud-text-muted: #606080;
+    --nhud-text-muted-darker: #404060;
+    --nhud-text-muted-darkest: #505070;
+    --nhud-text-input: #c0b0d8;
+    --nhud-text-placeholder: #606080;
+    --nhud-text-accent: #c0b0f0;
+    --nhud-text-accent-hover: #a090c0;
+    --nhud-text-tab: #606080;
+    --nhud-text-tab-hover: #a090c0;
+    --nhud-text-tab-active: #c0b0f0;
+    --nhud-text-label: #606080;
+    --nhud-text-hint: #404060;
+    --nhud-text-section-hint: #505070;
+    --nhud-text-checkbox: #a090c0;
+    --nhud-text-btn-add: #a090c0;
+    --nhud-text-btn-s-delete: #c06060;
+    --nhud-text-send: #c0b0f0;
+    --nhud-text-settings: #606080;
+    --nhud-text-settings-hover: #a090c0;
+    --nhud-text-divider: #2a2040;
+    --nhud-text-info-btn: #7070a0;
+    --nhud-text-info-btn-hover: #c0c0e0;
+    --nhud-text-info-btn-active: #c0b0f0;
+    --nhud-text-popup-title: #a090d0;
+    --nhud-text-popup-close: #606070;
+    --nhud-text-popup-close-hover: #c0c0d8;
+    --nhud-text-char-name: #c0b0d8;
+    --nhud-text-char-outfit: #7070a0;
+    --nhud-text-char-state: #909090;
+    --nhud-text-thoughts-dot: #ffffff;
+    --nhud-text-tracker-label: #a0a0b8;
+    --nhud-text-tracker-value: #505068;
+    --nhud-text-history-btn: #6050a0;
+    --nhud-text-history-btn-hover: #c0b0f0;
+    --nhud-text-resize-handle: transparent;
+    --nhud-text-resize-handle-hover: rgba(100,80,160,0.4);
+    --nhud-text-drawer-icon: #ffffff;
+    --nhud-text-drawer-icon-hover: rgba(255,255,255,0.1);
+    --nhud-text-avatar-empty: #505070;
+    --nhud-text-stat: #a090c0;
+    --nhud-text-stat-label: #606080;
+    --nhud-text-accordion-header: #a090c0;
+    --nhud-text-accordion-header-hover: rgba(255,255,255,0.08);
+    --nhud-text-accordion-count: #605080;
+    --nhud-text-accordion-arrow: #605080;
+    --nhud-text-prompt-block: #c0b0d8;
+    --nhud-text-char-badge: #c0b0f0;
+    --nhud-text-char-main-border: #4a3880;
+    --nhud-text-accordion-char-edit: #a090c0;
+    --nhud-text-status-error: #e05252;
+    --nhud-text-status-success: #52e0a3;
+    --nhud-text-status-loading: #a0a0c0;
+    --nhud-text-status-info: #8080c0;
+    --nhud-text-chat-block-content: #d0c0c0;
+    --nhud-text-chat-block-theme-monologue-header: #d07080;
+    --nhud-text-chat-block-theme-comments-header: #7090d0;
+    --nhud-text-chat-block-theme-diary-header: #d0b070;
+    --nhud-text-chat-block-theme-skillchecks-header: #70d090;
+
+    --nhud-accent-color: #80a0d0;
+    --nhud-danger-color: #e05252;
+    --nhud-success-color: #52e0a3;
+    --nhud-warning-color: #e0a352; /* не используется сейчас, но на будущее */
+
+    /* ── Радиусы ── */
+    --nhud-radius-sm: 4px;
+    --nhud-radius-md: 6px;
+    --nhud-radius-lg: 8px;
+    --nhud-radius-pill: 50px;
+
+    /* ── Отступы и размеры ── */
+    --nhud-spacing-xs: 4px;
+    --nhud-spacing-sm: 6px;
+    --nhud-spacing-md: 8px;
+    --nhud-spacing-lg: 12px;
+    --nhud-spacing-xl: 16px;
+    --nhud-spacing-2xl: 24px;
+
+    /* ── Размеры шрифта ── */
+    --nhud-font-size-xs: 9px;
+    --nhud-font-size-sm: 11px;
+    --nhud-font-size-base: 13px;
+    --nhud-font-size-lg: 14px;
+    --nhud-font-size-xl: 16px;
+
+    /* ── Ширина и высота элементов ── */
+    --nhud-widget-width: 32px;
+    --nhud-widget-height: 32px;
+    --nhud-sidebar-width: 300px;
+    --nhud-settings-panel-width: 480px;
+    --nhud-input-height: auto; /* высота определяется padding */
+    --nhud-textarea-min-height: 60px;
+    --nhud-avatar-size: 56px;
+    --nhud-avatar-preview-size: 56px;
+    --nhud-tracker-bar-height: 7px;
+    --nhud-topbar-btn-size: 32px;
+    --nhud-achievement-icon-size: 46px;
+    --nhud-achievement-popup-padding: 8px 24px 8px 8px;
+    --nhud-resize-handle-width: 6px;
+    --nhud-chat-blocks-margin-top: 10px;
+    --nhud-chat-blocks-gap: 8px;
+    --nhud-chat-block-padding: 8px;
+    --nhud-chat-block-header-height: auto;
+
+    /* ── Тени ── */
+    --nhud-shadow-popup: -4px 4px 20px rgba(0,0,0,0.6);
+    --nhud-shadow-achievement-popup: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(208, 80, 112, 0.4);
+    --nhud-shadow-thoughts-popup: -4px 4px 20px rgba(0,0,0,0.6);
+    --nhud-input-min-width: 60px;
+}
 
 /* ── Topbar Icon ── */
 #nhud-topbar-btn {
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 32px;
-    height: 32px;
-    font-size: 1.1em;
+    width: var(--nhud-widget-width);
+    height: var(--nhud-widget-height);
+    font-size: var(--nhud-font-size-lg);
     cursor: pointer;
-    border-radius: 4px;
+    border-radius: var(--nhud-radius-sm);
     transition: background 0.2s;
     user-select: none;
 }
 #nhud-topbar-btn:hover {
-    background: rgba(255,255,255,0.1);
+    background: var(--nhud-bg-input-hover);
 }
 
 /* ── Settings Overlay ── */
@@ -24,7 +171,7 @@
     display: none;
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.5);
+    background: var(--nhud-bg-overlay);
     z-index: 9900;
 }
 #nhud-settings-overlay.open {
@@ -32,18 +179,20 @@
 }
 
 /* ── Settings Panel ── */
+/* ── Settings Panel ── */
 #nhud-settings-panel {
     position: fixed;
-    left: -500px;
-    top: 0;
-    width: 480px;
-    height: 100vh;
-    background: #0e0c1a;
-    border-right: 1px solid #2a2040;
+    top: 40px;        /* Изменено: теперь отступ от верха фиксированный */
+    bottom: 0;        /* Добавлено: растягиваем до низа */
+    left: 0;          /* Исправлено: было -500px (панель улетала за экран) */
+    width: var(--nhud-settings-panel-width); /* Ширина пока есть, но JS может её менять */
+    /* height: 100vh; <- Убрали, так как используем top/bottom */
+    background: var(--nhud-bg-base);
+    border-right: 1px solid var(--nhud-border-base);
     z-index: 9950;
-    display: flex;
+    display: none;    /* Исправлено: скрыта по умолчанию, JS покажет через fadeIn */
     flex-direction: column;
-    transition: left 0.3s ease;
+    /* transition: left 0.3s ease; <- Убрали, чтобы не мешать JS позиционированию */
     font-family: 'Courier New', monospace;
 }
 #nhud-settings-panel.open {
@@ -55,10 +204,10 @@
     justify-content: space-between;
     align-items: center;
     padding: 14px 16px;
-    border-bottom: 1px solid #2a2040;
-    background: #0a0814;
-    font-size: 0.95em;
-    color: #c0b0e0;
+    border-bottom: 1px solid var(--nhud-border-base);
+    background: var(--nhud-bg-panel);
+    font-size: var(--nhud-font-size-sm);
+    color: var(--nhud-text-secondary);
     font-weight: bold;
     flex-shrink: 0;
 }
@@ -67,12 +216,12 @@
     background: none;
     border: none;
     color: #606070;
-    font-size: 1.1em;
+    font-size: var(--nhud-font-size-lg);
     cursor: pointer;
     padding: 2px 6px;
-    border-radius: 4px;
+    border-radius: var(--nhud-radius-sm);
 }
-#nhud-settings-close:hover { color: #c0c0d8; background: rgba(255,255,255,0.08); }
+#nhud-settings-close:hover { color: var(--nhud-bg-input-hover); background: var(--nhud-bg-input-focus); }
 
 /* ── Tabs ── */
 #nhud-settings-tabs {
@@ -95,10 +244,10 @@
     font-family: 'Courier New', monospace;
     transition: color 0.2s;
 }
-.nhud-tab:hover { color: #a090c0; }
+.nhud-tab:hover { color: var(--nhud-text-tab-hover); }
 .nhud-tab.active {
-    color: #c0b0f0;
-    border-bottom-color: #8060d0;
+    color: var(--nhud-text-tab-active);
+    border-bottom-color: var(--nhud-accent-color);
 }
 
 /* ── Tab Content ── */
@@ -124,36 +273,36 @@
 .nhud-field-group label,
 .nhud-settings-char-fields label {
     display: block;
-    font-size: 0.75em;
-    color: #606080;
-    margin-bottom: 4px;
+    font-size: var(--nhud-font-size-xs);
+    color: var(--nhud-text-label);
+    margin-bottom: var(--nhud-spacing-xs);
     text-transform: uppercase;
     letter-spacing: 0.05em;
 }
 
 .nhud-input {
-    background: #1a1628;
-    border: 1px solid #3a3050;
-    border-radius: 4px;
-    color: #c0b0d8;
-    font-size: 0.85em;
-    padding: 6px 8px;
+    background: var(--nhud-bg-input);
+    border: 1px solid var(--nhud-border-input);
+    border-radius: var(--nhud-radius-sm);
+    color: var(--nhud-text-primary);
+    font-size: var(--nhud-font-size-base);
+    padding: var(--nhud-spacing-xs) var(--nhud-spacing-sm);
     width: 100%;
     box-sizing: border-box;
     font-family: 'Courier New', monospace;
 }
 .nhud-input:focus {
     outline: none;
-    border-color: #6050a0;
+    border-color: var(--nhud-border-input-focus);
 }
 
 .nhud-textarea {
-    background: #1a1628;
-    border: 1px solid #3a3050;
-    border-radius: 4px;
-    color: #c0b0d8;
-    font-size: 0.82em;
-    padding: 6px 8px;
+    background: var(--nhud-bg-input);
+    border: 1px solid var(--nhud-border-input);
+    border-radius: var(--nhud-radius-sm);
+    color: var(--nhud-text-primary);
+    font-size: var(--nhud-font-size-sm);
+    padding: var(--nhud-spacing-xs) var(--nhud-spacing-sm);
     width: 100%;
     box-sizing: border-box;
     resize: vertical;
@@ -162,43 +311,43 @@
 }
 .nhud-textarea:focus {
     outline: none;
-    border-color: #6050a0;
+    border-color: var(--nhud-border-input-focus);
 }
 
 .nhud-select {
-    background: #1a1628;
-    border: 1px solid #3a3050;
-    border-radius: 4px;
-    color: #c0b0d8;
-    font-size: 0.85em;
-    padding: 6px 8px;
+    background: var(--nhud-bg-input);
+    border: 1px solid var(--nhud-border-input);
+    border-radius: var(--nhud-radius-sm);
+    color: var(--nhud-text-primary);
+    font-size: var(--nhud-font-size-base);
+    padding: var(--nhud-spacing-xs) var(--nhud-spacing-sm);
     width: 100%;
     box-sizing: border-box;
 }
 
 .nhud-hint {
-    font-size: 0.72em;
-    color: #404060;
-    margin-top: 6px;
+    font-size: var(--nhud-font-size-xs);
+    color: var(--nhud-text-muted-darker);
+    margin-top: var(--nhud-spacing-xs);
     line-height: 1.4;
 }
 
 .nhud-section-hint {
-    font-size: 0.72em;
-    color: #505070;
-    margin-bottom: 10px;
+    font-size: var(--nhud-font-size-xs);
+    color: var(--nhud-text-muted-darkest);
+    margin-bottom: var(--nhud-spacing-sm);
 }
 
 .nhud-checkbox-group {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: var(--nhud-spacing-sm);
 }
 .nhud-checkbox-group label {
     text-transform: none;
     letter-spacing: 0;
-    font-size: 0.85em;
-    color: #a090c0;
+    font-size: var(--nhud-font-size-base);
+    color: var(--nhud-text-checkbox);
     margin: 0;
     cursor: pointer;
 }
@@ -206,12 +355,12 @@
 .nhud-add-btn {
     background: rgba(80,60,140,0.3);
     border: 1px solid #4a3880;
-    border-radius: 4px;
-    color: #a090c0;
-    font-size: 0.82em;
-    padding: 6px 12px;
+    border-radius: var(--nhud-radius-sm);
+    color: var(--nhud-text-btn-add);
+    font-size: var(--nhud-font-size-sm);
+    padding: var(--nhud-spacing-xs) var(--nhud-spacing-md);
     cursor: pointer;
-    margin-top: 8px;
+    margin-top: var(--nhud-spacing-sm);
     font-family: 'Courier New', monospace;
     transition: background 0.2s;
 }
@@ -220,10 +369,10 @@
 .nhud-s-delete {
     background: rgba(140,40,40,0.3);
     border: 1px solid #6a2828;
-    border-radius: 4px;
-    color: #c06060;
-    font-size: 0.75em;
-    padding: 3px 8px;
+    border-radius: var(--nhud-radius-sm);
+    color: var(--nhud-text-btn-s-delete);
+    font-size: var(--nhud-font-size-xs);
+    padding: var(--nhud-spacing-xs) var(--nhud-spacing-sm);
     cursor: pointer;
     white-space: nowrap;
 }
@@ -233,48 +382,48 @@
 .nhud-settings-tracker-row {
     display: flex;
     align-items: center;
-    gap: 6px;
-    margin-bottom: 8px;
+    gap: var(--nhud-spacing-xs);
+    margin-bottom: var(--nhud-spacing-sm);
     flex-wrap: wrap;
 }
 .nhud-settings-tracker-row .nhud-input {
     flex: 1;
-    min-width: 60px;
+    min-width: var(--nhud-input-min-width);
 }
 .nhud-s-color {
-    width: 32px;
+    width: var(--nhud-widget-width);
     height: 30px;
     border: none;
-    border-radius: 4px;
+    border-radius: var(--nhud-radius-sm);
     cursor: pointer;
-    padding: 2px;
+    padding: var(--nhud-spacing-xs);
     background: none;
     flex-shrink: 0;
 }
 
 /* ── Settings Char Block ── */
 .nhud-settings-char-block {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid #2a2040;
-    border-radius: 6px;
-    padding: 12px;
-    margin-bottom: 12px;
+    background: var(--nhud-bg-section);
+    border: 1px solid var(--nhud-border-base);
+    border-radius: var(--nhud-radius-md);
+    padding: var(--nhud-spacing-lg);
+    margin-bottom: var(--nhud-spacing-lg);
 }
 .nhud-settings-char-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 10px;
+    margin-bottom: var(--nhud-spacing-sm);
 }
 .nhud-settings-char-title {
-    font-size: 0.85em;
-    color: #a090c0;
+    font-size: var(--nhud-font-size-base);
+    color: var(--nhud-text-secondary);
     font-weight: bold;
 }
 .nhud-settings-char-fields {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--nhud-spacing-xs);
 }
 
 /* ═══════════════════════════════════════
@@ -283,18 +432,19 @@
 
 #narrative-hud-sidebar {
     position: fixed;
-    top: 48px;
+    top: var(--nhud-topbar-btn-size); /* 32px, но оставим как есть, либо вынесем */
     right: 0;
-    width: 300px;
-    height: calc(100vh - 48px);
-    background: rgba(10, 8, 18, 0.95);
-    border-left: 1px solid #2a2040;
-    padding: 10px;
+    width: var(--nhud-sidebar-width);
+    height: calc(100vh - var(--nhud-topbar-btn-size));
+    background: var(--nhud-bg-sidebar);
+    border-left: 1px solid var(--nhud-border-base);
+    padding: var(--nhud-spacing-sm);
     overflow-y: auto;
+    overflow-x: visible; /* ✅ Разрешаем хендлу выходить слева */
     z-index: 9000;
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: var(--nhud-spacing-sm);
     font-family: 'Courier New', monospace;
     box-sizing: border-box;
 }
@@ -303,23 +453,23 @@
 #nhud-top-bar {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: var(--nhud-spacing-xs);
 }
 
 #nhud-controls-bar {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--nhud-spacing-xs);
 }
 
 #nhud-profile-select {
     flex: 1;
-    background: #1a1628;
-    border: 1px solid #3a3050;
-    border-radius: 4px;
-    color: #a090c0;
-    font-size: 0.72em;
-    padding: 3px 5px;
+    background: var(--nhud-bg-input);
+    border: 1px solid var(--nhud-border-input);
+    border-radius: var(--nhud-radius-sm);
+    color: var(--nhud-text-secondary);
+    font-size: var(--nhud-font-size-xs);
+    padding: var(--nhud-spacing-xs) var(--nhud-spacing-xs);
     min-width: 0;
     font-family: 'Courier New', monospace;
 }
@@ -327,10 +477,10 @@
 .nhud-send-btn {
     background: rgba(80,60,140,0.4);
     border: 1px solid #5040a0;
-    border-radius: 4px;
-    color: #c0b0f0;
-    font-size: 0.8em;
-    padding: 4px 8px;
+    border-radius: var(--nhud-radius-sm);
+    color: var(--nhud-text-accent);
+    font-size: var(--nhud-font-size-base);
+    padding: var(--nhud-spacing-sm) var(--nhud-spacing-sm);
     cursor: pointer;
     white-space: nowrap;
     flex-shrink: 0;
@@ -340,18 +490,18 @@
 
 .nhud-settings-btn {
     background: rgba(255,255,255,0.05);
-    border: 1px solid #3a3050;
-    border-radius: 4px;
-    color: #606080;
-    font-size: 0.8em;
-    padding: 4px 6px;
+    border: 1px solid var(--nhud-border-input);
+    border-radius: var(--nhud-radius-sm);
+    color: var(--nhud-text-settings);
+    font-size: var(--nhud-font-size-base);
+    padding: var(--nhud-spacing-sm) var(--nhud-spacing-xs);
     cursor: pointer;
     flex-shrink: 0;
 }
 .nhud-settings-btn:hover { color: #a090c0; background: rgba(255,255,255,0.1); }
 
 #nhud-api-status {
-    font-size: 0.68em;
+    font-size: var(--nhud-font-size-xs);
     min-height: 14px;
     padding: 1px 0;
 }
@@ -362,36 +512,36 @@
 
 /* ── Datetime ── */
 #nhud-datetime-bar {
-    padding: 2px 0;
+    padding: var(--nhud-spacing-xs) 0;
 }
 .nhud-datetime-content {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
-    font-size: 0.72em;
-    color: #a0a0c0;
+    gap: var(--nhud-spacing-xs);
+    font-size: var(--nhud-font-size-xs);
+    color: var(--nhud-text-secondary);
     line-height: 1.4;
 }
 
 .nhud-divider {
-    border-bottom: 1px solid #2a2040;
-    margin: 2px 0;
+    border-bottom: 1px solid var(--nhud-border-base);
+    margin: var(--nhud-spacing-xs) 0;
 }
 
 /* ── Info Block Buttons ── */
 #nhud-infoblock-buttons {
     display: flex;
     flex-direction: column;
-    gap: 3px;
+    gap: var(--nhud-spacing-xs);
 }
 
 .nhud-info-btn {
     background: rgba(255,255,255,0.04);
-    border: 1px solid #2a2040;
-    border-radius: 5px;
-    color: #7070a0;
-    font-size: 0.78em;
-    padding: 5px 10px;
+    border: 1px solid var(--nhud-border-base);
+    border-radius: var(--nhud-radius-md);
+    color: var(--nhud-text-info-btn);
+    font-size: var(--nhud-font-size-sm);
+    padding: var(--nhud-spacing-sm) var(--nhud-spacing-md);
     text-align: left;
     cursor: pointer;
     transition: background 0.2s, color 0.2s;
@@ -409,36 +559,36 @@
     width: 320px;
     max-height: 70vh;
     overflow-y: auto;
-    background: rgba(10, 8, 20, 0.98);
-    border: 1px solid #3a3050;
-    border-radius: 8px;
-    padding: 10px;
-    font-size: 0.8em;
-    color: #c0c0d8;
+    background: var(--nhud-bg-popup);
+    border: 1px solid var(--nhud-border-input);
+    border-radius: var(--nhud-radius-lg);
+    padding: var(--nhud-spacing-lg);
+    font-size: var(--nhud-font-size-base);
+    color: var(--nhud-text-primary);
     line-height: 1.5;
     word-break: break-word;
     z-index: 9500;
-    box-shadow: -4px 4px 20px rgba(0,0,0,0.6);
+    box-shadow: var(--nhud-shadow-popup);
 }
 #nhud-infoblock-popup-header {
     display: flex;
     justify-content: space-between;
     align-items: center;
     margin-bottom: 8px;
-    padding-bottom: 6px;
-    border-bottom: 1px solid #2a2040;
+    padding-bottom: var(--nhud-spacing-xs);
+    border-bottom: 1px solid var(--nhud-border-base);
 }
 #nhud-infoblock-popup-title {
-    font-size: 0.9em;
-    color: #a090d0;
+    font-size: var(--nhud-font-size-base);
+    color: var(--nhud-text-popup-title);
     font-weight: bold;
 }
 #nhud-infoblock-popup-close {
     background: none;
     border: none;
-    color: #606070;
+    color: var(--nhud-text-popup-close);
     cursor: pointer;
-    font-size: 1em;
+    font-size: var(--nhud-font-size-lg);
     padding: 0 4px;
 }
 #nhud-infoblock-popup-close:hover { color: #c0c0d8; }
@@ -451,22 +601,22 @@
 }
 
 .nhud-no-chars {
-    font-size: 0.72em;
-    color: #404060;
+    font-size: var(--nhud-font-size-xs);
+    color: var(--nhud-text-muted-darker);
     text-align: center;
-    padding: 6px 0;
+    padding: var(--nhud-spacing-xs);
 }
 
 .nhud-char-card {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid #2a2040;
-    border-radius: 6px;
-    padding: 8px;
+    background: var(--nhud-bg-section);
+    border: 1px solid var(--nhud-border-base);
+    border-radius: var(--nhud-radius-md);
+    padding: var(--nhud-spacing-sm);
 }
 
 .nhud-char-top {
     display: flex;
-    gap: 8px;
+    gap: var(--nhud-spacing-sm);
     align-items: flex-start;
     width: 100%;
 }
@@ -475,9 +625,9 @@
     width: 36px;
     height: 36px;
     flex-shrink: 0;
-    border-radius: 4px;
+    border-radius: var(--nhud-radius-sm);
     overflow: hidden;
-    border: 1px solid #3a3050;
+    border: 1px solid var(--nhud-border-input);
 }
 .nhud-char-avatar {
     width: 100%;
@@ -487,9 +637,9 @@
 .nhud-char-avatar-placeholder {
     width: 100%;
     height: 100%;
-    background: #1a1830;
-    color: #6060a0;
-    font-size: 1.1em;
+    background: var(--nhud-bg-input);
+    color: var(--nhud-text-muted);
+    font-size: var(--nhud-font-size-lg);
     font-weight: bold;
     display: flex;
     align-items: center;
@@ -502,26 +652,26 @@
     overflow: hidden;
 }
 .nhud-char-name {
-    font-size: 0.82em;
-    color: #c0b0d8;
+    font-size: var(--nhud-font-size-base);
+    color: var(--nhud-text-primary);
     font-weight: bold;
-    margin-bottom: 2px;
+    margin-bottom: var(--nhud-spacing-xs);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 .nhud-char-outfit {
-    font-size: 0.70em;
-    color: #7070a0;
+    font-size: var(--nhud-font-size-xs);
+    color: var(--nhud-text-muted);
     line-height: 1.3;
     white-space: normal;
     word-break: break-word;
-    margin-bottom: 2px;
+    margin-bottom: var(--nhud-spacing-xs);
     display: block;
 }
 .nhud-char-state {
-    font-size: 0.70em;
-    color: #909090;
+    font-size: var(--nhud-font-size-xs);
+    color: var(--nhud-text-muted);
     line-height: 1.3;
     white-space: normal;
     word-break: break-word;
@@ -530,11 +680,11 @@
 
 /* ── Thoughts ── */
 .nhud-thoughts-dot {
-    font-size: 1em;
+    font-size: var(--nhud-font-size-lg);
     cursor: pointer;
     flex-shrink: 0;
-    padding: 2px;
-    border-radius: 4px;
+    padding: var(--nhud-spacing-xs);
+    border-radius: var(--nhud-radius-sm);
     transition: background 0.2s;
     user-select: none;
 }
@@ -546,35 +696,35 @@
     width: 280px;
     max-height: 50vh;
     overflow-y: auto;
-    background: rgba(15, 10, 30, 0.97);
-    border: 1px solid #4a3068;
-    border-radius: 8px;
-    padding: 10px 12px;
-    font-size: 0.78em;
-    color: #b090d0;
+    background: var(--nhud-bg-thoughts-popup);
+    border: 1px solid var(--nhud-border-thoughts-popup);
+    border-radius: var(--nhud-radius-lg);
+    padding: var(--nhud-spacing-lg) var(--nhud-spacing-md);
+    font-size: var(--nhud-font-size-sm);
+    color: var(--nhud-text-popup-title); /* не совсем, но близко - можно вынести отдельно */
     line-height: 1.5;
     font-style: italic;
     word-break: break-word;
     z-index: 9500;
-    box-shadow: -4px 4px 20px rgba(0,0,0,0.6);
+    box-shadow: var(--nhud-shadow-thoughts-popup);
 }
 
 /* ── Trackers ── */
 #nhud-trackers-list {
     display: flex;
     flex-direction: column;
-    gap: 7px;
+    gap: var(--nhud-spacing-sm);
 }
 
 .nhud-tracker-row {
     display: grid;
     grid-template-columns: 75px 1fr 52px;
     align-items: center;
-    gap: 5px;
+    gap: var(--nhud-spacing-xs);
 }
 .nhud-tracker-label {
-    font-size: 0.72em;
-    color: #a0a0b8;
+    font-size: var(--nhud-font-size-xs);
+    color: var(--nhud-text-tracker-label);
     text-transform: uppercase;
     letter-spacing: 0.04em;
     white-space: nowrap;
@@ -582,20 +732,20 @@
     text-overflow: ellipsis;
 }
 .nhud-tracker-bar-wrap {
-    height: 7px;
-    background: #1a1628;
-    border-radius: 4px;
+    height: var(--nhud-tracker-bar-height);
+    background: var(--nhud-bg-input);
+    border-radius: var(--nhud-radius-sm);
     overflow: hidden;
-    border: 1px solid #2a2040;
+    border: 1px solid var(--nhud-border-base);
 }
 .nhud-tracker-bar {
     height: 100%;
-    border-radius: 4px;
+    border-radius: var(--nhud-radius-sm);
     transition: width 0.4s ease;
 }
 .nhud-tracker-value {
-    font-size: 0.68em;
-    color: #505068;
+    font-size: var(--nhud-font-size-xs);
+    color: var(--nhud-text-tracker-value);
     text-align: right;
     white-space: nowrap;
 }
@@ -612,8 +762,8 @@
     line-height: 1;
     vertical-align: middle;
 }
-.nhud-history-btn:hover { 
-    color: #c0b0f0; 
+.nhud-history-btn:hover {
+    color: #c0b0f0;
     opacity: 1;
 }
 
@@ -622,10 +772,11 @@
     position: fixed;
     top: 0;
     right: 300px;
-    width: 6px;
+    width: var(--nhud-resize-handle-width);
     height: 100vh;
     cursor: ew-resize;
     z-index: 9001;
+    pointer-events: auto;
     background: transparent;
     transition: background 0.2s;
 }
@@ -642,43 +793,43 @@
     cursor: pointer;
 }
 #nhud-topbar-btn .drawer-icon {
-    font-size: 1.4em;
-    padding: 4px;
-    border-radius: 4px;
+    font-size: var(--nhud-font-size-lg);
+    padding: var(--nhud-spacing-xs);
+    border-radius: var(--nhud-radius-sm);
     transition: background 0.2s;
     line-height: 1;
 }
 #nhud-topbar-btn:hover .drawer-icon {
-    background: rgba(255,255,255,0.1);
+    background: var(--nhud-bg-input-hover);
 }
 
 /* ── Avatar Upload ── */
 .nhud-avatar-row {
     display: flex;
-    gap: 10px;
+    gap: var(--nhud-spacing-sm);
     align-items: flex-start;
 }
 
 .nhud-avatar-preview {
-    width: 56px;
-    height: 56px;
-    border-radius: 6px;
+    width: var(--nhud-avatar-size);
+    height: var(--nhud-avatar-size);
+    border-radius: var(--nhud-radius-md);
     object-fit: cover;
-    border: 1px solid #3a3050;
+    border: 1px solid var(--nhud-border-input);
     flex-shrink: 0;
 }
 
 .nhud-avatar-empty {
-    width: 56px;
-    height: 56px;
-    border-radius: 6px;
-    background: #1a1628;
-    border: 1px solid #3a3050;
+    width: var(--nhud-avatar-size);
+    height: var(--nhud-avatar-size);
+    border-radius: var(--nhud-radius-md);
+    background: var(--nhud-bg-input);
+    border: 1px solid var(--nhud-border-input);
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #505070;
-    font-size: 1.2em;
+    color: var(--nhud-text-muted);
+    font-size: var(--nhud-font-size-lg);
     flex-shrink: 0;
 }
 
@@ -686,16 +837,16 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: var(--nhud-spacing-sm);
 }
 
 .nhud-file-btn {
     background: rgba(80,60,140,0.3);
     border: 1px solid #4a3880;
-    border-radius: 4px;
-    color: #a090c0;
-    font-size: 0.8em;
-    padding: 5px 10px;
+    border-radius: var(--nhud-radius-sm);
+    color: var(--nhud-text-btn-add);
+    font-size: var(--nhud-font-size-sm);
+    padding: var(--nhud-spacing-sm) var(--nhud-spacing-md);
     cursor: pointer;
     text-align: center;
     transition: background 0.2s;
@@ -707,16 +858,16 @@
 
 /* ── Storage Stats ── */
 .nhud-stats-box {
-    background: rgba(255,255,255,0.03);
-    border: 1px solid #2a2040;
-    border-radius: 6px;
-    padding: 10px;
-    font-size: 0.8em;
+    background: var(--nhud-bg-section);
+    border: 1px solid var(--nhud-border-base);
+    border-radius: var(--nhud-radius-md);
+    padding: var(--nhud-spacing-lg);
+    font-size: var(--nhud-font-size-base);
 }
 .nhud-stat-row {
     display: flex;
     justify-content: space-between;
-    padding: 3px 0;
+    padding: var(--nhud-spacing-xs) 0;
     border-bottom: 1px solid #1a1830;
     color: #a090c0;
 }
@@ -725,34 +876,34 @@
 
 /* ── Accordion ── */
 .nhud-accordion {
-    border: 1px solid #2a2040;
-    border-radius: 6px;
-    margin-bottom: 8px;
+    border: 1px solid var(--nhud-border-base);
+    border-radius: var(--nhud-radius-md);
+    margin-bottom: var(--nhud-spacing-sm);
     overflow: hidden;
 }
 .nhud-accordion-header {
     display: flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
-    background: rgba(255,255,255,0.04);
+    gap: var(--nhud-spacing-sm);
+    padding: var(--nhud-spacing-sm) var(--nhud-spacing-md);
+    background: var(--nhud-bg-section-hover);
     cursor: pointer;
-    font-size: 0.82em;
-    color: #a090c0;
+    font-size: var(--nhud-font-size-base);
+    color: var(--nhud-text-secondary);
 }
 .nhud-accordion-header:hover { background: rgba(255,255,255,0.08); }
 .nhud-accordion-count {
-    font-size: 0.85em;
-    color: #605080;
+    font-size: var(--nhud-font-size-base);
+    color: var(--nhud-text-accordion-count);
     margin-left: auto;
 }
-.nhud-accordion-arrow { color: #605080; font-size: 0.8em; }
-.nhud-accordion-body { padding: 8px; }
+.nhud-accordion-arrow { color: var(--nhud-text-accordion-arrow); font-size: var(--nhud-font-size-sm); }
+.nhud-accordion-body { padding: var(--nhud-spacing-sm); }
 .nhud-accordion-char {
     display: flex;
-    gap: 8px;
+    gap: var(--nhud-spacing-sm);
     align-items: center;
-    padding: 4px 0;
+    padding: var(--nhud-spacing-xs);
     border-bottom: 1px solid #1a1830;
 }
 .nhud-accordion-char:last-child { border-bottom: none; }
@@ -780,33 +931,33 @@
 
 /* ── Char badge ── */
 .nhud-char-badge {
-    font-size: 0.65em;
-    background: rgba(100,80,160,0.4);
-    border: 1px solid #6050a0;
-    border-radius: 3px;
-    padding: 1px 4px;
-    color: #c0b0f0;
+    font-size: var(--nhud-font-size-xs);
+    background: var(--nhud-bg-section-active);
+    border: 1px solid var(--nhud-text-char-main-border);
+    border-radius: var(--nhud-radius-sm);
+    padding: var(--nhud-spacing-xs);
+    color: var(--nhud-text-char-badge);
     vertical-align: middle;
-    margin-left: 4px;
+    margin-left: var(--nhud-spacing-xs);
 }
 .nhud-char-main {
-    border-color: #4a3880 !important;
+    border-color: var(--nhud-text-char-main-border) !important;
 }
 
 /* ── Accordion char edit ── */
 .nhud-accordion-char-edit {
-    padding: 8px;
+    padding: var(--nhud-spacing-sm);
     border-bottom: 1px solid #1a1830;
 }
 .nhud-accordion-char-edit:last-child { border-bottom: none; }
 .nhud-accordion-char-top {
     display: flex;
-    gap: 8px;
+    gap: var(--nhud-spacing-sm);
     align-items: flex-start;
-    margin-bottom: 8px;
+    margin-bottom: var(--nhud-spacing-sm);
 }
 .nhud-accordion-char-avatar-edit {
-    padding-left: 48px;
+    padding-left: var(--nhud-avatar-size);
 }
 
 #nhud-storage-stats {
@@ -829,14 +980,14 @@
     bottom: -100px;
     left: 50%;
     transform: translateX(-50%);
-    background: linear-gradient(135deg, #1a1628, #2a101a);
-    border: 1px solid var(--nhud-accent, #d05070);
-    border-radius: 50px;
-    padding: 8px 24px 8px 8px;
+    background: var(--nhud-bg-achievement-popup);
+    border: 1px solid var(--nhud-accent-color);
+    border-radius: var(--nhud-radius-pill);
+    padding: var(--nhud-achievement-popup-padding);
     display: flex;
     align-items: center;
-    gap: 15px;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.8), 0 0 15px rgba(208, 80, 112, 0.4);
+    gap: var(--nhud-spacing-lg);
+    box-shadow: var(--nhud-shadow-achievement-popup);
     z-index: 10000;
     transition: bottom 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
     pointer-events: none;
@@ -845,15 +996,15 @@
     bottom: 40px;
 }
 .nhud-ach-icon {
-    font-size: 28px;
+    font-size: var(--nhud-achievement-icon-size);
     background: rgba(0,0,0,0.4);
-    width: 46px;
-    height: 46px;
+    width: var(--nhud-achievement-icon-size);
+    height: var(--nhud-achievement-icon-size);
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    border: 1px solid var(--nhud-accent, #d05070);
+    border: 1px solid var(--nhud-accent-color);
     flex-shrink: 0;
 }
 .nhud-ach-text {
@@ -861,7 +1012,7 @@
     flex-direction: column;
 }
 .nhud-ach-title {
-    color: #52e0a3;
+    color: var(--nhud-text-status-success);
     font-weight: bold;
     font-size: 15px;
     text-transform: uppercase;
@@ -870,22 +1021,22 @@
 }
 .nhud-ach-desc {
     color: var(--nhud-text-main, #e0b0b0);
-    font-size: 12px;
+    font-size: var(--nhud-font-size-xs);
 }
 
 /* ── Встроенные красивые инфоблоки в чате ── */
 .nhud-chat-blocks-container {
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    margin-top: 10px;
-    padding-top: 10px;
+    gap: var(--nhud-chat-blocks-gap);
+    margin-top: var(--nhud-chat-blocks-margin-top);
+    padding-top: var(--nhud-chat-blocks-margin-top);
     border-top: 1px dashed rgba(255, 255, 255, 0.1);
 }
 .nhud-chat-block {
-    background: rgba(15, 10, 15, 0.6);
-    border: 1px solid #3a1525;
-    border-radius: 4px;
+    background: var(--nhud-bg-chat-block);
+    border: 1px solid var(--nhud-border-chat-block);
+    border-radius: var(--nhud-radius-sm);
     overflow: hidden;
 }
 .nhud-chat-block-header {
@@ -895,11 +1046,11 @@
     background: linear-gradient(90deg, rgba(42, 16, 26, 0.8), transparent);
     border-bottom: 1px solid #3a1525;
 }
-.nhud-chat-block-content {
-    padding: 8px;
-    font-size: 0.9em;
-    color: #d0c0c0;
-    line-height: 1.4;
+.nhud-chat-block-content {  
+    padding: var(--nhud-chat-block-padding);  
+    font-size: var(--nhud-font-size-base);  
+    color: var(--nhud-text-chat-block-content);  
+    line-height: 1.4;  
 }
 .nhud-chat-block.theme-monologue { border-color: #5a2a3a; }
 .nhud-chat-block.theme-monologue .nhud-chat-block-header { color: #d07080; background: linear-gradient(90deg, rgba(90, 42, 58, 0.5), transparent); }
@@ -909,3 +1060,3623 @@
 .nhud-chat-block.theme-diary .nhud-chat-block-header { color: #d0b070; background: linear-gradient(90deg, rgba(90, 74, 42, 0.5), transparent); }
 .nhud-chat-block.theme-skillchecks { border-color: #2a5a3a; }
 .nhud-chat-block.theme-skillchecks .nhud-chat-block-header { color: #70d090; background: linear-gradient(90deg, rgba(42, 90, 58, 0.5), transparent); }
+
+/* === NHUD: Refactored UI Classes === */
+
+/* Topbar Icon */
+.nhud-topbar-btn {
+    font-size: 1.4em;
+    padding: 4px 6px;
+    cursor: pointer;
+}
+
+/* Sidebar Base */
+.nhud-sidebar {
+    position: fixed;
+    top: 40px;
+    bottom: 0;
+    right: 0;
+    z-index: 9990;
+    background: var(--nhud-bg, #151220);
+    border-left: 1px solid var(--nhud-border, #3a1525);
+    display: flex;
+    flex-direction: column;
+    box-shadow: -5px 0 25px rgba(0,0,0,0.8);
+    padding-top: 30px;
+    transition: width 0.3s ease;
+    /* ВАЖНО: разрешаем контенту выходить за границы для хендла */
+    overflow: visible;
+}
+
+.nhud-resize-handle {
+    position: absolute;
+    left: -4px;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+    z-index: 100; /* ↑ выше, чем у контента сайдбара */
+    background: transparent;
+    /* Для отладки можно временно раскомментировать: */
+    /* background: rgba(255, 0, 0, 0.2); */
+}
+
+.nhud-sidebar-mode-toggle {
+    position: absolute;
+    top: 8px;
+    left: 8px;
+    background: none;
+    border: none;
+    color: var(--nhud-accent, #d05070);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    z-index: 100;
+    transition: 0.2s;
+}
+
+.nhud-sidebar-menu-container {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    z-index: 100;
+}
+
+.nhud-sidebar-menu-btn {
+    background: none;
+    border: none;
+    color: var(--nhud-text-muted, #a08080);
+    cursor: pointer;
+    font-size: 18px;
+    transition: 0.2s;
+    padding: 0 8px;
+}
+
+.nhud-sidebar-dropdown {
+    display: none;
+    position: absolute;
+    top: 24px;
+    right: 0;
+    background: var(--nhud-prompt-bg, #1a1015);
+    border: 1px solid var(--nhud-border);
+    border-radius: 6px;
+    flex-direction: column;
+    padding: 4px;
+    gap: 2px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.8);
+    width: 170px;
+}
+
+.nhud-dropdown-item {
+    text-align: left;
+    background: none;
+    border: none;
+    color: var(--nhud-text-main);
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nhud-dropdown-item:hover {
+    background: rgba(255,255,255,0.05) !important;
+}
+
+.nhud-dropdown-divider {
+    border-top: 1px solid var(--nhud-border);
+    margin: 2px 0;
+}
+
+.nhud-icon-send { color: #52a8e0; }
+.nhud-icon-widget { color: #e0a352; }
+.nhud-icon-settings { color: #d05070; }
+.nhud-icon-global { color: #b080e0; }
+.nhud-icon-map { color: #52e0a3; }
+.nhud-icon-close { color: #e05252; }
+
+.nhud-api-status {
+    padding: 0 10px;
+    font-size: 11px;
+    color: #a08080;
+    text-align: center;
+}
+
+.nhud-datetime-bar {
+    padding: 5px 10px;
+    text-align: center;
+    font-weight: bold;
+    color: #e0b0b0;
+    background: linear-gradient(90deg, transparent, rgba(120,20,40,0.3), transparent);
+}
+
+.nhud-datetime-content {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    padding: 4px 0;
+}
+
+.nhud-datetime-location {
+    color: #e0d0a0;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    text-shadow: 0 0 5px rgba(224,208,160,0.2);
+}
+
+.nhud-datetime-sub {
+    font-size: 11px;
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+.nhud-datetime-weather { color: #b0c0e0; }
+.nhud-datetime-time { color: #c0a0b0; }
+
+.nhud-divider {
+    height: 1px;
+    background: var(--nhud-border, #3a1525);
+    margin: 5px 0;
+}
+
+.nhud-trackers-section {
+    padding: 0 10px;
+    max-height: 30vh;
+    overflow-y: auto;
+}
+
+.nhud-infoblock-buttons {
+    padding: 0 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    justify-content: center;
+}
+
+.nhud-characters-section {
+    padding: 0 10px 10px 10px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+.nhud-characters-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nhud-resize-handle {
+    position: absolute;
+    left: -4px;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+    z-index: 100;
+    background: transparent;
+}
+
+/* Infoblock Popup */
+.nhud-infoblock-popup {
+    display: none;
+    position: fixed;
+    z-index: 9995;
+    background: var(--nhud-prompt-bg);
+    border: var(--nhud-prompt-border);
+    border-radius: 8px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.9);
+    width: var(--nhud-prompt-width);
+    resize: both;
+    overflow: hidden;
+}
+
+.nhud-infoblock-popup-header {
+    cursor: grab;
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 10px;
+    background: var(--nhud-prompt-header);
+    border-bottom: var(--nhud-prompt-border);
+    font-weight: bold;
+    color: var(--nhud-text-main);
+    border-radius: 8px 8px 0 0;
+    transition: background 0.3s ease;
+}
+
+.nhud-infoblock-popup-header.nhud-theme-monolog {
+    background: linear-gradient(90deg, rgba(90, 42, 58, 0.5), transparent);
+}
+.nhud-infoblock-popup-header.nhud-theme-comment {
+    background: linear-gradient(90deg, rgba(42, 58, 90, 0.5), transparent);
+}
+.nhud-infoblock-popup-header.nhud-theme-diar {
+    background: linear-gradient(90deg, rgba(90, 74, 42, 0.5), transparent);
+}
+.nhud-infoblock-popup-header.nhud-theme-skill {
+    background: linear-gradient(90deg, rgba(42, 90, 58, 0.5), transparent);
+}
+.nhud-infoblock-popup-header.nhud-theme-monolog #nhud-infoblock-popup-title,
+.nhud-infoblock-popup-header.nhud-theme-comment #nhud-infoblock-popup-title,
+.nhud-infoblock-popup-header.nhud-theme-diar #nhud-infoblock-popup-title,
+.nhud-infoblock-popup-header.nhud-theme-skill #nhud-infoblock-popup-title {
+    color: inherit;
+}
+.nhud-theme-monolog #nhud-infoblock-popup-title { color: #d07080; }
+.nhud-theme-comment #nhud-infoblock-popup-title { color: #7090d0; }
+.nhud-theme-diar #nhud-infoblock-popup-title { color: #d0b070; }
+.nhud-theme-skill #nhud-infoblock-popup-title { color: #70d090; }
+
+.nhud-infoblock-popup-close {
+    background: none;
+    border: none;
+    color: var(--nhud-accent);
+    cursor: pointer;
+}
+
+.nhud-infoblock-popup-content {
+    padding: 10px;
+    color: var(--nhud-prompt-text-color);
+    font-size: var(--nhud-prompt-font-size);
+    max-height: 50vh;
+    overflow-y: auto;
+}
+
+.nhud-info-btn {
+    background: none;
+    border: 1px solid var(--nhud-border);
+    color: var(--nhud-text-main);
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 11px;
+    border-radius: 4px;
+    transition: 0.2s;
+}
+
+.nhud-info-btn.active,
+.nhud-info-btn:hover {
+    background: rgba(255,255,255,0.1);
+    border-color: var(--nhud-accent);
+}
+
+.nhud-unified-thoughts-btn {
+    width: 100%;
+    margin-bottom: 8px;
+    background: rgba(82, 168, 224, 0.15);
+    border: 1px solid #3a5a80;
+    color: #80b0e0;
+    border-radius: 4px;
+    padding: 4px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.nhud-unified-thoughts-btn-hover {
+    background: rgba(82, 168, 224, 0.3);
+}
+
+/* Trackers */
+.nhud-tracker-row {
+    display: grid;
+    grid-template-columns: 1fr 2fr auto;
+    gap: 8px;
+    align-items: center;
+    padding: 4px 0;
+    font-size: 11px;
+}
+
+.nhud-tracker-label {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: var(--nhud-text-main);
+}
+
+.nhud-tracker-bar-wrap {
+    height: 8px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.nhud-tracker-bar {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease;
+}
+
+.nhud-tracker-value {
+    color: var(--nhud-text-muted);
+    font-size: 10px;
+    text-align: right;
+}
+
+/* Relationships */
+.nhud-relationships-section {
+    max-height: 25vh;
+    overflow-y: auto;
+    padding-right: 4px;
+}
+
+.nhud-relationships-list {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+}
+
+.nhud-relationships-title {
+    font-size: 0.65em;
+    color: #8060a0;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 2px;
+}
+
+/* Characters */
+.nhud-no-chars {
+    color: #a08080;
+    font-size: 11px;
+    text-align: center;
+}
+
+.nhud-character-card {
+    display: flex;
+    gap: 8px;
+    background: rgba(0,0,0,0.2);
+    border: 1px solid var(--nhud-border);
+    border-radius: 6px;
+    padding: 6px;
+}
+
+.nhud-character-avatar-wrapper {
+    width: 36px;
+    height: 36px;
+    flex-shrink: 0;
+}
+
+.nhud-character-avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.nhud-character-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #1a1628;
+    color: #6060a0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    border-radius: 4px;
+}
+
+.nhud-character-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.nhud-character-name {
+    display: flex;
+    align-items: center;
+    font-weight: bold;
+    color: var(--nhud-text-main);
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nhud-character-outfit {
+    font-size: 0.75em;
+    color: #8080a0;
+    margin-top: 2px;
+}
+
+.nhud-character-state {
+    font-size: 0.75em;
+    color: #a0a090;
+    margin-top: 2px;
+}
+
+.nhud-character-thoughts {
+    margin-top: 6px;
+    font-size: 0.8em;
+    color: #52a8e0;
+    background: rgba(16,16,21,0.6);
+    border: 1px solid #203050;
+    padding: 6px;
+    border-radius: 4px;
+    border-left: 2px solid #52a8e0;
+}
+
+.nhud-character-thoughts-title {
+    font-weight: bold;
+    font-size: 0.85em;
+    margin-bottom: 2px;
+    color: #4288b0;
+}
+
+.nhud-unified-thought-item {
+    margin-bottom: 12px;
+    border-left: 2px solid var(--nhud-accent);
+    padding-left: 8px;
+}
+
+.nhud-unified-thought-name {
+    color: var(--nhud-text-main);
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.nhud-unified-thought-content {
+    font-size: 0.9em;
+    color: var(--nhud-text-muted);
+}
+
+/* Floating Widget */
+.nhud-widget-container {
+    position: fixed;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    cursor: grab;
+}
+
+.nhud-widget {
+    background: var(--nhud-bg, rgba(20, 10, 15, 0.95));
+    border: 1px solid var(--nhud-border, #4a1525);
+    border-radius: 8px;
+    padding: 3px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.8), 0 0 8px rgba(150, 20, 40, 0.4);
+    display: grid;
+    gap: 2px;
+    transition: 0.3s;
+}
+
+.nhud-w-btn {
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 6px 0;
+    transition: 0.2s;
+    background: #2a101a;
+}
+
+.nhud-w-btn-hero {
+    background: #1a2035;
+    color: #52a8e0;
+    font-size: 13px;
+    padding: 4px 0;
+}
+
+.nhud-w-btn-inv {
+    background: #201a10;
+    color: #e0a352;
+    font-size: 13px;
+    padding: 4px 0;
+}
+
+.nhud-w-btn-quests {
+    background: #1a2520;
+    color: #52e0a3;
+    font-size: 13px;
+    padding: 4px 0;
+}
+
+.nhud-w-btn-calendar {
+    background: #201015;
+    color: #e080b0;
+    font-size: 13px;
+    padding: 4px 0;
+}
+
+.nhud-w-btn-codex {
+    background: #251a25;
+    color: #b080e0;
+    font-size: 13px;
+    padding: 4px 0;
+}
+
+.nhud-w-btn-notifs {
+    background: #1a1a2e;
+    color: #80a0d0;
+    font-size: 13px;
+    padding: 4px 0;
+}
+
+.nhud-w-rotate {
+    background: rgba(0,0,0,0.5);
+    border: 1px solid var(--nhud-border);
+    border-radius: 10px;
+    color: #a08080;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 2px;
+    margin: 0 auto;
+    width: 30px;
+}
+
+/* Global Settings Modal */
+.nhud-global-settings {
+    display: none;
+    position: fixed;
+    top: 40px;
+    bottom: 20px;
+    z-index: 9992;
+    background: var(--nhud-cen-bg, #151220);
+    border: 1px solid var(--nhud-border, #4a1525);
+    border-radius: 8px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9);
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.nhud-global-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--nhud-cen-head, linear-gradient(180deg, #2a101a, #1a0a10));
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--nhud-border, #4a1525);
+}
+
+.nhud-global-title {
+    font-weight: bold;
+    color: var(--nhud-cen-text, #e0c0c0);
+}
+
+.nhud-global-close {
+    background: none;
+    border: none;
+    color: var(--nhud-accent, #d05070);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.nhud-g-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    background: rgba(0,0,0,0.4);
+    border-bottom: 1px solid var(--nhud-border, #3a1525);
+    flex-shrink: 0;
+}
+
+.nhud-g-tab {
+    flex: 1;
+    padding: 8px;
+    background: none;
+    border: none;
+    color: var(--nhud-text-muted, #a08080);
+    font-weight: normal;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.nhud-g-tab.active {
+    color: var(--nhud-cen-text, #e0c0c0);
+    font-weight: bold;
+}
+
+.nhud-g-tab.inactive {
+    color: var(--nhud-text-muted, #a08080);
+    font-weight: normal;
+}
+
+.nhud-global-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    background: rgba(0,0,0,0.2);
+}
+
+.nhud-g-tab-content {
+    display: none;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.nhud-g-tab-content.active {
+    display: flex;
+}
+
+/* Design Accordion */
+.nhud-design-acc {
+    background: var(--nhud-cen-inp, rgba(0,0,0,0.3));
+    border: 1px solid var(--nhud-border);
+    border-radius: 4px;
+    padding: 5px;
+}
+
+.nhud-cen-head {
+    cursor: pointer;
+    color: var(--nhud-accent);
+    font-weight: bold;
+    outline: none;
+    padding: 5px;
+    list-style: none;
+}
+
+.nhud-cen-head::-webkit-details-marker {
+    display: none;
+}
+
+.nhud-cen-head-danger {
+    color: #e05252;
+}
+
+.nhud-design-section {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nhud-field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nhud-select {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--nhud-cen-inp, rgba(0,0,0,0.3));
+    border: 1px solid var(--nhud-border);
+    border-radius: 4px;
+    color: var(--nhud-text-main);
+    font-size: 12px;
+}
+
+.nhud-input {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--nhud-cen-inp, rgba(0,0,0,0.3));
+    border: 1px solid var(--nhud-border);
+    border-radius: 4px;
+    color: var(--nhud-text-main);
+    font-size: 12px;
+    box-sizing: border-box;
+}
+
+.nhud-input:focus,
+.nhud-select:focus,
+.nhud-textarea:focus {
+    outline: none;
+    border-color: var(--nhud-accent);
+}
+
+.nhud-number-input {
+    width: 100%;
+}
+
+.nhud-number-input-small {
+    width: 100%;
+}
+
+.nhud-textarea {
+    width: 100%;
+    padding: 6px 8px;
+    background: var(--nhud-cen-inp, rgba(0,0,0,0.3));
+    border: 1px solid var(--nhud-border);
+    border-radius: 4px;
+    color: var(--nhud-text-main);
+    font-size: 11px;
+    font-family: monospace;
+    box-sizing: border-box;
+    resize: vertical;
+}
+
+.nhud-textarea-small {
+    rows: 2;
+}
+
+.nhud-color-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.nhud-full-width {
+    grid-column: span 2;
+}
+
+.nhud-label-small {
+    font-size: 11px;
+    color: #a08080;
+    display: block;
+    margin-bottom: 2px;
+}
+
+.nhud-label-medium {
+    font-size: 12px;
+    color: #a08080;
+}
+
+.nhud-label-tiny {
+    font-size: 10px;
+    color: #a08080;
+}
+
+.nhud-color-input {
+    width: 100%;
+    height: 30px;
+    padding: 2px;
+    background: none;
+    border: 1px solid var(--nhud-border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.nhud-color-input-small {
+    width: 100%;
+    height: 25px;
+    padding: 2px;
+    background: none;
+    border: 1px solid var(--nhud-border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.nhud-color-input-tiny {
+    width: 30px;
+    height: 25px;
+    padding: 2px;
+    background: none;
+    border: 1px solid var(--nhud-border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.nhud-color-input-accent {
+    width: 30px;
+    height: 30px;
+    padding: 2px;
+    background: none;
+    border: 1px solid var(--nhud-border);
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.nhud-range-input {
+    width: 100%;
+}
+
+.nhud-design-subsection {
+    border-top: 1px dashed var(--nhud-border);
+    padding-top: 10px;
+}
+
+.nhud-subsection-title {
+    font-size: 11px;
+    color: var(--nhud-accent);
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.nhud-subsection-divider {
+    border-top: 1px dashed var(--nhud-border);
+    padding-top: 10px;
+    margin-top: 5px;
+}
+
+.nhud-bar-colors {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+}
+
+.nhud-bar-label {
+    font-size: 11px;
+}
+
+.nhud-checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--nhud-cen-text);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.nhud-checkbox-label-block {
+    margin-bottom: 8px;
+}
+
+.nhud-accent-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    border-top: 1px dashed var(--nhud-border);
+    padding-top: 10px;
+}
+
+/* Theme Actions */
+.nhud-theme-actions {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.nhud-send-btn {
+    flex: 1;
+    padding: 8px;
+    background: #2a101a;
+    border: 1px solid #5a2035;
+    color: #e0c0c0;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.nhud-send-btn:hover {
+    background: #3a202a;
+    border-color: #7a4055;
+}
+
+.nhud-tour-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+    background: var(--nhud-accent);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    color: #fff;
+    font-weight: bold;
+    box-shadow: 0 4px 15px rgba(208, 80, 112, 0.4);
+}
+
+/* Token Tracker */
+.nhud-tokens-acc {
+    background: rgba(20,0,0,0.4);
+    border: 1px solid #802030;
+    border-radius: 4px;
+    padding: 5px;
+    margin-bottom: 10px;
+}
+
+.nhud-tokens-section {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--nhud-cen-text);
+}
+
+.nhud-token-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.nhud-token-total {
+    font-weight: bold;
+    font-size: 14px;
+    color: #e0c0c0;
+}
+
+.nhud-token-divider {
+    border-top: 1px dashed #802030;
+    margin: 4px 0;
+}
+
+.nhud-token-note {
+    font-size: 9px;
+    color: #a08080;
+    margin-top: 4px;
+}
+
+/* Prompt Section */
+.nhud-prompt-section {
+    background: rgba(200,50,80,0.1);
+    padding: 10px;
+    border: 1px solid var(--nhud-border);
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.nhud-prompt-label {
+    color: #d0d0a0;
+    font-weight: bold;
+    font-size: 12px;
+    display: block;
+}
+
+.nhud-prompt-label + .nhud-input,
+.nhud-prompt-label + .nhud-textarea {
+    margin-top: 4px;
+}
+
+/* Modules Grid */
+.nhud-modules-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.nhud-module-card {
+    border: 1px solid var(--nhud-border);
+    padding: 8px;
+    border-radius: 4px;
+    background: var(--nhud-cen-inp, rgba(0,0,0,0.2));
+}
+
+.nhud-checkbox-group {
+    color: #52a8e0;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: pointer;
+}
+
+.nhud-checkbox-blue { color: #52a8e0; }
+.nhud-checkbox-pink { color: #e080b0; }
+.nhud-checkbox-purple { color: #b080e0; }
+.nhud-checkbox-gold { color: #e0d0a0; }
+.nhud-checkbox-green { color: #52e0a3; }
+.nhud-checkbox-danger { color: #e05252; }
+
+/* Modules Extra */
+.nhud-modules-extra {
+    margin-top: 10px;
+    border: 1px dashed var(--nhud-border);
+    padding: 10px;
+    border-radius: 4px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.nhud-modules-extra-title {
+    grid-column: span 2;
+    font-size: 11px;
+    color: #a08080;
+    margin-bottom: 5px;
+}
+
+.nhud-modules-extra-section {
+    grid-column: span 2;
+    border-top: 1px solid var(--nhud-border);
+    margin-top: 5px;
+    padding-top: 10px;
+}
+
+.nhud-field-inline {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding-left: 25px;
+    margin-top: 5px;
+}
+
+/* FAQ Tab */
+.nhud-faq-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    text-align: center;
+}
+
+.nhud-faq-icon {
+    font-size: 40px;
+    margin-bottom: 10px;
+}
+
+.nhud-faq-title {
+    color: var(--nhud-accent);
+    margin-top: 0;
+    margin-bottom: 10px;
+}
+
+.nhud-faq-text {
+    color: var(--nhud-text-main);
+    font-size: 14px;
+    margin-bottom: 20px;
+}
+
+/* Utility */
+.nhud-hidden { display: none !important; }
+
+/* =============================================================================
+   NARRATIVE HUD — SettingsUI.css (добавить в style.css)
+   ============================================================================= */
+
+/* ===== Settings Panel Structure ===== */
+.nhud-settings-panel {
+    display: none;
+    position: fixed;
+    top: 40px;
+    bottom: 0;
+    left: 0;
+    z-index: 9990;
+    background: var(--nhud-left-bg, #151220);
+    border-right: 1px solid var(--nhud-border, #3a1525);
+    flex-direction: column;
+    box-shadow: 5px 0 25px rgba(0, 0, 0, 0.8);
+}
+
+.nhud-settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--nhud-left-head, linear-gradient(180deg, #2a101a, #1a0a10));
+    padding: 10px 15px;
+    border-bottom: 1px solid var(--nhud-border, #4a1525);
+}
+
+.nhud-settings-header-title {
+    font-weight: bold;
+    color: var(--nhud-left-text, #e0c0c0);
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.nhud-settings-close-btn {
+    background: none;
+    border: none;
+    color: var(--nhud-accent, #d05070);
+    font-size: 18px;
+    cursor: pointer;
+    padding: 0;
+}
+
+.nhud-settings-body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    flex-direction: column;
+}
+
+.nhud-settings-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid var(--nhud-border, #3a1525);
+    flex-shrink: 0;
+}
+
+.nhud-tab {
+    padding: 8px;
+    background: none;
+    border: none;
+    color: var(--nhud-text-muted, #a08080);
+    font-weight: bold;
+    cursor: pointer;
+    transition: color 0.2s, font-weight 0.2s;
+}
+
+.nhud-tab.active {
+    color: var(--nhud-text-main, #e0c0c0);
+    font-weight: bold;
+}
+
+.nhud-settings-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* ===== Left Panel Resize Controls ===== */
+.nhud-left-mode-toggle {
+    position: absolute;
+    top: -5px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: var(--nhud-accent, #d05070);
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    padding: 0;
+    z-index: 100;
+    transition: 0.2s;
+}
+
+.nhud-left-resize-handle {
+    position: absolute;
+    right: -4px;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+    z-index: 10;
+    background: transparent;
+}
+
+/* ===== Details / Accordion Cards ===== */
+.nhud-details-card {
+    margin-top: 10px;
+    border: 1px solid var(--nhud-border, #3a1525);
+    border-radius: 4px;
+    padding: 5px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.nhud-acc-header {
+    font-weight: bold;
+    cursor: pointer;
+    padding: 5px;
+    outline: none;
+    user-select: none;
+}
+
+.nhud-acc-header-factions { color: #a090c0; }
+.nhud-acc-header-hero { color: #52a8e0; }
+.nhud-acc-header-trackers { color: var(--nhud-accent, #d05070); }
+.nhud-acc-header-estate { color: #a0d0e0; }
+.nhud-acc-header-vehicles { color: #e080b0; }
+.nhud-acc-header-outfit { color: #e0c0e0; }
+.nhud-acc-header-player-outfit { color: #d0b0e0; }
+.nhud-acc-header-player-inv { color: #52e0a3; }
+.nhud-acc-header-bot-inv { color: #e0a352; }
+.nhud-acc-header-quests { color: #e0c0a0; }
+.nhud-acc-header-codex { color: #b080e0; }
+.nhud-acc-header-calendar { color: #70d090; }
+
+/* ===== Tracker Row ===== */
+.nhud-settings-tracker-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+    align-items: center;
+}
+
+.nhud-s-color {
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    margin-top: 10px;
+}
+
+.nhud-s-delete-btn {
+    width: 24px;
+    padding: 2px 0;
+    margin-top: 10px;
+}
+
+/* ===== Relationship Card ===== */
+.nhud-rel-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid #3a3050;
+    margin-bottom: 10px;
+}
+
+.nhud-rel-card-header {
+    display: flex;
+    gap: 10px;
+    align-items: flex-start;
+}
+
+.nhud-rel-avatar {
+    width: 42px;
+    height: 42px;
+    border-radius: 4px;
+    overflow: hidden;
+    border: 1px solid #4a4060;
+    flex-shrink: 0;
+}
+
+.nhud-rel-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.nhud-rel-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #1a1628;
+    color: #6060a0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+
+.nhud-rel-name {
+    font-weight: bold;
+    color: #e0d0a0;
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.nhud-rel-bar-container {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nhud-rel-bar {
+    flex: 1;
+    height: 6px;
+    background: #1a1628;
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid #2a2040;
+}
+
+.nhud-rel-bar-fill {
+    height: 100%;
+    transition: width 0.2s;
+}
+
+.nhud-rel-bar-fill-low { background: #e05252; }
+.nhud-rel-bar-fill-medium-low { background: #e0a352; }
+.nhud-rel-bar-fill-medium-high { background: #52e0a3; }
+.nhud-rel-bar-fill-high { background: #e052a8; }
+
+.nhud-rel-val-input {
+    width: 40px;
+    padding: 2px;
+    font-size: 0.75em;
+    text-align: center;
+}
+
+.nhud-rel-status-input {
+    width: 110px;
+    padding: 2px 4px;
+    font-size: 0.75em;
+    text-align: right;
+    color: #c0b0a0;
+    border-color: #4a3030;
+}
+
+.nhud-rel-section-title {
+    font-size: 0.65em;
+    color: #52a8e0;
+    text-transform: uppercase;
+    margin-bottom: 2px;
+    font-weight: bold;
+}
+
+.nhud-rel-thoughts { color: #a0c0e0; border-color: #203050; }
+.nhud-rel-hint { color: #e0e0b0; border-color: #606040; background: #202015; }
+
+/* ===== Prompt Block Row ===== */
+.nhud-prompt-block-row {
+    margin-bottom: 8px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    border: 1px solid var(--nhud-border, #3a1525);
+}
+
+.nhud-prompt-block-header {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    margin-bottom: 6px;
+}
+
+.nhud-pb-prompt {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* ===== Storage Stats ===== */
+.nhud-stats-box {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--nhud-border);
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.nhud-stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 0.85em;
+}
+
+.nhud-stat-row:last-child {
+    margin-bottom: 0;
+}
+
+/* ===== Hall of Fame ===== */
+.nhud-achievement-card {
+    display: flex;
+    gap: 12px;
+    background: linear-gradient(90deg, rgba(0, 0, 0, 0.4), rgba(42, 16, 26, 0.2));
+    border: 1px solid var(--nhud-border, #4a1525);
+    border-radius: 8px;
+    padding: 10px;
+    align-items: center;
+    position: relative;
+}
+
+.nhud-achievement-icon {
+    font-size: 24px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--nhud-accent, #d05070);
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.nhud-achievement-title {
+    color: #52e0a3;
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 2px;
+}
+
+.nhud-achievement-desc {
+    color: var(--nhud-text-main, #e0b0b0);
+    font-size: 12px;
+    margin-bottom: 4px;
+}
+
+.nhud-achievement-date {
+    color: var(--nhud-text-muted, #606080);
+    font-size: 10px;
+}
+
+.nhud-del-ach {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background: none;
+    border: none;
+    color: #804040;
+    cursor: pointer;
+    font-size: 12px;
+    transition: 0.2s;
+}
+
+.nhud-del-ach:hover {
+    color: #e05252;
+}
+
+/* ===== Property Card ===== */
+.nhud-property-card {
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.8));
+    border-radius: 6px;
+    border: 1px solid #3a3050;
+    transition: 0.2s;
+    margin-bottom: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+.nhud-property-card.active {
+    border-color: var(--nhud-accent, #d05070);
+}
+
+.nhud-property-card.has-bg {
+    background-size: cover;
+    background-position: center;
+}
+
+.nhud-property-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 8px;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.nhud-prop-accordion-btn {
+    background: none;
+    border: none;
+    color: #e0c0c0;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 0;
+    width: 16px;
+    transition: 0.2s;
+}
+
+.nhud-prop-name {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #e0c0c0;
+    font-weight: bold;
+    flex: 1;
+    padding: 4px 6px;
+}
+
+.nhud-prop-toggle-btn {
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: 0.2s;
+}
+
+.nhud-prop-toggle-btn.active {
+    background: var(--nhud-accent, #d05070);
+    color: #fff;
+    border-color: var(--nhud-accent, #d05070);
+    box-shadow: 0 0 10px rgba(208, 80, 112, 0.4);
+}
+
+.nhud-prop-toggle-btn.inactive {
+    background: rgba(255, 255, 255, 0.1);
+    color: #a0a0b0;
+    border-color: transparent;
+}
+
+.nhud-prop-prompt-btn {
+    background: rgba(82, 168, 224, 0.2);
+    border: 1px solid #3a5a80;
+    color: #80b0e0;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.nhud-prop-settings-btn {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 11px;
+    cursor: pointer;
+}
+
+.nhud-prop-desc-container {
+    padding: 8px;
+}
+
+.nhud-prop-desc {
+    font-size: 12px;
+    background: rgba(0, 0, 0, 0.4);
+    color: #e0d0c0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.5);
+    text-shadow: 0 1px 2px #000;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.nhud-prop-settings-container {
+    display: none;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.85);
+    border-top: 1px dashed #d05070;
+}
+
+.nhud-prop-settings-title {
+    font-size: 10px;
+    color: #d05070;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.nhud-prop-bg {
+    font-size: 11px;
+    padding: 4px;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 6px;
+}
+
+.nhud-prop-del-btn {
+    padding: 4px;
+    font-size: 11px;
+    width: 100%;
+}
+
+/* ===== Character Edit Block ===== */
+.nhud-accordion-char-edit {
+    padding: 8px;
+    border-bottom: 1px solid var(--nhud-border, #3a1525);
+}
+
+.nhud-accordion-char-top {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.nhud-char-avatar-wrap {
+    width: 40px;
+    height: 40px;
+    flex-shrink: 0;
+}
+
+.nhud-char-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 4px;
+}
+
+.nhud-char-avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: #1a1628;
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6060a0;
+    font-weight: bold;
+}
+
+.nhud-char-name {
+    font-size: 0.85em;
+    color: #c0b0d8;
+    font-weight: bold;
+    margin-bottom: 4px;
+}
+
+.nhud-char-outfit-preview {
+    font-size: 0.7em;
+    color: #7070a0;
+}
+
+.nhud-char-state-preview {
+    font-size: 0.7em;
+    color: #909090;
+}
+
+.nhud-accordion-char-avatar-edit {
+    padding-top: 8px;
+    border-top: 1px dashed var(--nhud-border, #3a1525);
+}
+
+.nhud-avatar-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.nhud-avatar-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.nhud-file-btn {
+    cursor: pointer;
+    padding: 4px 8px;
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 4px;
+    font-size: 11px;
+}
+
+/* ===== Proxy Modal ===== */
+.nhud-proxy-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 2147483647;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 15px;
+    box-sizing: border-box;
+    backdrop-filter: blur(3px);
+}
+
+.nhud-proxy-modal-content {
+    background: #151220;
+    border: 1px solid #e05252;
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 500px;
+    width: 100%;
+    max-height: 85vh;
+    overflow-y: auto;
+    position: relative;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8);
+}
+
+.nhud-proxy-modal-close {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #a08080;
+    font-size: 22px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+.nhud-proxy-modal-close:hover {
+    color: #e05252;
+}
+
+.nhud-proxy-modal-title {
+    color: #e05252;
+    margin-top: 0;
+    font-size: 1.2em;
+    padding-right: 20px;
+}
+
+.nhud-proxy-modal-instructions {
+    font-size: 0.95em;
+    color: var(--nhud-text-main);
+}
+
+.nhud-proxy-list {
+    padding-left: 20px;
+    color: #c0b0d8;
+    font-size: 0.95em;
+    line-height: 1.6;
+}
+
+.nhud-proxy-list li {
+    margin-bottom: 8px;
+}
+
+.nhud-proxy-modal-success {
+    color: #52a8e0;
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 0;
+    font-size: 0.95em;
+    background: rgba(82, 168, 224, 0.1);
+    padding: 10px;
+    border-radius: 4px;
+}
+
+.nhud-proxy-code {
+    font-family: monospace;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+/* ===== Local Token Tracker ===== */
+.nhud-local-token-tracker {
+    background: rgba(20, 0, 0, 0.3);
+    border: 1px solid #802030;
+    border-radius: 4px;
+    padding: 5px;
+    margin-bottom: 15px;
+}
+
+.nhud-local-token-tracker summary {
+    cursor: pointer;
+    color: #e05252;
+    font-weight: bold;
+    outline: none;
+    padding: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.nhud-local-token-content {
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--nhud-left-text);
+}
+
+.nhud-local-token-row {
+    display: flex;
+    justify-content: space-between;
+}
+
+.nhud-local-token-row-memory {
+    color: #52a8e0;
+    font-weight: bold;
+}
+
+.nhud-local-token-row-total {
+    font-weight: bold;
+    font-size: 14px;
+    color: #e0c0c0;
+}
+
+.nhud-local-token-hint {
+    font-size: 9px;
+    color: #a08080;
+    margin-top: 4px;
+}
+
+/* ===== Proxy Instruction Button ===== */
+.nhud-proxy-instruction-btn {
+    background: rgba(224, 82, 82, 0.15);
+    border: 1px solid #e05252;
+    border-radius: 4px;
+    padding: 10px;
+    margin-bottom: 15px;
+    cursor: pointer;
+    text-align: center;
+    transition: 0.2s;
+}
+
+.nhud-proxy-instruction-btn:hover {
+    background: rgba(224, 82, 82, 0.25);
+}
+
+.nhud-proxy-instruction-title {
+    color: #e05252;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.nhud-proxy-instruction-desc {
+    font-size: 11px;
+    color: #d0d0a0;
+    margin-top: 4px;
+}
+
+/* ===== Light Mode Info ===== */
+.nhud-light-mode-info {
+    font-size: 11px;
+    color: #a0a0b0;
+    padding-left: 24px;
+    margin-bottom: 8px;
+    line-height: 1.4;
+}
+
+.nhud-light-mode-section {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px dashed var(--nhud-border);
+}
+
+.nhud-light-mode-label {
+    color: #e0d0a0;
+    font-weight: bold;
+}
+
+/* ===== Parser Section ===== */
+.nhud-parser-section {
+    border-top: 1px solid var(--nhud-border);
+    padding-top: 12px;
+    margin-top: 8px;
+}
+
+.nhud-parser-section-title {
+    color: #d05070;
+    margin-top: 20px;
+    border-top: 1px solid var(--nhud-border);
+    padding-top: 15px;
+}
+
+.nhud-api-section-title {
+    color: #d05070;
+    margin-top: 0;
+}
+
+/* ===== Character Accordion ===== */
+.nhud-accordion-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    padding: 5px;
+}
+
+.nhud-accordion-title {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.nhud-accordion-count {
+    font-size: 0.8em;
+    color: #a0a0b0;
+}
+
+.nhud-accordion-arrow {
+    font-size: 10px;
+    color: #8080a0;
+    transition: transform 0.2s;
+}
+
+.nhud-accordion-arrow.open {
+    transform: rotate(180deg);
+}
+
+.nhud-char-action-btn {
+    padding: 2px 6px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    transition: 0.2s;
+}
+
+.nhud-char-rename-btn {
+    background: rgba(80, 140, 80, 0.3);
+    border: 1px solid #286a28;
+    border-radius: 4px;
+    color: #60c060;
+}
+
+.nhud-char-return-scene-btn {
+    margin-left: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.nhud-char-ghost-btn {
+    margin-left: 4px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    opacity: 0.7;
+    transition: 0.2s;
+}
+
+.nhud-char-ghost-btn:hover {
+    opacity: 1;
+}
+
+/* ===== Player Outfit ===== */
+.nhud-player-outfit-eye {
+    cursor: pointer;
+    margin-left: 8px;
+    font-size: 14px;
+    transition: opacity 0.2s;
+}
+
+.nhud-player-outfit-eye.off {
+    opacity: 0.4;
+}
+
+.nhud-player-outfit-hint {
+    font-size: 10px;
+    color: #806080;
+    margin-bottom: 4px;
+}
+
+.nhud-player-outfit-textarea {
+    width: 100%;
+    font-size: 12px;
+    resize: vertical;
+    min-height: 60px;
+}
+
+/* ===== Storage Actions ===== */
+.nhud-storage-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.nhud-export-btn,
+.nhud-import-label {
+    background: #2a101a;
+    border-color: #5a2035;
+}
+
+.nhud-import-label {
+    cursor: pointer;
+}
+
+.nhud-import-input {
+    display: none;
+}
+
+.nhud-clear-section {
+    margin-top: 16px;
+    border-top: 1px dashed var(--nhud-border);
+    padding-top: 12px;
+}
+
+.nhud-clear-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.nhud-smart-clean-btn {
+    padding: 6px 12px;
+    border: 1px solid #5040a0;
+    background: rgba(80, 60, 140, 0.3);
+}
+
+.nhud-clear-chat-btn,
+.nhud-clear-all-btn {
+    padding: 6px 12px;
+    border: 1px solid #802030;
+}
+
+.nhud-clear-all-btn {
+    background: #401015;
+}
+
+.nhud-factory-reset-section {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px dashed #802030;
+}
+
+.nhud-factory-reset-hint {
+    font-size: 11px;
+    color: #a08080;
+    margin-bottom: 6px;
+}
+
+.nhud-factory-reset-btn {
+    padding: 6px 12px;
+    border: 2px solid #e05252;
+    background: #500010;
+    color: #ffaaaa;
+    font-weight: bold;
+    width: 100%;
+}
+
+/* ===== Relationship Container ===== */
+.nhud-rel-container {
+    padding-top: 5px;
+}
+
+.nhud-rel-container details {
+    border: 1px solid var(--nhud-border);
+    border-radius: 4px;
+    padding: 5px;
+    background: rgba(0, 0, 0, 0.2);
+}
+
+.nhud-rel-container summary {
+    font-weight: bold;
+    color: var(--nhud-accent);
+    cursor: pointer;
+    padding: 5px;
+    outline: none;
+    user-select: none;
+}
+
+.nhud-rel-actions {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin: 10px 0;
+}
+
+.nhud-rel-statuses-btn {
+    margin: 0;
+    padding: 4px 8px;
+    background: rgba(200, 100, 150, 0.15);
+    border: 1px solid #803a5a;
+    color: #e080b0;
+    transition: 0.2s;
+}
+
+.nhud-rel-statuses-btn:hover {
+    background: rgba(200, 100, 150, 0.3);
+}
+
+.nhud-rel-statuses-wrapper {
+    display: none;
+    margin-bottom: 10px;
+    padding: 8px;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px dashed #803a5a;
+    border-radius: 4px;
+}
+
+.nhud-rel-statuses-title {
+    font-size: 0.7em;
+    color: #e080b0;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+.nhud-rel-statuses-textarea {
+    width: 100%;
+    box-sizing: border-box;
+    font-size: 0.8em;
+    color: #a090c0;
+    border-color: #803a5a;
+    resize: vertical;
+}
+
+/* ===== Analytics Button ===== */
+.nhud-analytics-btn {
+    margin: 0;
+    padding: 4px 8px;
+    background: rgba(82, 168, 224, 0.15);
+    border: 1px solid #3a5a80;
+    color: #80b0e0;
+    transition: 0.2s;
+}
+
+.nhud-analytics-btn:hover {
+    background: rgba(82, 168, 224, 0.3);
+}
+
+/* ===== Hints Toggle ===== */
+.nhud-hints-toggle-label {
+    font-size: 0.75em;
+    color: #d0d0a0;
+    display: flex;
+    gap: 6px;
+    cursor: pointer;
+    align-items: center;
+    background: rgba(200, 200, 100, 0.1);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #606040;
+    white-space: nowrap;
+}
+
+/* ===== Add / Delete Buttons ===== */
+.nhud-add-btn {
+    margin-top: 8px;
+    padding: 6px 12px;
+    background: rgba(82, 168, 224, 0.2);
+    border: 1px solid #3a5a80;
+    color: #80b0e0;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: 0.2s;
+}
+
+.nhud-add-btn:hover {
+    background: rgba(82, 168, 224, 0.3);
+}
+
+.nhud-s-delete {
+    background: rgba(224, 82, 82, 0.2);
+    border: 1px solid #802030;
+    color: #e05252;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    padding: 4px 8px;
+    transition: 0.2s;
+}
+
+.nhud-s-delete:hover {
+    background: rgba(224, 82, 82, 0.4);
+}
+
+.nhud-send-btn {
+    background: rgba(82, 168, 224, 0.2);
+    border: 1px solid #3a5a80;
+    color: #80b0e0;
+    border-radius: 4px;
+    cursor: pointer;
+    padding: 6px 12px;
+}
+
+/* ===== Input Styles ===== */
+.nhud-input {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--nhud-border, #3a1525);
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: var(--nhud-text-main, #e0c0c0);
+    font-size: 12px;
+}
+
+.nhud-input:focus {
+    outline: none;
+    border-color: var(--nhud-accent, #d05070);
+}
+
+.nhud-textarea {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--nhud-border, #3a1525);
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: var(--nhud-text-main, #e0c0c0);
+    font-size: 12px;
+    resize: vertical;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.nhud-textarea:focus {
+    outline: none;
+    border-color: var(--nhud-accent, #d05070);
+}
+
+.nhud-select {
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid var(--nhud-border, #3a1525);
+    border-radius: 4px;
+    padding: 6px 8px;
+    color: var(--nhud-text-main, #e0c0c0);
+    font-size: 12px;
+    cursor: pointer;
+}
+
+/* ===== Field Groups ===== */
+.nhud-field-group {
+    margin-bottom: 10px;
+}
+
+.nhud-field-group label {
+    display: block;
+    font-size: 0.85em;
+    color: var(--nhud-text-muted);
+    margin-bottom: 4px;
+}
+
+.nhud-checkbox-group {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.nhud-checkbox-group label {
+    margin: 0;
+    cursor: pointer;
+}
+
+/* ===== Money / Currency Inputs ===== */
+.nhud-money-row {
+    display: flex;
+    gap: 6px;
+    margin-top: 8px;
+    margin-bottom: 8px;
+}
+
+.nhud-money-input {
+    flex: 1;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+.nhud-money-input.player { color: #52e0a3; }
+.nhud-money-input.bot { color: #e0a352; }
+
+.nhud-currency-input {
+    width: 100px;
+    text-align: center;
+}
+
+/* ===== Add Item Row ===== */
+.nhud-add-item-row {
+    display: flex;
+    gap: 4px;
+    margin-top: 8px;
+}
+
+/* ===== Hall of Fame States ===== */
+.nhud-hof-empty,
+.nhud-hof-disabled {
+    text-align: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 8px;
+    border: 1px dashed #3a1525;
+}
+
+.nhud-hof-empty { color: #606080; }
+.nhud-hof-disabled { color: #806060; }
+
+.nhud-hof-header {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.nhud-hof-title {
+    margin: 0;
+    color: #52e0a3;
+    text-shadow: 0 0 10px rgba(82, 224, 163, 0.3);
+}
+
+.nhud-hof-desc {
+    font-size: 0.8em;
+    color: var(--nhud-text-muted);
+}
+
+/* ===== Character Accordion Add Row ===== */
+.nhud-acc-add-row {
+    padding: 8px;
+}
+
+.nhud-acc-add-name {
+    flex: 1;
+}
+
+/* ===== Ignored Characters ===== */
+.nhud-ignored-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.nhud-unignore-btn {
+    background: rgba(82, 168, 224, 0.15);
+    border: 1px solid #3a5a80;
+    color: #80b0e0;
+    border-radius: 4px;
+    padding: 3px 8px;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    transition: 0.2s;
+}
+
+.nhud-unignore-btn:hover {
+    background: rgba(82, 168, 224, 0.3);
+}
+
+/* ===== Outfit Slots ===== */
+.nhud-outfit-slot-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+    margin-bottom: 4px;
+}
+
+.nhud-outfit-slot-label {
+    font-size: 12px;
+    min-width: 100px;
+    color: #a0a0b8;
+    padding-top: 8px;
+}
+
+.nhud-outfit-slot {
+    flex: 1;
+    font-size: 11px;
+    resize: vertical;
+    min-height: 36px;
+    overflow-y: auto;
+    line-height: 1.4;
+    padding: 8px;
+}
+
+/* ===== Inventory Item Row ===== */
+.nhud-inv-item-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.3);
+    padding: 4px 8px;
+    border-radius: 4px;
+    border: 1px solid #2a2040;
+    margin-bottom: 4px;
+    font-size: 12px;
+}
+
+/* ===== Outfit Card ===== */
+.nhud-outfit-card {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px;
+    border-radius: 4px;
+    border: 1px solid #2a2040;
+    margin-bottom: 8px;
+}
+
+.nhud-outfit-card-title {
+    font-size: 12px;
+    font-weight: bold;
+    color: #c0c0e0;
+    margin-bottom: 6px;
+}
+
+/* ===== Relationship Action Buttons ===== */
+.nhud-rel-action-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0 4px;
+    transition: 0.2s;
+}
+
+.nhud-rel-toggle-btn-ignored {
+    filter: grayscale(100%);
+}
+
+/* ===== Utility ===== */
+.nhud-hidden { display: none !important; }
+.nhud-visible { display: block !important; }
+
+/* === ИСПРАВЛЕННЫЙ resize-handle — удалите все дубликаты ниже === */
+#nhud-resize-handle,
+.nhud-resize-handle {
+    position: absolute;
+    left: -4px;
+    top: 0;
+    bottom: 0;
+    width: 8px;
+    cursor: ew-resize;
+    z-index: 100 !important; /* !important на случай конфликтов */
+    background: transparent;
+    pointer-events: auto; /* ✅ Критично для работы drag */
+}
+
+#nhud-resize-handle:hover,
+.nhud-resize-handle:hover {
+    background: rgba(100, 80, 160, 0.4); /* визуальная подсказка */
+}
+
+/* === Исправление сайдбара === */
+#narrative-hud-sidebar {
+    /* оставьте все существующие свойства */
+    overflow-y: auto;
+    overflow-x: visible; /* ✅ Разрешаем выход хендла за левую границу */
+}
+
+/* ==========================================================================
+   ✨ ПРЕСЕТЫ ТЕМ (THEME ENGINE V2 - OVERRIDE) ✨
+   ========================================================================== */
+
+.nhud-theme-btn {
+    background: rgba(0,0,0,0.3); border: 1px solid var(--nhud-border); border-radius: 6px;
+    color: var(--nhud-text-primary); padding: 8px; cursor: pointer; font-size: 12px; font-weight: bold;
+    transition: all 0.2s ease;
+}
+.nhud-theme-btn:hover { background: rgba(255,255,255,0.1); border-color: var(--nhud-accent); transform: translateY(-2px); }
+
+/* ==========================================================================
+   🧊 ТЕМА 1: ЖИДКОЕ СТЕКЛО (Premium Glassmorphism V2)
+   ========================================================================== */
+:root.theme-glass {
+    --glass-bg: rgba(20, 15, 30, 0.2); /* Сверхчистый фон, всю работу делает блюр */
+    --glass-inp: rgba(0, 0, 0, 0.25); /* Темная подложка для читаемости ввода */
+    --glass-border: rgba(255, 255, 255, 0.08); /* Тонкая грань стекла */
+
+    --nhud-hud-bg: var(--glass-bg);
+    --nhud-left-bg: var(--glass-bg);
+    --nhud-cen-bg: rgba(10, 5, 15, 0.25);
+    --nhud-prompt-bg: var(--glass-bg);
+
+    --nhud-hud-inp: var(--glass-inp);
+    --nhud-left-inp: var(--glass-inp);
+    --nhud-cen-inp: var(--glass-inp);
+    --nhud-pop-inp: var(--glass-inp);
+
+    --nhud-border: var(--glass-border);
+    --nhud-prompt-border: 1px solid var(--glass-border);
+
+    --nhud-accent: #c4a8ff; /* Благородный светящийся сиреневый */
+    --nhud-bar-start: #8a5cff;
+    --nhud-bar-end: #d8b8ff;
+}
+
+/* 1. ГЛАВНЫЕ ПАНЕЛИ: Мощный блюр с сатурацией и эффектом толстого стекла */
+html.theme-glass #narrative-hud-sidebar,
+body.theme-glass #narrative-hud-sidebar,
+html.theme-glass #nhud-settings-panel,
+body.theme-glass #nhud-settings-panel,
+html.theme-glass #nhud-global-settings,
+body.theme-glass #nhud-global-settings,
+html.theme-glass .nhud-infoblock-popup,
+body.theme-glass .nhud-infoblock-popup {
+    background: linear-gradient(135deg, rgba(40, 25, 50, 0.25), rgba(15, 10, 25, 0.35)) !important;
+    backdrop-filter: blur(24px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    /* Имитация блика света на гранях стекла */
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important; 
+    border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow:
+        inset 1px 1px 2px rgba(255, 255, 255, 0.15), /* Внутренний отблеск */
+        inset -1px -1px 2px rgba(0, 0, 0, 0.2), /* Внутреннее затемнение */
+        0 15px 40px rgba(0, 0, 0, 0.5) !important; /* Глубокая внешняя тень */
+}
+
+/* 2. КАРТОЧКИ И БЛОКИ (Внутри панелей): Матовое, слегка выпуклое стекло */
+html.theme-glass .nhud-char-card, body.theme-glass .nhud-char-card,
+html.theme-glass .nhud-property-card, body.theme-glass .nhud-property-card,
+html.theme-glass details, body.theme-glass details,
+html.theme-glass .nhud-chat-block, body.theme-glass .nhud-chat-block,
+html.theme-glass .nhud-design-acc, body.theme-glass .nhud-design-acc,
+html.theme-glass .nhud-rel-card, body.theme-glass .nhud-rel-card {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.06), rgba(0, 0, 0, 0.15)) !important;
+    backdrop-filter: blur(10px) !important;
+    -webkit-backdrop-filter: blur(10px) !important;
+    border: 1px solid rgba(255, 255, 255, 0.04) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px !important;
+    box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* 3. КНОПКИ: Глянцевые леденцы */
+html.theme-glass .nhud-send-btn, body.theme-glass .nhud-send-btn,
+html.theme-glass .nhud-add-btn, body.theme-glass .nhud-add-btn,
+html.theme-glass .nhud-theme-btn, body.theme-glass .nhud-theme-btn,
+html.theme-glass .nhud-info-btn, body.theme-glass .nhud-info-btn {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.02)) !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 6px !important;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2), inset 1px 1px 0 rgba(255, 255, 255, 0.1) !important;
+    color: #f0e6ff !important;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8) !important;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1) !important;
+}
+html.theme-glass .nhud-send-btn:hover, body.theme-glass .nhud-send-btn:hover,
+html.theme-glass .nhud-add-btn:hover, body.theme-glass .nhud-add-btn:hover,
+html.theme-glass .nhud-theme-btn:hover, body.theme-glass .nhud-theme-btn:hover,
+html.theme-glass .nhud-info-btn:hover, body.theme-glass .nhud-info-btn:hover,
+html.theme-glass .nhud-info-btn.active, body.theme-glass .nhud-info-btn.active {
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.05)) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 6px 15px rgba(196, 168, 255, 0.25), inset 1px 1px 0 rgba(255, 255, 255, 0.3) !important;
+    color: #fff !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 4. ПОЛЯ ВВОДА: Глубоко вдавленные лунки в стекле */
+html.theme-glass .nhud-input, body.theme-glass .nhud-input,
+html.theme-glass .nhud-textarea, body.theme-glass .nhud-textarea,
+html.theme-glass .nhud-select, body.theme-glass .nhud-select {
+    background: rgba(0, 0, 0, 0.25) !important;
+    border: 1px solid rgba(255, 255, 255, 0.03) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.15) !important;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.4) !important;
+    color: #ffffff !important;
+    border-radius: 6px !important;
+    transition: all 0.3s ease !important;
+}
+html.theme-glass .nhud-input:focus, body.theme-glass .nhud-input:focus,
+html.theme-glass .nhud-textarea:focus, body.theme-glass .nhud-textarea:focus {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border-color: var(--nhud-accent) !important;
+    box-shadow: 0 0 12px rgba(196, 168, 255, 0.3), inset 0 3px 6px rgba(0, 0, 0, 0.5) !important;
+    outline: none !important;
+}
+
+/* 5. ШАПКИ И ВКЛАДКИ: Объемные стеклянные козырьки */
+html.theme-glass .nhud-settings-header, body.theme-glass .nhud-settings-header,
+html.theme-glass .nhud-global-header, body.theme-glass .nhud-global-header,
+html.theme-glass .nhud-infoblock-popup-header, body.theme-glass .nhud-infoblock-popup-header {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.15)) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2) !important;
+}
+html.theme-glass .nhud-settings-tabs, body.theme-glass .nhud-settings-tabs {
+    background: rgba(0, 0, 0, 0.15) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05) !important;
+}
+html.theme-glass .nhud-tab, body.theme-glass .nhud-tab {
+    color: #aeb5c0 !important;
+}
+html.theme-glass .nhud-tab.active, body.theme-glass .nhud-tab.active {
+    color: #ffffff !important;
+    text-shadow: 0 0 10px rgba(196, 168, 255, 0.8) !important;
+    border-bottom: 2px solid var(--nhud-accent) !important;
+}
+
+/* 6. ПРОГРЕСС-БАРЫ (Трекеры): Светящиеся неоновые капсулы внутри темного стекла */
+html.theme-glass .nhud-tracker-bar-wrap, body.theme-glass .nhud-tracker-bar-wrap,
+html.theme-glass .nhud-rel-bar, body.theme-glass .nhud-rel-bar {
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8) !important;
+    border-radius: 10px !important;
+}
+html.theme-glass .nhud-tracker-bar, body.theme-glass .nhud-tracker-bar,
+html.theme-glass .nhud-rel-bar-fill, body.theme-glass .nhud-rel-bar-fill {
+    background: linear-gradient(90deg, var(--nhud-bar-start), var(--nhud-bar-end)) !important;
+    box-shadow: 0 0 10px rgba(196, 168, 255, 0.6), inset 0 2px 2px rgba(255,255,255,0.4) !important;
+    border-radius: 10px !important;
+}
+
+/* 7. ИДЕАЛЬНАЯ ЧИТАЕМОСТЬ: Мягкие, но плотные тени для текста на любом фоне */
+html.theme-glass .nhud-settings-header-title, body.theme-glass .nhud-settings-header-title,
+html.theme-glass .nhud-global-title, body.theme-glass .nhud-global-title,
+html.theme-glass .nhud-acc-header, body.theme-glass .nhud-acc-header,
+html.theme-glass .nhud-char-name, body.theme-glass .nhud-char-name,
+html.theme-glass .nhud-accordion-title, body.theme-glass .nhud-accordion-title {
+    color: #ffffff !important;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5) !important;
+    font-weight: bold !important;
+}
+html.theme-glass .nhud-tracker-label, body.theme-glass .nhud-tracker-label,
+html.theme-glass .nhud-section-hint, body.theme-glass .nhud-section-hint,
+html.theme-glass .nhud-datetime-content, body.theme-glass .nhud-datetime-content,
+html.theme-glass label, body.theme-glass label {
+    color: #dbe0e8 !important;
+    text-shadow: 0 1px 3px rgba(0, 0, 0, 0.9) !important;
+}
+
+/* 8. ИКОНКА ВИДЖЕТА (Плавающий кубик) */
+html.theme-glass .nhud-widget, body.theme-glass .nhud-widget {
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), rgba(0,0,0,0.25)) !important;
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-top: 1px solid rgba(255,255,255,0.25) !important;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.5), inset 1px 1px 0 rgba(255,255,255,0.15) !important;
+    border-radius: 12px !important;
+}
+/* Аватарки и иконки без бордовых рамок */
+html.theme-glass .nhud-character-avatar-placeholder, body.theme-glass .nhud-character-avatar-placeholder,
+html.theme-glass .nhud-rel-avatar-placeholder, body.theme-glass .nhud-rel-avatar-placeholder,
+html.theme-glass .nhud-char-avatar-placeholder, body.theme-glass .nhud-char-avatar-placeholder {
+    background: rgba(0, 0, 0, 0.3) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    color: #aeb5c0 !important;
+}
+
+/* ==========================================================================
+   🧊 ФИКСЫ ДЛЯ ТЕМЫ GLASS: Попапы и Аккордеоны
+   ========================================================================== */
+/* 1. Расширяем эффект стекла на специфичные окна (Герой, Инвентарь, Кодекс и т.д.) */
+html.theme-glass #nhud-hero-sheet, body.theme-glass #nhud-hero-sheet,
+html.theme-glass #nhud-quest-panel, body.theme-glass #nhud-quest-panel,
+html.theme-glass #nhud-notif-panel, body.theme-glass #nhud-notif-panel,
+html.theme-glass #nhud-calendar-panel, body.theme-glass #nhud-calendar-panel,
+html.theme-glass #nhud-inv-panel, body.theme-glass #nhud-inv-panel,
+html.theme-glass #nhud-codex-panel, body.theme-glass #nhud-codex-panel {
+    background: linear-gradient(135deg, rgba(40, 25, 50, 0.25), rgba(15, 10, 25, 0.35)) !important;
+    backdrop-filter: blur(24px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.15), inset -1px -1px 2px rgba(0, 0, 0, 0.2), 0 15px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 2. Уничтожаем хардкод цветных заголовков аккордеонов (.nhud-acc-header-outfit и т.д.), приводя их к общему премиальному виду */
+html.theme-glass [class*="nhud-acc-header-"],
+body.theme-glass [class*="nhud-acc-header-"] {
+    color: #ffffff !important;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5) !important;
+    font-weight: bold !important;
+}
+
+/* ==========================================================================
+   🧊 ПАТЧ: Пропущенные окна и упрямые красные заголовки
+   ========================================================================== */
+
+/* 1. Добавляем пропущенные окна (Quest, Codex, Calendar, Mini-conn) в общую стеклянную базу */
+html.theme-glass #nhud-mini-conn, body.theme-glass #nhud-mini-conn,
+html.theme-glass #nhud-quest-log, body.theme-glass #nhud-quest-log,
+html.theme-glass #nhud-codex-modal, body.theme-glass #nhud-codex-modal,
+html.theme-glass #nhud-calendar-modal, body.theme-glass #nhud-calendar-modal {
+    background: linear-gradient(135deg, rgba(40, 25, 50, 0.25), rgba(15, 10, 25, 0.35)) !important;
+    backdrop-filter: blur(24px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.15), inset -1px -1px 2px rgba(0, 0, 0, 0.2), 0 15px 40px rgba(0, 0, 0, 0.5) !important;
+}
+
+/* 2. Уничтожаем цветные заголовки гармошек.
+   Используем комбинацию селекторов, чтобы гарантированно перебить базовые стили. */
+html.theme-glass .nhud-settings-panel .nhud-acc-header,
+body.theme-glass .nhud-settings-panel .nhud-acc-header,
+html.theme-glass details summary,
+body.theme-glass details summary,
+html.theme-glass [class*="nhud-acc-header-"],
+body.theme-glass [class*="nhud-acc-header-"] {
+    color: #ffffff !important;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5) !important;
+    font-weight: bold !important;
+}
+
+/* --------------------------------------------------------------------------
+   🤖 ТЕМА 2: AETHER TERMINAL (Sci-Fi / Cyberpunk)
+   -------------------------------------------------------------------------- */
+:root.theme-cyber {
+    --nhud-hud-bg: #131b23;
+    --nhud-left-bg: #131b23;
+    --nhud-cen-bg: #0f151b;
+    --nhud-prompt-bg: #131b23;
+    
+    --nhud-hud-inp: #090e13;
+    --nhud-left-inp: #090e13;
+    --nhud-cen-inp: #090e13;
+    --nhud-pop-inp: #090e13;
+    
+    --nhud-border: #243b4c;
+    --nhud-prompt-border: 1px solid #243b4c;
+    --nhud-left-head-bg: #18232c;
+    --nhud-cen-head-bg: #18232c;
+    --nhud-prompt-header: #18232c;
+    
+    --nhud-hud-text: #c2e2f0;
+    --nhud-left-text: #c2e2f0;
+    --nhud-cen-text: #c2e2f0;
+    --nhud-prompt-text-color: #c2e2f0;
+    
+    --nhud-accent: #38ef7d;
+    --nhud-bar-start: #11998e;
+    --nhud-bar-end: #38ef7d;
+}
+:root.theme-cyber #narrative-hud-sidebar, 
+:root.theme-cyber #nhud-settings-panel, 
+:root.theme-cyber #nhud-global-settings,
+:root.theme-cyber .nhud-infoblock-popup {
+    font-family: 'Consolas', 'Courier New', monospace !important;
+    box-shadow: inset 0 0 0 1px #243b4c, 0 0 30px rgba(15, 21, 27, 0.9) !important;
+}
+:root.theme-cyber #nhud-widget { background: #131b23 !important; border-color: #38ef7d !important; }
+:root.theme-cyber .nhud-send-btn, :root.theme-cyber .nhud-add-btn, :root.theme-cyber .nhud-theme-btn {
+    background: rgba(56, 239, 125, 0.05) !important; border: 1px solid #38ef7d !important; color: #38ef7d !important;
+    text-transform: uppercase; letter-spacing: 1px;
+}
+:root.theme-cyber .nhud-send-btn:hover, :root.theme-cyber .nhud-theme-btn:hover { box-shadow: 0 0 10px rgba(56, 239, 125, 0.3) !important; }
+:root.theme-cyber .nhud-input, :root.theme-cyber .nhud-textarea { border-radius: 0 !important; }
+
+/* 1. ГЛАВНЫЙ ФОН: Темный терминал с кибер-сеткой и неоновой рамкой */
+html.theme-cyber #narrative-hud-sidebar, 
+body.theme-cyber #narrative-hud-sidebar,
+html.theme-cyber #nhud-settings-panel, 
+body.theme-cyber #nhud-settings-panel,
+html.theme-cyber #nhud-global-settings, 
+body.theme-cyber #nhud-global-settings,
+html.theme-cyber .nhud-infoblock-popup, 
+body.theme-cyber .nhud-infoblock-popup {
+    font-family: 'Consolas', 'Courier New', monospace !important;
+    background-color: #090e13 !important;
+    /* Рисуем тонкую голографическую сетку */
+    background-image: 
+        linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px) !important;
+    background-size: 20px 20px !important;
+    border: 2px solid #00FFFF !important;
+    border-radius: 4px !important;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.1), inset 0 0 20px rgba(0, 255, 255, 0.05) !important;
+}
+
+/* 2. ЗАГОЛОВКИ И ШАПКИ: Светящийся Cyan (#00FFFF) */
+html.theme-cyber .nhud-settings-header-title,
+body.theme-cyber .nhud-settings-header-title,
+html.theme-cyber .nhud-cen-head,
+body.theme-cyber .nhud-cen-head,
+html.theme-cyber .nhud-acc-header,
+body.theme-cyber .nhud-acc-header,
+html.theme-cyber summary[class*="nhud-acc-header"],
+body.theme-cyber summary[class*="nhud-acc-header"] {
+    color: #00FFFF !important;
+    text-transform: uppercase !important;
+    letter-spacing: 2px !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.6) !important;
+    background: rgba(0, 255, 255, 0.05) !important;
+    border: 1px solid rgba(0, 255, 255, 0.3) !important;
+    border-radius: 4px !important;
+}
+
+/* 3. ОБЫЧНЫЙ ТЕКСТ: Светло-серый (как в референсе #AAB1B8 / #F0F4F7) */
+html.theme-cyber, body.theme-cyber,
+html.theme-cyber label, body.theme-cyber label,
+html.theme-cyber .nhud-hint, body.theme-cyber .nhud-hint,
+html.theme-cyber .nhud-section-hint, body.theme-cyber .nhud-section-hint {
+    color: #AAB1B8 !important;
+}
+
+/* 4. ПОЛЯ ВВОДА: Прозрачные с нижней подсветкой */
+html.theme-cyber .nhud-input, body.theme-cyber .nhud-input,
+html.theme-cyber .nhud-textarea, body.theme-cyber .nhud-textarea,
+html.theme-cyber .nhud-select, body.theme-cyber .nhud-select {
+    background: rgba(0, 0, 0, 0.6) !important;
+    border: 1px solid rgba(0, 255, 255, 0.2) !important;
+    border-bottom: 2px solid #00FFFF !important;
+    color: #F0F4F7 !important;
+    border-radius: 2px !important;
+    text-shadow: none !important;
+}
+html.theme-cyber .nhud-input:focus, body.theme-cyber .nhud-input:focus,
+html.theme-cyber .nhud-textarea:focus, body.theme-cyber .nhud-textarea:focus {
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.3) !important;
+    background: rgba(0, 255, 255, 0.05) !important;
+}
+
+/* 5. КНОПКИ (SCAN, ENGAGE): Неоновые контуры */
+html.theme-cyber .nhud-send-btn, body.theme-cyber .nhud-send-btn,
+html.theme-cyber .nhud-add-btn, body.theme-cyber .nhud-add-btn,
+html.theme-cyber .nhud-theme-btn, body.theme-cyber .nhud-theme-btn {
+    background: rgba(0, 255, 255, 0.05) !important;
+    border: 2px solid #00FFFF !important;
+    color: #00FFFF !important;
+    text-transform: uppercase !important;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2) !important;
+    font-weight: bold !important;
+}
+html.theme-cyber .nhud-send-btn:hover, body.theme-cyber .nhud-send-btn:hover,
+html.theme-cyber .nhud-add-btn:hover, body.theme-cyber .nhud-add-btn:hover {
+    background: #00FFFF !important;
+    color: #000 !important;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.6) !important;
+}
+
+/* 6. КНОПКИ УДАЛЕНИЯ (SYSTEM ALERT - Red #FF0000) */
+html.theme-cyber .nhud-s-delete, body.theme-cyber .nhud-s-delete {
+    background: rgba(255, 0, 0, 0.1) !important;
+    border: 2px solid #FF0000 !important;
+    color: #FF0000 !important;
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.3) !important;
+    text-transform: uppercase !important;
+}
+html.theme-cyber .nhud-s-delete:hover, body.theme-cyber .nhud-s-delete:hover {
+    background: #FF0000 !important;
+    color: #000 !important;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.6) !important;
+}
+
+/* 7. ВКЛАДКИ (DATA, LOGS, NET) */
+html.theme-cyber #nhud-settings-tabs .nhud-tab,
+body.theme-cyber #nhud-settings-tabs .nhud-tab {
+    color: #AAB1B8 !important;
+    background: transparent !important;
+    border-bottom: 2px solid transparent !important;
+    text-transform: uppercase !important;
+}
+html.theme-cyber #nhud-settings-tabs .nhud-tab.active,
+body.theme-cyber #nhud-settings-tabs .nhud-tab.active {
+    color: #00FFFF !important;
+    background: rgba(0, 255, 255, 0.1) !important;
+    border-bottom: 2px solid #00FFFF !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.6) !important;
+}
+
+/* 8. КАРТОЧКИ И ПЛАШКИ (Убираем старый фон) */
+html.theme-cyber .nhud-char-card, body.theme-cyber .nhud-char-card,
+html.theme-cyber .nhud-property-card, body.theme-cyber .nhud-property-card,
+html.theme-cyber details, body.theme-cyber details {
+    background: rgba(0, 255, 255, 0.02) !important;
+    border: 1px solid rgba(0, 255, 255, 0.2) !important;
+    border-radius: 4px !important;
+}
+html.theme-cyber .nhud-tracker-bar-wrap, body.theme-cyber .nhud-tracker-bar-wrap {
+    border: 1px solid rgba(0, 255, 255, 0.3) !important;
+    background: #000 !important;
+}
+html.theme-cyber .nhud-tracker-bar, body.theme-cyber .nhud-tracker-bar {
+    background: #00FFFF !important;
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.8) !important;
+    border-radius: 0 !important;
+}
+
+
+/* --- ФОНОВАЯ КАРТИНКА ДЛЯ ЛЕВОЙ ПАНЕЛИ (AETHER TERMINAL) --- */
+html.theme-cyber .nhud-datetime-content,
+body.theme-cyber .nhud-datetime-content {
+    /* Замени ссылку внутри url() на свою */
+    background-image: url('./ui_image/pog_cyber.jpg') !important;
+    
+    /* Настройки отображения (чтобы не ехало) */
+    background-size: cover !important;
+    background-position: center !important;
+    background-repeat: no-repeat !important;
+    
+    /* Если картинка слишком яркая, можно добавить темное наложение прямо поверх нее: */
+    /* background-image: linear-gradient(rgba(9, 14, 19, 0.8), rgba(9, 14, 19, 0.8)), url('URL_ТВОЕЙ_КАРТИНКИ') !important; */
+}
+
+/* 1. Кибер-шрифт ВЕЗДЕ внутри темы Cyber */
+html.theme-cyber #narrative-hud-sidebar, 
+body.theme-cyber #narrative-hud-sidebar,
+html.theme-cyber #narrative-hud-sidebar *, 
+body.theme-cyber #narrative-hud-sidebar *,
+html.theme-cyber #nhud-settings-panel, 
+body.theme-cyber #nhud-settings-panel,
+html.theme-cyber #nhud-settings-panel *, 
+body.theme-cyber #nhud-settings-panel *,
+html.theme-cyber #nhud-global-settings, 
+body.theme-cyber #nhud-global-settings,
+html.theme-cyber #nhud-global-settings *, 
+body.theme-cyber #nhud-global-settings *,
+html.theme-cyber .nhud-infoblock-popup, 
+body.theme-cyber .nhud-infoblock-popup,
+html.theme-cyber .nhud-infoblock-popup *, 
+body.theme-cyber .nhud-infoblock-popup * {
+    font-family: 'Chakra Petch', 'Consolas', monospace !important;
+}
+
+/* 1. ВКЛАДКИ: Перебиваем скрипты и цвета внутри span */
+html.theme-cyber #nhud-settings-tabs .nhud-tab,
+body.theme-cyber #nhud-settings-tabs .nhud-tab,
+html.theme-cyber #nhud-settings-tabs .nhud-tab span,
+body.theme-cyber #nhud-settings-tabs .nhud-tab span {
+    color: #AAB1B8 !important;
+    text-shadow: none !important;
+    font-weight: normal !important;
+}
+
+/* Активная вкладка (голубой неон ВЕЗДЕ внутри нее) */
+html.theme-cyber #nhud-settings-tabs .nhud-tab.active,
+body.theme-cyber #nhud-settings-tabs .nhud-tab.active,
+html.theme-cyber #nhud-settings-tabs .nhud-tab.active span,
+body.theme-cyber #nhud-settings-tabs .nhud-tab.active span {
+    color: #00FFFF !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.6) !important;
+}
+
+/* 2. ВСЕ ГАРМОШКИ: Выжигаем старые цвета (красный, фиолетовый, золотой) */
+html.theme-cyber #nhud-settings-content .nhud-acc-header,
+body.theme-cyber #nhud-settings-content .nhud-acc-header,
+html.theme-cyber #nhud-settings-content [class*="nhud-acc-header-"],
+body.theme-cyber #nhud-settings-content [class*="nhud-acc-header-"] {
+    color: #00FFFF !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.4) !important;
+    background: rgba(0, 255, 255, 0.05) !important;
+    border: 1px solid rgba(0, 255, 255, 0.3) !important;
+    letter-spacing: 1px !important;
+}
+
+/* 3. ГЛАВНАЯ ШАПКА: Сносим обводку и красим в голубой */
+html.theme-cyber #nhud-settings-header .nhud-settings-header-title,
+body.theme-cyber #nhud-settings-header .nhud-settings-header-title {
+    color: #00FFFF !important;
+    text-shadow: 0 0 10px rgba(0, 255, 255, 0.6) !important; /* Только легкое неоновое свечение */
+    -webkit-text-stroke: 0px transparent !important; /* Насильно отключаем контур текста */
+    letter-spacing: 2px !important;
+}
+
+/* 5. ФИКС КРЕСТИКОВ (Выравниваем по центру относительно инпутов) */
+html.theme-cyber .nhud-s-delete-btn, 
+body.theme-cyber .nhud-s-delete-btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    height: 26px !important; /* Жестко задаем высоту */
+    width: 26px !important;
+    padding: 0 !important;
+    margin-top: 10px !important; /* Корректируем отступ от надписей "Тек/Макс" */
+    box-sizing: border-box !important;
+}
+
+/* 1. ПОГОДА И ЛОКАЦИЯ (Убиваем красный градиент) */
+html.theme-cyber .nhud-datetime-bar,
+body.theme-cyber .nhud-datetime-bar {
+    background: transparent !important; /* Убирает красную подложку */
+}
+html.theme-cyber .nhud-datetime-location,
+body.theme-cyber .nhud-datetime-location {
+    color: #00FFFF !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.6) !important;
+}
+
+/* 2. РАЗДЕЛИТЕЛИ (Неоновые линии вместо бордовых) */
+html.theme-cyber .nhud-divider,
+body.theme-cyber .nhud-divider {
+    background: transparent !important;
+    border-bottom: 1px dashed rgba(0, 255, 255, 0.3) !important;
+    box-shadow: 0 1px 5px rgba(0, 255, 255, 0.2) !important;
+    height: 0 !important;
+    margin: 8px 0 !important;
+}
+
+/* 3. КНОПКИ БЛОКОВ (Комментарии, Монолог и т.д.) */
+html.theme-cyber #narrative-hud-sidebar .nhud-info-btn,
+body.theme-cyber #narrative-hud-sidebar .nhud-info-btn {
+    background: rgba(0, 255, 255, 0.05) !important;
+    border: 1px solid rgba(0, 255, 255, 0.3) !important;
+    color: #00FFFF !important;
+    box-shadow: inset 0 0 10px rgba(0, 255, 255, 0.05) !important;
+    border-radius: 4px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}
+html.theme-cyber #narrative-hud-sidebar .nhud-info-btn:hover,
+body.theme-cyber #narrative-hud-sidebar .nhud-info-btn:hover {
+    background: rgba(0, 255, 255, 0.15) !important;
+    border-color: #00FFFF !important;
+    box-shadow: inset 0 0 15px rgba(0, 255, 255, 0.3), 0 0 10px rgba(0, 255, 255, 0.4) !important;
+    color: #FFF !important;
+}
+
+/* 4. МЕЛКИЕ ЗАГОЛОВКИ (Трекер отношений) */
+html.theme-cyber .nhud-relationships-title,
+body.theme-cyber .nhud-relationships-title {
+    color: #00FFFF !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5) !important;
+    letter-spacing: 1px !important;
+}
+
+/* 5. ИМЕНА И МЫСЛИ ПЕРСОНАЖЕЙ */
+html.theme-cyber .nhud-character-name,
+body.theme-cyber .nhud-character-name {
+    color: #FFF !important;
+    text-shadow: 0 0 5px #00FFFF !important;
+    letter-spacing: 1px !important;
+}
+
+html.theme-cyber .nhud-character-thoughts,
+body.theme-cyber .nhud-character-thoughts {
+    background: rgba(0, 255, 255, 0.03) !important;
+    border: 1px solid rgba(0, 255, 255, 0.2) !important;
+    border-left: 3px solid #00FFFF !important; /* Голубая полоса вместо синей/красной */
+}
+html.theme-cyber .nhud-character-thoughts-title,
+body.theme-cyber .nhud-character-thoughts-title {
+    color: #00FFFF !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5) !important;
+}
+
+/* 6. ПУСТЫЕ АВАТАРКИ (Вместо темно-бордового фона) */
+html.theme-cyber .nhud-character-avatar-placeholder,
+body.theme-cyber .nhud-character-avatar-placeholder {
+    background: rgba(0, 255, 255, 0.05) !important;
+    color: #00FFFF !important;
+    border: 1px solid rgba(0, 255, 255, 0.3) !important;
+}
+
+
+/* 1. ШАПКА ГЛОБАЛЬНЫХ НАСТРОЕК (Меняем красный градиент на Cyan) */
+html.theme-cyber .nhud-global-header,
+body.theme-cyber .nhud-global-header {
+    background: rgba(0, 255, 255, 0.05) !important;
+    border-bottom: 1px solid #00FFFF !important;
+    box-shadow: 0 2px 10px rgba(0, 255, 255, 0.1) !important;
+}
+html.theme-cyber .nhud-global-title,
+body.theme-cyber .nhud-global-title {
+    color: #00FFFF !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5) !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+}
+
+/* 2. ВСЕ РАМКИ: ВСПЛЫВАЮЩИЕ ОКНА, СЕКЦИИ, КАРТОЧКИ (Сносим бордовые границы) */
+/* Перечисляем все проблемные блоки и карточки */
+html.theme-cyber #nhud-global-settings,
+body.theme-cyber #nhud-global-settings,
+html.theme-cyber #nhud-global-content,
+body.theme-cyber #nhud-global-content,
+html.theme-cyber #nhud-characters-section,
+body.theme-cyber #nhud-characters-section,
+html.theme-cyber #nhud-hero-sheet,
+body.theme-cyber #nhud-hero-sheet,
+html.theme-cyber .nhud-thoughts-popup,
+body.theme-cyber .nhud-thoughts-popup,
+html.theme-cyber .nhud-achievement-popup,
+body.theme-cyber .nhud-achievement-popup,
+html.theme-cyber .nhud-details-card,
+body.theme-cyber .nhud-details-card,
+html.theme-cyber .nhud-design-acc,
+body.theme-cyber .nhud-design-acc,
+html.theme-cyber .nhud-rel-card,
+body.theme-cyber .nhud-rel-card,
+html.theme-cyber .nhud-outfit-card,
+body.theme-cyber .nhud-outfit-card {
+    border-color: rgba(0, 255, 255, 0.3) !important; /* Мягкая неоновая рамка вместо бордовой */
+}
+
+/* 3. ЖЕСТКАЯ МОДАЛКА С ПРОКСИ (Там был прописан жесткий красный #e05252) */
+html.theme-cyber .nhud-proxy-modal-content,
+body.theme-cyber .nhud-proxy-modal-content {
+    border: 1px solid #00FFFF !important;
+    box-shadow: 0 0 20px rgba(0, 255, 255, 0.1) !important;
+    background: #090e13 !important;
+}
+html.theme-cyber .nhud-proxy-modal-title,
+body.theme-cyber .nhud-proxy-modal-title,
+html.theme-cyber .nhud-proxy-instruction-title,
+body.theme-cyber .nhud-proxy-instruction-title,
+html.theme-cyber .nhud-proxy-instruction-btn,
+body.theme-cyber .nhud-proxy-instruction-btn {
+    color: #00FFFF !important;
+    border-color: rgba(0, 255, 255, 0.3) !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.4) !important;
+    background: transparent !important;
+}
+
+/* 4. КРЕСТИКИ ЗАКРЫТИЯ (Везде) */
+html.theme-cyber .nhud-global-close,
+body.theme-cyber .nhud-global-close,
+html.theme-cyber .nhud-proxy-modal-close,
+body.theme-cyber .nhud-proxy-modal-close,
+html.theme-cyber .nhud-infoblock-popup-close,
+body.theme-cyber .nhud-infoblock-popup-close {
+    color: #00FFFF !important;
+    text-shadow: none !important;
+}
+html.theme-cyber .nhud-global-close:hover,
+body.theme-cyber .nhud-global-close:hover,
+html.theme-cyber .nhud-proxy-modal-close:hover,
+body.theme-cyber .nhud-proxy-modal-close:hover,
+html.theme-cyber .nhud-infoblock-popup-close:hover,
+body.theme-cyber .nhud-infoblock-popup-close:hover {
+    color: #FFF !important;
+    text-shadow: 0 0 10px #00FFFF !important;
+}
+
+/* 5. КРАСНЫЕ КНОПКИ (Сброс, Удаление логов) - Делаем их стильными красными неоновыми */
+html.theme-cyber .nhud-factory-reset-btn,
+body.theme-cyber .nhud-factory-reset-btn,
+html.theme-cyber .nhud-clear-all-btn,
+body.theme-cyber .nhud-clear-all-btn,
+html.theme-cyber .nhud-clear-chat-btn,
+body.theme-cyber .nhud-clear-chat-btn {
+    background: rgba(255, 0, 0, 0.05) !important;
+    border: 1px solid #FF0000 !important;
+    color: #FF0000 !important;
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.2) !important;
+}
+html.theme-cyber .nhud-factory-reset-btn:hover,
+body.theme-cyber .nhud-factory-reset-btn:hover,
+html.theme-cyber .nhud-clear-all-btn:hover,
+body.theme-cyber .nhud-clear-all-btn:hover,
+html.theme-cyber .nhud-clear-chat-btn:hover,
+body.theme-cyber .nhud-clear-chat-btn:hover {
+    background: #FF0000 !important;
+    color: #000 !important;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.6) !important;
+}
+
+
+/* --------------------------------------------------------------------------
+   📜 ТЕМА 3: ДРЕВНИЙ СВИТОК (Dark Fantasy RPG - ТЕКСТУРНАЯ ВЕРСИЯ V3)
+   -------------------------------------------------------------------------- */
+:root.theme-fantasy {
+    --nhud-hud-bg: #e2d5c3; /* Цвет старого пергамента */
+    --nhud-left-bg: #e2d5c3;
+    --nhud-cen-bg: #211510; /* Цвет темного дерева */
+    --nhud-prompt-bg: #e2d5c3;
+    
+    --nhud-border: #4a3219; /* Темная бронза/латунь */
+    
+    --nhud-hud-text: #2b1a10; /* Выцветшие чернила */
+    --nhud-left-text: #2b1a10;
+    --nhud-cen-text: #e2d5c3;
+    --nhud-prompt-text-color: #2b1a10;
+    
+    --nhud-accent: #8b1c1c; /* Цвет запекшейся крови/сургуча */
+    --nhud-bar-start: #593e26;
+    --nhud-bar-end: #8b1c1c;
+}
+
+/* 1. ГЛАВНЫЙ ФОН: Шершавый пергамент с двойной рамкой (металл + тень) */
+:root.theme-fantasy #narrative-hud-sidebar, 
+:root.theme-fantasy #nhud-settings-panel,
+:root.theme-fantasy #nhud-global-settings,
+:root.theme-fantasy .nhud-infoblock-popup {
+    font-family: 'Georgia', 'Times New Roman', serif !important;
+    background-color: #e2d5c3 !important;
+    background-image: url('./ui_image/Paper_Page_01_Fold.png') !important;
+    border: 6px solid #1a110e !important; /* Мощная внешняя металлическая ковка */
+    box-shadow: inset 0 0 0 2px #6b4e31, inset 0 0 40px rgba(43, 26, 16, 0.4), 0 10px 40px rgba(0,0,0,0.9) !important;
+}
+
+/* 2. КАРТОЧКИ: Резное дерево со СРЕЗАННЫМИ УГЛАМИ (как на вашем скрине!) */
+:root.theme-fantasy details,
+:root.theme-fantasy .nhud-property-card,
+:root.theme-fantasy .nhud-char-card,
+:root.theme-fantasy .nhud-chat-block {
+    background-color: #211510 !important;
+    background-image: url('./ui_image/Paper_Page_01_Fold.png') !important;
+    border: none !important;
+    
+    /* Магия CSS: Срезанные углы */
+    clip-path: polygon(8px 0, calc(100% - 8px) 0, 100% 8px, 100% calc(100% - 8px), calc(100% - 8px) 100%, 8px 100%, 0 calc(100% - 8px), 0 8px) !important;
+    
+    /* Имитация латунной окантовки внутри срезанного угла */
+    box-shadow: inset 0 0 0 2px #4a3219 !important; 
+    margin-bottom: 12px !important;
+}
+
+/* Шапки внутри деревянных карточек */
+:root.theme-fantasy .nhud-acc-header, 
+:root.theme-fantasy details summary,
+:root.theme-fantasy .nhud-char-name {
+    background: rgba(0,0,0,0.3) !important;
+    color: #e2d5c3 !important;
+    text-shadow: 1px 1px 2px #000 !important;
+    border-bottom: 1px solid #4a3219 !important;
+    padding: 8px !important;
+}
+
+/* 3. ТРЕКЕРЫ И ПОЛЯ ВВОДА: Вдавленные отверстия в бумаге */
+:root.theme-fantasy .nhud-tracker-bar-wrap,
+:root.theme-fantasy .nhud-input, 
+:root.theme-fantasy .nhud-textarea, 
+:root.theme-fantasy .nhud-select {
+    background-color: #c9bba6 !important; /* Чуть более темный пергамент для глубины */
+    background-image: url('./ui_image/Paper_Page_01_Fold.png') !important;
+    border: 1px solid #4a3219 !important;
+    box-shadow: inset 0 3px 6px rgba(43, 26, 16, 0.6) !important; /* Жесткая тень вовнутрь */
+    border-radius: 0 !important;
+    color: #2b1a10 !important;
+    font-weight: bold !important;
+}
+
+/* 4. РАЗДЕЛИТЕЛИ: Объемные металлические прутья */
+:root.theme-fantasy .nhud-divider {
+    height: 4px !important;
+    background-color: #211510 !important;
+    border-top: 1px solid #000 !important;
+    border-bottom: 1px solid #6b4e31 !important;
+    margin: 16px 0 !important;
+}
+
+/* 5. КНОПКИ: Бронзовые/деревянные таблички */
+:root.theme-fantasy .nhud-send-btn, 
+:root.theme-fantasy .nhud-add-btn, 
+:root.theme-fantasy .nhud-theme-btn {
+    background-color: #2b1a10 !important;
+    border: 2px solid #4a3219 !important;
+    color: #e2d5c3 !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    font-weight: bold !important;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.8), 0 4px 6px rgba(0,0,0,0.5) !important;
+}
+:root.theme-fantasy .nhud-send-btn:hover, :root.theme-fantasy .nhud-theme-btn:hover {
+    background-color: #3d2517 !important;
+    border-color: #6b4e31 !important;
+    transform: translateY(-1px) !important;
+}
+
+/* 4. ЖЕЛЕЗОБЕТОННЫЕ ШРИФТЫ (Погода, Имена, Заголовки) */
+:root.theme-fantasy .nhud-datetime-content span,
+:root.theme-fantasy .nhud-datetime-location,
+:root.theme-fantasy .nhud-tracker-label,
+:root.theme-fantasy .nhud-character-name,
+:root.theme-fantasy .nhud-rel-name,
+:root.theme-fantasy .nhud-accordion-title,
+:root.theme-fantasy .nhud-relationships-title {
+    color: #2b1a10 !important; 
+    font-weight: bold !important;
+    text-shadow: none !important;
+}
+
+:root.theme-fantasy .nhud-tracker-value,
+:root.theme-fantasy .nhud-character-outfit,
+:root.theme-fantasy .nhud-character-state,
+:root.theme-fantasy .nhud-rel-val-input {
+    color: #5c3a21 !important;
+    font-weight: bold !important;
+    text-shadow: none !important;
+}
+
+/* 5. МЫСЛИ ПЕРСОНАЖЕЙ (Стиль: пометки красными чернилами) */
+:root.theme-fantasy .nhud-character-thoughts {
+    background: rgba(139, 101, 51, 0.1) !important;
+    border: 1px solid #8b6533 !important;
+    border-left: 3px solid #8b0000 !important;
+    color: #2b1a10 !important;
+}
+:root.theme-fantasy .nhud-character-thoughts-title { color: #8b0000 !important; }
+:root.theme-fantasy .nhud-unified-thought-content { color: #2b1a10 !important; }
+
+/* 2. ОДНА КАРТИНКА НА ВСЕ ШАПКИ (БЕЗ ВКЛАДОК) */
+:root.theme-fantasy .nhud-global-header,
+:root.theme-fantasy #nhud-notif-panel-header,
+:root.theme-fantasy #nhud-hero-header,
+:root.theme-fantasy #nhud-quest-header,
+:root.theme-fantasy #nhud-calendar-header,
+:root.theme-fantasy #nhud-inv-header,
+:root.theme-fantasy #nhud-codex-header,
+:root.theme-fantasy #nhud-settings-header {
+    background-image: url('./ui_image/Wood_Planks_07_Moss_2.png') !important;
+    background-color: #211510 !important; 
+    /* background-size: cover !important; */
+}
+
+/* ОТДЕЛЬНАЯ КАРТИНКА ДЛЯ ВКЛАДОК НАСТРОЕК */
+:root.theme-fantasy #nhud-settings-tabs,
+:root.theme-fantasy .nhud-settings-tabs {
+    background-image: url('./ui_image/Wood_Planks_07_Moss_2.png') !important;
+    background-color: #211510 !important;
+    /* background-size: cover !important; */
+}
+
+/* ОТДЕЛЬНАЯ КАРТИНКА ДЛЯ КОНТЕНТА НАСТРОЕК */
+:root.theme-fantasy #nhud-settings-content,
+:root.theme-fantasy .nhud-settings-content {
+    background-image: url('./ui_image/Wood_Planks_05_Wide_1.png') !important;
+    background-color: transparent !important; 
+    /* background-size: cover !important; */
+}
+
+/* 1. Общий шрифт для панели и базовая читаемость */
+:root.theme-fantasy #nhud-settings-panel {
+    font-family: 'Georgia', 'Times New Roman', serif !important;
+}
+
+/* 2. Верхние вкладки (Трекеры, Имущество, Журнал и т.д.) */
+:root.theme-fantasy .nhud-settings-tabs {
+    /* Темная подложка, чтобы отделить вкладки от пестрого фона */
+    background: rgba(15, 10, 5, 0.85) !important; 
+    border-bottom: 2px solid #4a3219 !important; /* Бронзовая линия снизу */
+}
+
+:root.theme-fantasy .nhud-tab {
+    color: #c9bba6 !important; /* Цвет темного пергамента */
+    font-weight: bold !important;
+    font-size: 12px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+    /* Имитация четкой черной обводки текста */
+    text-shadow: 
+        -1px -1px 0 #000,  
+         1px -1px 0 #000,
+        -1px  1px 0 #000,
+         1px  1px 0 #000,
+         2px  2px 4px rgba(0,0,0,0.8) !important; 
+    padding: 10px 8px !important;
+    transition: all 0.2s ease !important;
+}
+
+:root.theme-fantasy .nhud-tab:hover {
+    color: #ffffff !important;
+    background: rgba(255, 255, 255, 0.05) !important;
+}
+
+:root.theme-fantasy .nhud-tab.active {
+    color: #ffffff !important;
+    /* Свечение для активной вкладки вместо обычного цвета */
+    text-shadow: 
+        0 0 8px #8b1c1c, 
+        -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000 !important; 
+    background: rgba(139, 28, 28, 0.2) !important; /* Легкая кроваво-красная/сургучная подсветка */
+}
+
+/* 3. Заголовки аккордеонов (Основные трекеры, Недвижимость...) */
+:root.theme-fantasy .nhud-acc-header, 
+:root.theme-fantasy details summary {
+    color: #f4eade !important; /* Светлый читаемый цвет */
+    background: rgba(20, 10, 5, 0.8) !important; /* Темная деревянная плашка прямо под текстом */
+    border: 1px solid #4a3219 !important; /* Металлическая рамочка */
+    border-radius: 4px !important;
+    padding: 8px 12px !important;
+    font-size: 14px !important;
+    font-weight: bold !important;
+    /* Убираем "дешевый" красно-розовый цвет и делаем солидную вдавленную тень */
+    text-shadow: 2px 2px 4px rgba(0,0,0,0.9), 1px 1px 1px #000 !important; 
+    box-shadow: inset 0 0 15px rgba(0,0,0,0.8) !important;
+    margin-bottom: 4px !important;
+}
+
+/* 4. Имена персонажей (Серафина, Элара...) */
+:root.theme-fantasy .nhud-char-name,
+:root.theme-fantasy .nhud-accordion-char-top .nhud-char-name {
+    color: #e2d5c3 !important;
+    font-size: 16px !important;
+    font-weight: bold !important;
+    /* Мощная обводка, чтобы имя выделялось на фоне */
+    text-shadow: 
+        -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000,
+        2px 2px 5px rgba(0,0,0,0.9) !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
+}
+
+/* 5. Лейблы (Голова, Торс, Ноги) */
+:root.theme-fantasy .nhud-outfit-slot-label,
+:root.theme-fantasy .nhud-label-small,
+:root.theme-fantasy .nhud-field-group label {
+    color: #c9bba6 !important; /* Благородный серо-бежевый вместо вырвиглазного синего */
+    font-weight: bold !important;
+    text-shadow: 1px 1px 3px #000, -1px -1px 1px rgba(0,0,0,0.8) !important;
+    font-size: 13px !important;
+}
+
+/* 1. Подгружаем фэнтезийный шрифт ВЕЗДЕ внутри темы Fantasy */
+:root.theme-fantasy #narrative-hud-sidebar, 
+:root.theme-fantasy #narrative-hud-sidebar *,
+:root.theme-fantasy #nhud-settings-panel, 
+:root.theme-fantasy #nhud-settings-panel *,
+:root.theme-fantasy #nhud-global-settings,
+:root.theme-fantasy #nhud-global-settings *,
+:root.theme-fantasy .nhud-infoblock-popup,
+:root.theme-fantasy .nhud-infoblock-popup * {
+    font-family: 'Philosopher', 'Georgia', serif !important;
+}
+
+/* 2. СПАСАЕМ ТЕКСТ НА ТЕМНОМ ДЕРЕВЕ (Левая панель и База) */
+
+/* Текст-подсказка ("Нажми на чат чтобы раскрыть...") и мелкий текст */
+:root.theme-fantasy .nhud-section-hint,
+:root.theme-fantasy .nhud-hint,
+:root.theme-fantasy .nhud-no-chars,
+:root.theme-fantasy .nhud-char-state-preview,
+:root.theme-fantasy .nhud-char-outfit-preview {
+    color: #e2d5c3 !important; /* Цвет светлого пергамента */
+    background: rgba(15, 8, 4, 0.7) !important; /* Плотная темная подложка */
+    padding: 6px 8px !important;
+    border-radius: 4px !important;
+    border: 1px solid rgba(74, 50, 25, 0.5) !important; /* Тонкая бронзовая рамка */
+    text-shadow: 1px 1px 2px #000 !important;
+    font-weight: normal !important;
+}
+
+/* Строки чатов и персонажей (Аккордеоны на дереве) */
+:root.theme-fantasy .nhud-accordion-char-edit,
+:root.theme-fantasy .nhud-accordion-char,
+:root.theme-fantasy .nhud-accordion-header {
+    background: rgba(20, 12, 5, 0.85) !important; /* Темная полупрозрачная плашка под всю строку */
+    border: 1px solid #4a3219 !important; /* Металлическая рамочка */
+    border-radius: 4px !important;
+    margin-bottom: 4px !important;
+}
+
+/* Имена и главные заголовки на деревянном фоне (Делаем их белыми с жесткой черной обводкой) */
+:root.theme-fantasy .nhud-accordion-title,
+:root.theme-fantasy .nhud-char-name {
+    color: #ffffff !important;
+    font-weight: bold !important;
+    text-shadow: 
+        -1px -1px 0 #000, 1px -1px 0 #000, 
+        -1px 1px 0 #000, 1px 1px 0 #000, 
+        2px 2px 4px rgba(0,0,0,0.9) !important;
+}
+
+/* Данные внутри карточек (например, 5 перс.) */
+:root.theme-fantasy .nhud-accordion-count {
+    color: #dcb88e !important;
+    text-shadow: 1px 1px 2px #000 !important;
+    font-weight: bold !important;
+}
+
+/* 3. ФИКС БЕЛОГО ТЕКСТА И ТЕНЕЙ НА СВЕТЛОМ ПЕРГАМЕНТЕ (Центральное окно настроек) */
+
+/* Заголовки (1. Левая панель, 2. Правая панель...) */
+:root.theme-fantasy .nhud-cen-head {
+    color: #2b1a10 !important; /* Цвет густых чернил */
+    background: rgba(0, 0, 0, 0.04) !important; /* Едва заметное затемнение бумаги */
+    border: 1px solid #6b4e31 !important; /* Коричневая рамка */
+    text-shadow: none !important; /* ЖЕСТКО УБИРАЕМ БЕЛУЮ/РОЗОВУЮ ТЕНЬ */
+    font-weight: bold !important;
+    padding: 8px 12px !important;
+    border-radius: 4px !important;
+}
+
+/* Обычный текст, лейблы, чекбоксы на пергаменте */
+:root.theme-fantasy #nhud-global-settings .nhud-checkbox-label,
+:root.theme-fantasy #nhud-global-settings .nhud-label-small,
+:root.theme-fantasy #nhud-global-settings .nhud-label-medium,
+:root.theme-fantasy #nhud-global-settings .nhud-subsection-title,
+:root.theme-fantasy #nhud-global-settings .nhud-global-title {
+    color: #2b1a10 !important; /* Цвет чернил */
+    text-shadow: none !important; /* Убираем свечение */
+    font-weight: bold !important;
+}
+
+/* 1. Жестко применяем шрифт Philosopher ко всем элементам мода */
+html.theme-fantasy #narrative-hud-sidebar, 
+body.theme-fantasy #narrative-hud-sidebar,
+html.theme-fantasy #narrative-hud-sidebar *, 
+body.theme-fantasy #narrative-hud-sidebar *,
+html.theme-fantasy #nhud-settings-panel, 
+body.theme-fantasy #nhud-settings-panel,
+html.theme-fantasy #nhud-settings-panel *, 
+body.theme-fantasy #nhud-settings-panel *,
+html.theme-fantasy #nhud-global-settings, 
+body.theme-fantasy #nhud-global-settings,
+html.theme-fantasy #nhud-global-settings *, 
+body.theme-fantasy #nhud-global-settings * {
+    font-family: 'Philosopher', 'Georgia', serif !important;
+}
+
+/* 2. Вкладки (Трекеры, Имущество...) на деревянном фоне */
+html.theme-fantasy #nhud-settings-tabs .nhud-tab,
+body.theme-fantasy #nhud-settings-tabs .nhud-tab {
+    color: #c9bba6 !important;
+    background: rgba(15, 10, 5, 0.85) !important;
+    text-shadow: -1px -1px 0 #1a0a05, 1px -1px 0 #1a0a05, -1px 1px 0 #1a0a05, 1px 1px 0 #1a0a05, 2px 2px 4px rgba(0,0,0,0.9) !important;
+    font-weight: bold !important;
+    font-size: 13px !important;
+}
+html.theme-fantasy #nhud-settings-tabs .nhud-tab.active,
+body.theme-fantasy #nhud-settings-tabs .nhud-tab.active {
+    color: #ffb347 !important; /* Золотистый цвет для активной вкладки */
+    background: rgba(139, 28, 28, 0.4) !important;
+}
+
+/* 3. Шапка на деревянном фоне (Narrative HUD) */
+html.theme-fantasy #nhud-settings-header .nhud-settings-header-title,
+body.theme-fantasy #nhud-settings-header .nhud-settings-header-title {
+    color: #ffeed3 !important;
+    text-shadow: -1px -1px 0 #1a0a05, 1px -1px 0 #1a0a05, -1px 1px 0 #1a0a05, 1px 1px 0 #1a0a05, 3px 3px 5px rgba(0,0,0,0.9) !important;
+}
+
+/* 4. СВЕТЛЫЕ ПЕРГАМЕНТНЫЕ ЗАГОЛОВКИ С ТЕМНЫМ ТЕКСТОМ (Трекеры, Отношения и т.д.) */
+html.theme-fantasy #nhud-settings-content .nhud-acc-header,
+body.theme-fantasy #nhud-settings-content .nhud-acc-header,
+html.theme-fantasy #nhud-settings-content summary[class*="nhud-acc-header"],
+body.theme-fantasy #nhud-settings-content summary[class*="nhud-acc-header"] {
+    color: #2b1a10 !important; /* Цвет темных чернил */
+    background: rgba(226, 213, 195, 0.85) !important; /* Полупрозрачный светлый пергамент */
+    text-shadow: none !important; /* Убираем все тени для чистого текста */
+    border: 1px solid #6b4e31 !important; /* Аккуратная коричневая рамка */
+    border-radius: 4px !important;
+    font-weight: bold !important;
+}
+
+/* 5. ЦЕНТРАЛЬНАЯ ПАНЕЛЬ (Пергамент): Фикс белых шапок */
+html.theme-fantasy #nhud-global-settings .nhud-cen-head,
+body.theme-fantasy #nhud-global-settings .nhud-cen-head {
+    color: #2b1a10 !important; /* Густые чернила */
+    text-shadow: none !important; /* Сносим белое свечение */
+    background: rgba(0, 0, 0, 0.08) !important;
+    border: 1px solid #6b4e31 !important;
+    font-weight: bold !important;
+}
+
+/* 6. ПОЛЯ ВВОДА (Везде): Делаем текст темным и читаемым */
+html.theme-fantasy .nhud-input, body.theme-fantasy .nhud-input,
+html.theme-fantasy .nhud-select, body.theme-fantasy .nhud-select,
+html.theme-fantasy .nhud-textarea, body.theme-fantasy .nhud-textarea,
+html.theme-fantasy #nhud-global-settings input, body.theme-fantasy #nhud-global-settings input,
+html.theme-fantasy #nhud-global-settings select, body.theme-fantasy #nhud-global-settings select,
+html.theme-fantasy #nhud-global-settings textarea, body.theme-fantasy #nhud-global-settings textarea {
+    color: #1a0a05 !important; /* Темно-коричневый/черный */
+    background-color: rgba(255, 255, 255, 0.6) !important; /* Светлый фон для полей */
+    border: 1px solid #6b4e31 !important;
+    text-shadow: none !important;
+    font-weight: bold !important;
+}
+
+/* Фикс текста внутри выпадающих списков */
+html.theme-fantasy .nhud-select option,
+body.theme-fantasy .nhud-select option {
+    background-color: #e2d5c3 !important;
+    color: #1a0a05 !important;
+}
+
+/* Мелкий текст (лейблы, чекбоксы) на центральной панели */
+html.theme-fantasy #nhud-global-settings label,
+body.theme-fantasy #nhud-global-settings label,
+html.theme-fantasy #nhud-global-settings .nhud-label-small,
+body.theme-fantasy #nhud-global-settings .nhud-label-small {
+    color: #2b1a10 !important;
+    text-shadow: none !important;
+    font-weight: bold !important;
+}
+
+/*ДОПОЛНИТЕЛЬНЫЕ ИСПРАВЛЕНИЯ ЧИТАЕМОСТИ (Гардероб, Токены, FAQ) */
+html.theme-fantasy .nhud-outfit-card-title,
+body.theme-fantasy .nhud-outfit-card-title,
+html.theme-fantasy .nhud-tokens-section,
+body.theme-fantasy .nhud-tokens-section,
+html.theme-fantasy .nhud-tokens-section *,
+body.theme-fantasy .nhud-tokens-section *,
+html.theme-fantasy .nhud-faq-text,
+body.theme-fantasy .nhud-faq-text {
+    color: #2b1a10 !important; /* Цвет густых чернил */
+    text-shadow: none !important;
+}
+
+/* ==========================================================================
+   ✨ ФИКС ШАПОК И ВКЛАДОК ДЛЯ ТЕМ ✨
+   ========================================================================== *
+
+/* 🤖 CYBER */
+:root.theme-cyber .nhud-settings-header, :root.theme-cyber .nhud-settings-tabs {
+    background: #18232c !important;
+    border-color: var(--nhud-border) !important;
+}
+:root.theme-cyber .nhud-settings-header-title { color: var(--nhud-accent) !important; }
+:root.theme-cyber .nhud-tab.active { color: var(--nhud-accent) !important; }
+
+/* 📜 FANTASY */
+:root.theme-fantasy .nhud-settings-header, :root.theme-fantasy .nhud-settings-tabs {
+    background: #2a1a15 !important;
+    border-color: var(--nhud-border) !important;
+}
+:root.theme-fantasy .nhud-settings-header-title { color: #ded1c1 !important; text-shadow: none !important; }
+:root.theme-fantasy .nhud-tab { color: #8b6533 !important; }
+:root.theme-fantasy .nhud-tab.active { color: #ded1c1 !important; font-weight: bold !important; }
+:root.theme-fantasy .nhud-settings-close-btn { color: #8b6533 !important; }
+
+/* ==========================================================================
+   🛡️ ФИКС УТЕЧКИ V4: Полностью прозрачный и чистый блок мыслей
+   ========================================================================== */
+
+/* 1. Делаем контейнер полностью прозрачным и снимаем рамки */
+html[class*="theme-"] details.mes_reasoning_details,
+body[class*="theme-"] details.mes_reasoning_details,
+.mes_reasoning_details {
+    background: transparent !important; /* 👈 Вот тут убиваем черный цвет */
+    background-image: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    border: none !important; /* 👈 Убиваем рамки */
+    box-shadow: none !important;
+    clip-path: none !important;
+    margin-top: 4px !important;
+    margin-bottom: 4px !important;
+}
+
+/* 2. Снимаем всё с шапки (summary) и внутренних оберток */
+html[class*="theme-"] details.mes_reasoning_details summary,
+body[class*="theme-"] details.mes_reasoning_details summary,
+.mes_reasoning_summary,
+.mes_reasoning_header_block,
+.mes_reasoning_header_block.flex-container {
+    background: transparent !important;
+    background-image: none !important;
+    border: none !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    clip-path: none !important;
+    color: var(--textMain, #cccccc) !important; /* Оставляем стандартный цвет текста таверны */
+    text-shadow: none !important;
+    font-family: inherit !important;
+}
+/* ==========================================================================
+   🚫 СКРЫТИЕ СКРОЛЛБАРОВ В NARRATIVE HUD (БЕЗ ПОТЕРИ ПРОКРУТКИ)
+   ========================================================================== */
+
+/* Для Firefox и IE/Edge */
+#narrative-hud-sidebar, #narrative-hud-sidebar *,
+#nhud-settings-panel, #nhud-settings-panel *,
+#nhud-global-settings, #nhud-global-settings *,
+.nhud-infoblock-popup, .nhud-infoblock-popup *,
+.nhud-settings-content, .nhud-proxy-modal-content {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* Для Chrome, Safari, Opera и новых версий Edge */
+#narrative-hud-sidebar::-webkit-scrollbar,
+#narrative-hud-sidebar *::-webkit-scrollbar,
+#nhud-settings-panel::-webkit-scrollbar,
+#nhud-settings-panel *::-webkit-scrollbar,
+#nhud-global-settings::-webkit-scrollbar,
+#nhud-global-settings *::-webkit-scrollbar,
+.nhud-infoblock-popup::-webkit-scrollbar,
+.nhud-infoblock-popup *::-webkit-scrollbar,
+.nhud-settings-content::-webkit-scrollbar,
+.nhud-proxy-modal-content::-webkit-scrollbar {
+    display: none !important;
+}
+
+/* ==========================================================================
+   🚫 ГЛОБАЛЬНЫЙ ФИКС: Скрываем стрелочки (spin-buttons) у числовых полей
+   ========================================================================== */
+/* Для Chrome, Safari, Edge, Opera */
+.nhud-sidebar input[type="number"]::-webkit-inner-spin-button,
+.nhud-sidebar input[type="number"]::-webkit-outer-spin-button,
+.nhud-settings-panel input[type="number"]::-webkit-inner-spin-button,
+.nhud-settings-panel input[type="number"]::-webkit-outer-spin-button,
+.nhud-global-settings input[type="number"]::-webkit-inner-spin-button,
+.nhud-global-settings input[type="number"]::-webkit-outer-spin-button,
+.nhud-infoblock-popup input[type="number"]::-webkit-inner-spin-button,
+.nhud-infoblock-popup input[type="number"]::-webkit-outer-spin-button,
+input[type="number"].nhud-input::-webkit-inner-spin-button,
+input[type="number"].nhud-input::-webkit-outer-spin-button,
+input[type="number"].nhud-rel-val-input::-webkit-inner-spin-button,
+input[type="number"].nhud-rel-val-input::-webkit-outer-spin-button {
+    -webkit-appearance: none !important;
+    margin: 0 !important;
+}
+
+/* Для Firefox */
+.nhud-sidebar input[type="number"],
+.nhud-settings-panel input[type="number"],
+.nhud-global-settings input[type="number"],
+.nhud-infoblock-popup input[type="number"],
+input[type="number"].nhud-input,
+input[type="number"].nhud-rel-val-input {
+    -moz-appearance: textfield !important;
+}

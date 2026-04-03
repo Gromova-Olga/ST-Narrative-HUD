@@ -42,7 +42,9 @@ export const defaultSettings = {
         factions: true,
         codex: true,
         inventory: true,
-        loreInjection: true
+        loreInjection: true,
+        map: true,
+        mapMode: 'system'
     },
     trackers: [
         { id: "health",  label: "Здоровье", max: 100, color: "#e05252" },

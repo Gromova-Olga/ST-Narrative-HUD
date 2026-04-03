@@ -2,17 +2,211 @@ import { extension_settings } from "../../../extensions.js";
 import { saveSettingsDebounced, setExtensionPrompt, extension_prompt_types, extension_prompt_roles } from "../../../../script.js";
 import { eventSource, event_types } from "../../../../script.js";
 import { NarrativeApiService } from "./api/NarrativeApiService.js";
+import { eventBus } from "./core/EventBus.js";
+import { getContext as getSTContext } from "./integration/STContextProvider.js";
 import { NarrativeStorage } from "./storage/NarrativeStorage.js";
 import { extensionName, extensionFolderPath, defaultSettings } from "./core/constants.js";
 import { CharacterModel } from "./core/CharacterModel.js";
 import { AIParser } from "./core/AIParser.js";
-import { getSTContext, getUserName, getCharName, showStatus, stripHtml, parseJsonFromMessage, removeTagsFromMessage, getCurrentSwipeId, getCurrentMessageInfo } from "./utils/helpers.js";
+import { getUserName, getCharName, showStatus, stripHtml, parseJsonFromMessage, removeTagsFromMessage, getCurrentSwipeId, getCurrentMessageInfo, cleanJsonString } from "./utils/helpers.js";
 import { getSettings, getLive, getChatTrackers, ensureCharInLive, deduplicateCharacters, restoreLiveData, restoreLastSwipeInfoBlocks } from "./core/StateManager.js";
 
 // Подключаем интерфейс
 import * as UI from "./ui/UIManager.js";
 import * as MsgUI from "./ui/MessageActions.js";
 import * as SetUI from "./ui/SettingsUI.js";
+
+// ========================================================================
+// МОДУЛЬ 2: Toast-уведомления
+// ========================================================================
+
+let notifStylesInjected = false;
+const NOTIF_CSS = `
+    #nhud-notif-container {
+        position: fixed; bottom: 20px; right: 20px; z-index: 99999;
+        display: flex; flex-direction: column-reverse; gap: 8px;
+        pointer-events: none;
+    }
+    .nhud-toast {
+        pointer-events: auto;
+        background: rgba(20, 10, 15, 0.95);
+        border: 1px solid var(--nhud-border, #4a1525);
+        border-left: 3px solid #80a0d0;
+        border-radius: 6px; padding: 10px 14px;
+        max-width: 320px; min-width: 200px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+        animation: nhud-toast-in 0.3s ease-out;
+        font-family: sans-serif;
+    }
+    .nhud-toast.removing {
+        animation: nhud-toast-out 0.3s ease-in forwards;
+    }
+    .nhud-toast-sender {
+        font-size: 11px; font-weight: bold;
+        color: #80a0d0;
+        margin-bottom: 4px;
+    }
+    .nhud-toast-text {
+        font-size: 13px; color: var(--nhud-text-main, #e0c0c0);
+        line-height: 1.4;
+    }
+    .nhud-toast-device {
+        font-size: 9px; color: #606080; margin-top: 4px;
+    }
+    @keyframes nhud-toast-in {
+        from { opacity: 0; transform: translateX(50px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+    @keyframes nhud-toast-out {
+        from { opacity: 1; transform: translateX(0); }
+        to { opacity: 0; transform: translateX(50px); }
+    }
+    #nhud-notif-panel {
+        display: none; position: fixed; top: 50%; left: 50%;
+        transform: translate(-50%, -50%); z-index: 99998;
+        width: 400px; max-height: 500px;
+        background: rgba(20, 10, 15, 0.97);
+        border: 1px solid var(--nhud-border, #4a1525);
+        border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+        font-family: sans-serif; overflow: hidden;
+        display: flex; flex-direction: column;
+    }
+    #nhud-notif-panel-header {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 10px 14px; background: rgba(0,0,0,0.4);
+        border-bottom: 1px solid var(--nhud-border);
+    }
+    #nhud-notif-panel-header span { font-weight: bold; color: #80a0d0; font-size: 14px; }
+    #nhud-notif-panel-close {
+        background: none; border: none; color: #a08080; cursor: pointer; font-size: 16px;
+    }
+    #nhud-notif-panel-body {
+        flex: 1; overflow-y: auto; padding: 10px;
+    }
+    .nhud-notif-entry {
+        background: rgba(0,0,0,0.3); border: 1px solid #2a2040;
+        border-radius: 4px; padding: 8px 10px; margin-bottom: 6px;
+        position: relative;
+    }
+    .nhud-notif-entry-sender { font-size: 11px; font-weight: bold; color: #80a0d0; }
+    .nhud-notif-entry-text { font-size: 12px; color: #c0c0e0; margin-top: 3px; }
+    .nhud-notif-entry-time { font-size: 9px; color: #606080; margin-top: 3px; }
+    .nhud-notif-del {
+        position: absolute; top: 4px; right: 6px;
+        background: none; border: none; color: #605060; cursor: pointer;
+        font-size: 14px; line-height: 1; padding: 2px 4px; border-radius: 3px;
+        transition: 0.15s;
+    }
+    .nhud-notif-del:hover { color: #e05252; background: rgba(224,82,82,0.15); }
+    #nhud-notif-panel-empty { text-align: center; color: #606080; padding: 30px; font-size: 13px; }
+`;
+
+let notifHistory = [];
+
+export function showNotification(sender, text) {
+    if (!notifStylesInjected) {
+        $('<style id="nhud-notif-styles">').text(NOTIF_CSS).appendTo('head');
+        $('body').append(`
+            <div id="nhud-notif-container"></div>
+            <div id="nhud-notif-panel">
+                <div id="nhud-notif-panel-header">
+                    <span>📨 Уведомления</span>
+                    <button id="nhud-notif-panel-close">✕</button>
+                </div>
+                <div id="nhud-notif-panel-body">
+                    <div id="nhud-notif-panel-empty">Нет уведомлений</div>
+                </div>
+            </div>
+        `);
+        $('#nhud-notif-panel-close').on('click', () => $('#nhud-notif-panel').fadeOut(200));
+        notifStylesInjected = true;
+    }
+
+    const settings = getSettings();
+    const deviceName = settings.prompts?.notificationDeviceName || 'Смартфон';
+    const time = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
+    // Сохраняем в историю
+    notifHistory.unshift({ sender, text, time, device: deviceName });
+    if (notifHistory.length > 50) notifHistory.pop();
+
+    // Сохраняем в chatData между сессиями
+    try {
+        const chatId = NarrativeStorage.getCurrentChatId();
+        if (chatId && getSettings().chatData) {
+            if (!getSettings().chatData[chatId]) getSettings().chatData[chatId] = {};
+            getSettings().chatData[chatId].notifHistory = notifHistory.slice(0, 50);
+            saveSettingsDebounced();
+        }
+    } catch(e) { console.warn('[NHUD] Failed to save notifHistory:', e); }
+
+    // Обновляем панель
+    renderNotifPanel();
+
+    // Toast
+    const toast = $(`
+        <div class="nhud-toast">
+            <div class="nhud-toast-sender">📨 ${sender}</div>
+            <div class="nhud-toast-text">${text}</div>
+            <div class="nhud-toast-device">via ${deviceName} · ${time}</div>
+        </div>
+    `);
+
+    toast.on('click', function() {
+        $(this).addClass('removing');
+        setTimeout(() => $(this).remove(), 300);
+    });
+
+    $('#nhud-notif-container').append(toast);
+
+    setTimeout(() => {
+        if (toast.parent().length) {
+            toast.addClass('removing');
+            setTimeout(() => toast.remove(), 300);
+        }
+    }, 8000);
+}
+
+function renderNotifPanel() {
+    const body = $('#nhud-notif-panel-body');
+    if (!body.length) return;
+    body.empty();
+
+    if (notifHistory.length === 0) {
+        body.append('<div id="nhud-notif-panel-empty">Нет уведомлений</div>');
+        return;
+    }
+
+    for (let i = 0; i < notifHistory.length; i++) {
+        const n = notifHistory[i];
+        const entry = $(`
+            <div class="nhud-notif-entry" data-notif-idx="${i}">
+                <button class="nhud-notif-del" title="Удалить">✕</button>
+                <div class="nhud-notif-entry-sender">📨 ${n.sender}</div>
+                <div class="nhud-notif-entry-text">${n.text}</div>
+                <div class="nhud-notif-entry-time">via ${n.device} · ${n.time}</div>
+            </div>
+        `);
+        entry.find('.nhud-notif-del').on('click', function(e) {
+            e.stopPropagation();
+            const idx = parseInt($(this).closest('.nhud-notif-entry').attr('data-notif-idx'));
+            if (!isNaN(idx) && idx >= 0 && idx < notifHistory.length) {
+                notifHistory.splice(idx, 1);
+                // Обновляем сохранённые данные
+                try {
+                    const chatId = NarrativeStorage.getCurrentChatId();
+                    if (chatId && getSettings().chatData) {
+                        if (!getSettings().chatData[chatId]) getSettings().chatData[chatId] = {};
+                        getSettings().chatData[chatId].notifHistory = notifHistory.slice(0, 50);
+                        saveSettingsDebounced();
+                    }
+                } catch(e) { console.warn('[NHUD] Failed to save notifHistory:', e); }
+                renderNotifPanel();
+            }
+        });
+        body.append(entry);
+    }
+}
 
 export function applyJsonUpdate(jsonData, messageId, swipeId) {
     if (!jsonData) return false;
@@ -80,7 +274,26 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
 
             if (!live.characters[name]) live.characters[name] = {};
             live.characters[name].isHiddenFromScene = false;
-            if (charData.outfit !== undefined && charData.outfit !== '') live.characters[name].outfit = stripHtml(charData.outfit);
+            if (charData.outfit !== undefined && charData.outfit !== '') {
+                if (typeof charData.outfit === 'object') {
+                    // Новый формат: объект со слотами { head, torso, legs, feet, accessories }
+                    if (!live.characters[name].outfit || typeof live.characters[name].outfit !== 'object') {
+                        live.characters[name].outfit = { head: '', torso: '', legs: '', feet: '', accessories: '' };
+                    }
+                    const slots = ['head', 'torso', 'legs', 'feet', 'accessories'];
+                    for (const slot of slots) {
+                        if (charData.outfit[slot] !== undefined && charData.outfit[slot] !== '') {
+                            live.characters[name].outfit[slot] = stripHtml(String(charData.outfit[slot]));
+                        }
+                    }
+                } else if (typeof charData.outfit === 'string') {
+                    // Старый формат: строка — сохраняем как torso (для совместимости)
+                    if (!live.characters[name].outfit || typeof live.characters[name].outfit !== 'object') {
+                        live.characters[name].outfit = { head: '', torso: '', legs: '', feet: '', accessories: '' };
+                    }
+                    live.characters[name].outfit.torso = stripHtml(charData.outfit);
+                }
+            }
             if (charData.state !== undefined && charData.state !== '')   live.characters[name].state  = stripHtml(charData.state);
             if (charData.thoughts !== undefined && charData.thoughts !== '') live.characters[name].thoughts = stripHtml(charData.thoughts);
 
@@ -204,6 +417,43 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
     
     UI.renderInfoBlocks();
     MsgUI.updateHistoryButtons();
+
+    // 🗺️ Обработка map_actions из JSON ИИ
+    if (jsonData.map_actions) {
+        import('./map/MapIntegration.js').then(m => m.handleMapActions(jsonData.map_actions));
+    }
+
+    // МОДУЛЬ 2: Обработка notifications
+    if (Array.isArray(jsonData.notifications) && settings.modules?.notifications !== false) {
+        for (const notif of jsonData.notifications) {
+            if (notif?.sender && notif?.text) {
+                showNotification(notif.sender, notif.text);
+            }
+        }
+    }
+
+    // МОДУЛЬ 3: Обработка inventory_actions (в chatData, не liveData)
+    if (Array.isArray(jsonData.inventory_actions)) {
+        const invChatId = NarrativeStorage.getCurrentChatId();
+        if (invChatId && settings.chatData) {
+            if (!settings.chatData[invChatId]) settings.chatData[invChatId] = {};
+            const invChatData = settings.chatData[invChatId];
+            for (const action of jsonData.inventory_actions) {
+                if (!action?.entity || !action?.action || !action?.item) continue;
+                const target = action.entity.toLowerCase() === 'bot' ? 'botInventory' : 'playerInventory';
+                if (!Array.isArray(invChatData[target])) invChatData[target] = [];
+                if (action.action === 'add') {
+                    if (!invChatData[target].includes(action.item)) invChatData[target].push(action.item);
+                } else if (action.action === 'remove') {
+                    const idx = invChatData[target].indexOf(action.item);
+                    if (idx !== -1) invChatData[target].splice(idx, 1);
+                }
+            }
+            saveSettingsDebounced();
+            eventBus.emit('inventory:auto-changed');
+        }
+    }
+
     return true;
 }
 
@@ -221,27 +471,7 @@ export function processLastMessage() {
     const { openTag, closeTag, autoRemoveTags } = settings.jsonParser;
     
     try {
-        let jsonData = parseJsonFromMessage(text, openTag, closeTag);
-        
-        if (!jsonData) {
-            const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
-            if (codeBlockMatch && codeBlockMatch[1]) {
-                try { jsonData = JSON.parse(codeBlockMatch[1].trim()); } catch (e) { }
-            }
-            if (!jsonData) {
-                const withoutTags = text.replace(/<[^>]*>[\s\S]*?<\/[^>]*>|<[^>]*\/>/gi, ' ').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
-                const jsonMatch = withoutTags.match(/(\{[\s\S]*\})/);
-                if (jsonMatch) {
-                    try { jsonData = JSON.parse(jsonMatch[1]); } catch (e) { }
-                }
-            }
-            if (!jsonData) {
-                const rawJsonMatch = text.match(/(\{[\s\S]*\})/);
-                if (rawJsonMatch) {
-                    try { jsonData = JSON.parse(rawJsonMatch[1]); } catch (e) { }
-                }
-            }
-        }
+        let jsonData = parseModularJson(text, openTag, closeTag);
         
         if (jsonData) {
             const messageId = lastIndex;
@@ -286,11 +516,11 @@ export async function runLightModeUpdate(messageId, messageText) {
         if (!rawText) { showStatus("⚠️ Лайт: пустой ответ", "error"); return; }
 
         const { openTag, closeTag } = settings.jsonParser;
-        let jsonData = parseJsonFromMessage(rawText, openTag, closeTag);
+        let jsonData = parseModularJson(rawText, openTag, closeTag);
         if (!jsonData) {
             const cleaned = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```json|```/gi, '').trim();
             const m = cleaned.match(/\{[\s\S]*\}/);
-            if (m) { try { jsonData = JSON.parse(m[0]); } catch(e) {} }
+            if (m) { try { jsonData = JSON.parse(cleanJsonString(m[0])); } catch(e) {} }
         }
 
         if (jsonData) {
@@ -337,12 +567,12 @@ export async function sendToAPI(manualTrigger = false) {
 
         if (!rawText) throw new Error("Пустой ответ от модели");
         const { openTag, closeTag } = settings.jsonParser;
-        let jsonData = parseJsonFromMessage(rawText, openTag, closeTag);
+        let jsonData = parseModularJson(rawText, openTag, closeTag);
         
         if (!jsonData) {
             const cleaned = rawText.replace(/<think>[\s\S]*?<\/think>/gi, '').replace(/```json|```/gi, '').trim();
             const jsonMatch = cleaned.match(/\{[\s\S]*\}/);
-            if (jsonMatch) { try { jsonData = JSON.parse(jsonMatch[0]); } catch(e) {} }
+            if (jsonMatch) { try { jsonData = JSON.parse(cleanJsonString(jsonMatch[0])); } catch(e) {} }
         }
         
         if (jsonData) {
@@ -423,80 +653,167 @@ export function injectPromptIntoRequest() {
         } else {
             setExtensionPrompt('narrative-hud-lore', '', extension_prompt_types.IN_CHAT, 1, false, extension_prompt_roles.SYSTEM);
         }
+
+        // 🗺️ Интерактивная карта — инжекция контекста позиции игрока
+        if (settings.modules?.map) {
+            import('./map/MapIntegration.js').then(m => {
+                m.injectMapContext(setExtensionPrompt, extension_prompt_types.IN_CHAT, extension_prompt_roles.SYSTEM);
+            });
+        } else {
+            setExtensionPrompt('narrative-hud-map', '', extension_prompt_types.IN_CHAT, 1, false, extension_prompt_roles.SYSTEM);
+        }
     } catch(err) {
         console.error(`[${extensionName}] Ошибка инжекции:`, err);
     }
 }
 
-export function buildDynamicPrompt(settings) {
-    const lang = settings.prompts.language || 'Russian';
-    const openTag = settings.jsonParser?.openTag || '[NHUD]';
-    const closeTag = settings.jsonParser?.closeTag || '[/NHUD]';
-    let finalPrompt = settings.prompts.system + "\n\n";
+// ========================================================================
+// МОДУЛЬНАЯ АРХИТЕКТУРА ПРОМПТОВ
+// Вместо одного гигантского JSON-скелета — три независимых блока,
+// каждый в своих тегах. ИИ проще генерировать, проще парсить.
+// ========================================================================
 
+// --- Теги для трёх модулей ---
+const HUD_TAGS = {
+    core:     { open: '[HUD_CORE]',   close: '[/HUD_CORE]' },
+    prog:     { open: '[HUD_PROG]',   close: '[/HUD_PROG]' },
+    custom:   { open: '[HUD_CUSTOM]', close: '[/HUD_CUSTOM]' }
+};
+
+/**
+ * Удалить ВСЕ теги HUD из текста (старые + новые модульные).
+ * Вызывается при autoRemoveTags.
+ */
+function removeAllHudTags(text, legacyOpenTag, legacyCloseTag) {
+    if (!text) return text;
+    let cleaned = text;
+
+    // Удаляем новые модульные теги
+    for (const tags of Object.values(HUD_TAGS)) {
+        const openEsc = tags.open.replace(/[.*+?${}()|[\]\\]/g, '\\$&');
+        const closeEsc = tags.close.replace(/[.*+?${}()|[\]\\]/g, '\\$&');
+        cleaned = cleaned.replace(new RegExp(`${openEsc}[\\s\\S]*?${closeEsc}`, 'gi'), '');
+    }
+
+    // Удаляем старые теги (fallback)
+    cleaned = removeTagsFromMessage(cleaned, legacyOpenTag, legacyCloseTag);
+
+    return cleaned.trim();
+}
+
+/**
+ * Собрать промпт для CORE-блока (трекеры, персонажи, время/погода).
+ * Это обязательный блок — ИИ должен выдавать его в каждом ответе.
+ */
+function buildCorePrompt(settings) {
+    const lang = settings.prompts.language || 'Russian';
+    let prompt = '';
+
+    // Трекеры
     if (settings.modules?.trackers !== false) {
-        finalPrompt += settings.prompts.trackersPrompt + "\n";
+        prompt += settings.prompts.trackersPrompt + "\n";
         const live = getLive();
         const trackers = getChatTrackers();
         if (trackers && trackers.length > 0) {
             const currentVals = trackers.map(t => `${t.label}: ${live.trackerValues[t.id] ?? t.max}/${t.max}`).join(', ');
-            finalPrompt += `Current tracker values: ${currentVals}\n`;
+            prompt += `Current tracker values: ${currentVals}\n`;
         }
     }
-    
-    if (settings.modules?.characters !== false) finalPrompt += settings.prompts.charsPrompt + "\n";
-    
-    // --- НОВЫЙ БЛОК ДЛЯ ВРЕМЕНИ И ЛОКАЦИИ ---
+
+    // Персонажи
+    if (settings.modules?.characters !== false) {
+        prompt += settings.prompts.charsPrompt + "\n";
+    }
+
+    // Время, локация, погода
     if (settings.modules?.datetime !== false) {
-        finalPrompt += settings.prompts.datetimePrompt + "\n";
-        const live = getLive(); 
-        if (live.infoBlocks.datetime) finalPrompt += `Current In-Game Date & Time: ${live.infoBlocks.datetime}\n`;
-        if (live.infoBlocks.location) finalPrompt += `Current Location: ${live.infoBlocks.location}\n`;
-        if (live.infoBlocks.weather) finalPrompt += `Current Weather: ${live.infoBlocks.weather}\n`;
-    }
-    // ----------------------------------------
-
-    if (settings.modules?.codex !== false && settings.prompts?.codexPrompt)               finalPrompt += "\n" + settings.prompts.codexPrompt + "\n";
-    if (settings.modules?.quests && settings.prompts?.questsPrompt)             finalPrompt += "\n" + settings.prompts.questsPrompt + "\n";
-    if (settings.modules?.achievements && settings.prompts?.achievementsPrompt) finalPrompt += "\n" + settings.prompts.achievementsPrompt + "\n";
-    if (settings.modules?.hero && settings.prompts?.heroPrompt)                 finalPrompt += "\n" + settings.prompts.heroPrompt + "\n";
-    if (settings.modules?.factions && settings.prompts?.factionsPrompt)         finalPrompt += "\n" + settings.prompts.factionsPrompt + "\n";
-
-    if (settings.promptBlocks && settings.promptBlocks.length > 0) {
-        settings.promptBlocks.filter(b => b.enabled).forEach(block => {
-            finalPrompt += `For the JSON field "${block.id}": ${block.prompt}\n`;
-        });
+        prompt += settings.prompts.datetimePrompt + "\n";
+        const live = getLive();
+        if (live.infoBlocks.datetime) prompt += `Current In-Game Date & Time: ${live.infoBlocks.datetime}\n`;
+        if (live.infoBlocks.location) prompt += `Current Location: ${live.infoBlocks.location}\n`;
+        if (live.infoBlocks.weather) prompt += `Current Weather: ${live.infoBlocks.weather}\n`;
     }
 
+    // JSON-скелет для CORE
+    const statsHint = settings.modules?.enableOutfitStats ? ' (add stats in parentheses, e.g. "Leather jacket (+10 Armor)")' : '';
+    const outfitSchema = `"outfit": {"head": "description in ${lang}${statsHint}", "torso": "description in ${lang}${statsHint}", "legs": "description in ${lang}${statsHint}", "feet": "description in ${lang}${statsHint}", "accessories": "description in ${lang}${statsHint}"}`;
+    let skeleton = `{\n  "characters": [\n    {\n      "name": "CharacterName",\n      "state": "current state in ${lang}",\n      ${outfitSchema},\n      "thoughts": "thoughts about user in ${lang}",\n      "relationship": 50,\n      "relationship_status": "status in ${lang}",\n      "relationship_thoughts": "thoughts in ${lang}",\n      "relationship_hint": "hint in ${lang}",\n      "relationship_change_reason": "reason in ${lang}"\n    }\n  ]`;
+
+    if (settings.modules?.trackers !== false) {
+        const trackers = getChatTrackers();
+        if (trackers && trackers.length > 0) {
+            const ex = {}; trackers.forEach(t => { ex[t.id] = t.max; });
+            skeleton += `,\n  "trackers": ${JSON.stringify(ex)}`;
+        } else {
+            skeleton += `,\n  "trackers": { "health": 100, "energy": 100 }`;
+        }
+    }
+    if (settings.modules?.datetime !== false) {
+        skeleton += `,\n  "datetime": "date and time in ${lang}",\n  "location": "location in ${lang}",\n  "weather": "weather in ${lang}"`;
+    }
+    skeleton += `\n}`;
+
+    const tags = HUD_TAGS.core;
+    prompt += `\n\nCRITICAL: All text values MUST be in ${lang}.`;
+    prompt += `\n\nYou MUST output this block in EVERY response. Wrap it in ${tags.open}...${tags.close} tags:\n${tags.open}\n${skeleton}\n${tags.close}`;
+
+    return prompt;
+}
+
+/**
+ * Собрать промпт для PROGRESSION-блока (квесты, ачивки, кодекс, фракции, xp).
+ * Блок опционален — ИИ добавляет его только при срабатывании условий.
+ */
+function buildProgressionPrompt(settings) {
+    const lang = settings.prompts.language || 'Russian';
+    const live = getLive();
+    let prompt = '';
+    const tags = HUD_TAGS.prog;
+
+    // Модульные промпты
+    if (settings.modules?.codex !== false && settings.prompts?.codexPrompt) prompt += settings.prompts.codexPrompt + "\n";
+    if (settings.modules?.quests && settings.prompts?.questsPrompt) prompt += settings.prompts.questsPrompt + "\n";
+    if (settings.modules?.achievements && settings.prompts?.achievementsPrompt) prompt += settings.prompts.achievementsPrompt + "\n";
+    if (settings.modules?.hero && settings.prompts?.heroPrompt) prompt += settings.prompts.heroPrompt + "\n";
+    if (settings.modules?.factions && settings.prompts?.factionsPrompt) prompt += settings.prompts.factionsPrompt + "\n";
+
+    // Контекстные данные из chatData
     const chatId = NarrativeStorage.getCurrentChatId();
     if (chatId && settings.chatData && settings.chatData[chatId]) {
         const chatData = settings.chatData[chatId];
 
+        // Календарь
         if (settings.modules?.calendar !== false) {
-            if (settings.prompts?.calendarPrompt) finalPrompt += "\n" + settings.prompts.calendarPrompt + "\n";
+            if (settings.prompts?.calendarPrompt) prompt += "\n" + settings.prompts.calendarPrompt + "\n";
             const activeEvents = (chatData.calendar || []).filter(e => e.active !== false);
             if (activeEvents.length > 0) {
-                finalPrompt += `\n[Timeline / Calendar Events]\n`;
-                activeEvents.forEach(ev => { finalPrompt += `- [${ev.date}]: ${ev.desc}\n`; });
-                finalPrompt += `[End Timeline]\n`;
+                prompt += `\n[Timeline / Calendar Events]\n`;
+                activeEvents.forEach(ev => { prompt += `- [${ev.date}]: ${ev.desc}\n`; });
+                prompt += `[End Timeline]\n`;
             }
         }
+
+        // Герой
         if (settings.modules?.hero) {
             const sheet = chatData.heroSheet;
             if (sheet) {
-                finalPrompt += `\n[User Character Stats: Level ${sheet.level} | ` +
+                prompt += `\n[User Character Stats: Level ${sheet.level} | ` +
                     Object.entries(sheet.stats).map(([k, v]) => `${k.replace(/[^а-яА-Яa-zA-Z\s]/g, '').trim()}: ${v}`).join(', ') +
                     `. Take these into account for action outcomes.]\n`;
             }
         }
+
+        // Кодекс
         if (settings.modules?.codex !== false) {
             const activeCodex = (chatData.codex || []).filter(c => c.active !== false);
             if (activeCodex.length > 0) {
-                finalPrompt += `\n[Unlocked Codex Entries]\n`;
-                activeCodex.forEach(c => { finalPrompt += `- ${c.title}: ${c.text}\n`; });
-                finalPrompt += `[End Codex]\n`;
+                prompt += `\n[Unlocked Codex Entries]\n`;
+                activeCodex.forEach(c => { prompt += `- ${c.title}: ${c.text}\n`; });
+                prompt += `[End Codex]\n`;
             }
         }
+
+        // Инвентарь
         if (settings.modules?.inventory !== false) {
             const inv = chatData.inventory;
             if (inv) {
@@ -506,78 +823,256 @@ export function buildDynamicPrompt(settings) {
                 if (actVeh.length) invText += `Vehicles: ${actVeh.map(v => `${v.name}${v.desc ? ` (${v.desc})` : ''}`).join(', ')}\n`;
                 const actEst = (inv.estate || []).filter(e => e.active);
                 if (actEst.length) invText += `Real Estate: ${actEst.map(e => `${e.name}${e.desc ? ` (${e.desc})` : ''}`).join(', ')}\n`;
-                finalPrompt += invText + `[End Inventory]\n`;
+                prompt += invText + `[End Inventory]\n`;
             }
         }
+
+        // МОДУЛЬ 3: Player Inventory (из chatData, не liveData)
+        if (settings.modules?.trackPlayerInventory) {
+            const chatId2 = NarrativeStorage.getCurrentChatId();
+            const chatData2 = chatId2 ? settings.chatData?.[chatId2] : null;
+            const pInv = Array.isArray(chatData2?.playerInventory) ? chatData2.playerInventory : [];
+            prompt += `\n[Player Inventory]\n${pInv.length > 0 ? pInv.join(', ') : '(empty)'}\n[End Player Inventory]\n`;
+        }
+
+        // МОДУЛЬ 3: Bot Inventory (из chatData, не liveData)
+        if (settings.modules?.trackBotInventory) {
+            const chatId3 = NarrativeStorage.getCurrentChatId();
+            const chatData3 = chatId3 ? settings.chatData?.[chatId3] : null;
+            const bInv = Array.isArray(chatData3?.botInventory) ? chatData3.botInventory : [];
+            const wealth = settings.prompts?.botWealthStatus || 'Средний';
+            prompt += `\n[Bot Inventory]\nItems: ${bInv.length > 0 ? bInv.join(', ') : '(empty)'}\nWealth Status: ${wealth}\n[End Bot Inventory]\n`;
+        }
+
+        // Фракции
         if (settings.modules?.factions !== false) {
             const factions = chatData.factions;
             if (factions && factions.length > 0) {
-                finalPrompt += `\n[Factions Reputation]\n` +
+                prompt += `\n[Factions Reputation]\n` +
                     factions.map(f => `${f.name}: ${f.rep}/100${f.descActive && f.desc ? ` (${f.desc})` : ''}`).join('\n') +
                     `\n[End Factions]\n`;
             }
         }
+
+        // Квесты
         if (settings.modules?.quests !== false) {
             const activeQuests = (chatData.quests || []).filter(q => q.status === 'active').map(q => `- ${q.title}: ${q.desc}`);
             if (activeQuests.length > 0) {
-                finalPrompt += `\n[Active Quests]\n${activeQuests.join('\n')}\n[End Quests]\n`;
+                prompt += `\n[Active Quests]\n${activeQuests.join('\n')}\n[End Quests]\n`;
             }
         }
     }
 
-    finalPrompt += `\n\nCRITICAL: All text values inside the JSON MUST be written in ${lang}.`;
+    // JSON-скелет для PROG
+    let skeleton = `{}`;
+    const progFields = [];
+    if (settings.modules?.quests !== false) progFields.push(`  "quests": [ { "title": "Quest title", "desc": "Description", "status": "active|completed|failed" } ]`);
+    if (settings.modules?.codex !== false) progFields.push(`  "codex_unlocked": { "title": "Entry title", "text": "Lore text in ${lang}" }`);
+    if (settings.modules?.factions !== false) progFields.push(`  "factions": { "FactionName": 50 }`);
+    if (settings.modules?.calendar !== false) progFields.push(`  "calendar_event": { "date": "DD.MM.YYYY", "desc": "Event description in ${lang}" }`);
+    if (settings.modules?.achievements !== false) progFields.push(`  "achievement": { "title": "Achievement title", "desc": "Description", "icon": "🏆" }`);
+    if (settings.modules?.hero !== false) progFields.push(`  "xp_gained": "small|medium|large"`);
+    if (settings.modules?.map) progFields.push(`  "map_actions": [ { "action": "move", "entity": "Игрок/Бот/NPC", "zone": "zone_name", "anchor": "anchor_name_or_null" }, { "action": "spawn", "entity": "NPC Name", "zone": "zone_name" }, { "action": "remove", "entity": "NPC Name" } ]`);
+    if (settings.modules?.trackPlayerInventory || settings.modules?.trackBotInventory) progFields.push(`  "inventory_actions": [ { "action": "add", "entity": "Player", "item": "Item name in ${lang}" }, { "action": "remove", "entity": "Bot", "item": "Item name in ${lang}" } ]`);
+    if (settings.modules?.notifications !== false) progFields.push(`  "notifications": [ { "sender": "Absent NPC Name or System", "text": "Message text in ${lang}" } ]`);
 
-    const mandatoryFields = [];
-    if (settings.modules?.trackers !== false) mandatoryFields.push('"trackers"');
-    if (settings.modules?.characters !== false) mandatoryFields.push('"characters"');
-    if (settings.modules?.datetime !== false) mandatoryFields.push('"datetime", "location", "weather"');
-    if (settings.promptBlocks) settings.promptBlocks.filter(b => b.enabled).forEach(b => mandatoryFields.push(`"${b.id}"`));
-    if (mandatoryFields.length > 0) {
-        finalPrompt += `\nMANDATORY: You MUST always include these fields in every response, no exceptions: ${mandatoryFields.join(', ')}.`;
+    if (progFields.length > 0) {
+        skeleton = `{\n${progFields.join(',\n')}\n}`;
     }
 
-    let jsonSkeleton = `{\n  "characters": [\n    {\n      "name": "ИмяПерсонажа",\n      "state": "текущее состояние на ${lang}",\n      "outfit": "одежда на ${lang}",\n      "thoughts": "мысли о пользователе на ${lang}",\n      "relationship": 50,\n      "relationship_status": "статус на ${lang}",\n      "relationship_thoughts": "что думает о пользователе на ${lang}",\n      "relationship_hint": "подсказка/цель на ${lang}",\n      "relationship_change_reason": "причина изменения отношений на ${lang}"\n    }\n  ]`;
-
-    if (settings.modules?.trackers !== false) {
-        const trackers = getChatTrackers();
-        if (trackers && trackers.length > 0) {
-            const ex = {}; trackers.forEach(t => { ex[t.id] = t.max; });
-            jsonSkeleton += `,\n  "trackers": ${JSON.stringify(ex)}`;
-        } else {
-            jsonSkeleton += `,\n  "trackers": { "health": 100, "energy": 100 }`;
-        }
+    if (progFields.length > 0) {
+        prompt += `\n\nWhen a quest, achievement, codex, faction, calendar event, XP gain, map movement, inventory change, or notification occurs, output this block (ONLY when triggered, omit if nothing changed):\n${tags.open}\n${skeleton}\n${tags.close}`;
     }
-    if (settings.modules?.datetime !== false) {
-        jsonSkeleton += `,\n  "datetime": "дата и время на ${lang}",\n  "location": "локация на ${lang}",\n  "weather": "погода на ${lang}"`;
-    }
-    if (settings.modules?.quests !== false)       jsonSkeleton += `,\n  "quests": [ { "title": "Название квеста", "desc": "Описание", "status": "active|completed|failed" } ]`;
-    if (settings.modules?.codex !== false)         jsonSkeleton += `,\n  "codex_unlocked": { "title": "Название записи", "text": "Текст лора на ${lang}" }`;
-    if (settings.modules?.factions !== false)      jsonSkeleton += `,\n  "factions": { "НазваниеФракции": 50 }`;
-    if (settings.modules?.calendar !== false)      jsonSkeleton += `,\n  "calendar_event": { "date": "DD.MM.YYYY", "desc": "Описание события на ${lang}" }`;
-    if (settings.modules?.achievements !== false)  jsonSkeleton += `,\n  "achievement": { "title": "Название ачивки", "desc": "Описание", "icon": "🏆" }`;
-    if (settings.modules?.hero !== false)          jsonSkeleton += `,\n  "xp_gained": "small|medium|large"`;
 
+    return prompt;
+}
+
+/**
+ * Собрать промпт для CUSTOM-блока (кастомные инфоблоки + карта).
+ * Блок опционален.
+ */
+function buildCustomPrompt(settings) {
+    const lang = settings.prompts.language || 'Russian';
+    let prompt = '';
+    const tags = HUD_TAGS.custom;
+
+    // Кастомные промпт-блоки
     if (settings.promptBlocks && settings.promptBlocks.length > 0) {
         settings.promptBlocks.filter(b => b.enabled).forEach(block => {
-            if (block.id === 'comments')     jsonSkeleton += `,\n  "comments": [ "комментарий 1", "комментарий 2" ]`;
-            else if (block.id === 'monologue')    jsonSkeleton += `,\n  "monologue": "текст внутреннего монолога на ${lang}"`;
-            else if (block.id === 'diary')        jsonSkeleton += `,\n  "diary": [ { "author": "Имя", "text": "запись на ${lang}" } ]`;
-            else if (block.id === 'skillchecks')  jsonSkeleton += `,\n  "skillchecks": [ { "skill": "Навык", "difficulty": "Сложность", "outcome": "Успех/Провал", "text": "Описание на ${lang}" } ]`;
-            else jsonSkeleton += `,\n  "${block.id}": "текст на ${lang}"`;
+            prompt += `For the field "${block.id}": ${block.prompt}\n`;
         });
     }
 
-    jsonSkeleton += `\n}`;
+    if (!prompt.trim()) return ''; // Нет кастомных блоков — не генерируем
 
-    finalPrompt += `\n\nReturn a JSON object using EXACTLY this structure. Mandatory fields must always be present. Conditional fields only if triggered:\n${jsonSkeleton}`;
+    // JSON-скелет для CUSTOM
+    let skeleton = `{}`;
+    const customFields = [];
+    if (settings.promptBlocks) {
+        settings.promptBlocks.filter(b => b.enabled).forEach(block => {
+            if (block.id === 'comments') customFields.push(`  "comments": [ "comment 1", "comment 2" ]`);
+            else if (block.id === 'monologue') customFields.push(`  "monologue": "internal monologue text in ${lang}"`);
+            else if (block.id === 'diary') customFields.push(`  "diary": [ { "author": "Name", "text": "entry in ${lang}" } ]`);
+            else if (block.id === 'skillchecks') customFields.push(`  "skillchecks": [ { "skill": "Skill", "difficulty": "Difficulty", "outcome": "Success/Fail", "text": "Description in ${lang}" } ]`);
+            else customFields.push(`  "${block.id}": "text in ${lang}"`);
+        });
+    }
 
+    if (customFields.length > 0) {
+        skeleton = `{\n${customFields.join(',\n')}\n}`;
+    }
+
+    prompt += `\n\nWhen relevant, output this block:\n${tags.open}\n${skeleton}\n${tags.close}`;
+
+    return prompt;
+}
+
+/**
+ * Главная функция сборки промпта. Собирает три модуля и инструкцию по тегам.
+ * Поддерживает два режима:
+ * - sendWithMain: RP-ответ + JSON-теги в конце
+ * - lightMode: только JSON (без RP)
+ */
+export function buildDynamicPrompt(settings) {
+    const openTag = settings.jsonParser?.openTag || '[NHUD]';
+    const closeTag = settings.jsonParser?.closeTag || '[/NHUD]';
+
+    let finalPrompt = settings.prompts.system + "\n\n";
+
+    // Собираем три модуля
+    const corePrompt = buildCorePrompt(settings);
+    const progPrompt = buildProgressionPrompt(settings);
+    const customPrompt = buildCustomPrompt(settings);
+
+    finalPrompt += corePrompt;
+    if (progPrompt) finalPrompt += "\n" + progPrompt;
+    if (customPrompt) finalPrompt += "\n" + customPrompt;
+
+    // МОДУЛЬ: Ручной гардероб игрока (read-only для ИИ)
+    if (settings.modules?.injectPlayerOutfit && settings.liveData?.playerOutfitText) {
+        const outfitText = settings.liveData.playerOutfitText.trim();
+        if (outfitText) {
+            finalPrompt += `\n[Player Outfit]\n${outfitText}\n[End Player Outfit]\n`;
+            finalPrompt += `\nCRITICAL: The [Player Outfit] above is READ-ONLY context. DO NOT update, modify, or return this outfit in your JSON. The player manages it manually.\n`;
+        }
+    }
+
+    // Инструкция на отыгрыш пространственного контекста
+    if (settings.modules?.map) {
+        finalPrompt += `\n\nIMPORTANT SPATIAL RULES: You will receive a [ПРОСТРАНСТВЕННЫЙ КОНТЕКСТ] block below. You MUST obey it strictly:`;
+        finalPrompt += `\n- If characters are far apart — describe raising voice, walking over, or inability to see each other.`;
+        finalPrompt += `\n- If in different rooms — a character CANNOT see or hear the other unless explicitly stated.`;
+        finalPrompt += `\n- If close — describe proximity, eye contact, physical interaction possibilities.`;
+        finalPrompt += `\n- You can control the map! Use "map_actions" in your JSON:`;
+        finalPrompt += `\n  "map_actions": [`;
+        finalPrompt += `\n    { "action": "move", "entity": "Игрок", "zone": "zone_name" },  // Move player`;
+        finalPrompt += `\n    { "action": "move", "entity": "bot", "zone": "zone_name", "anchor": "anchor_name" },  // Move your character`;
+        finalPrompt += `\n    { "action": "spawn", "entity": "NPC Name", "zone": "zone_name" },  // Spawn NPC`;
+        finalPrompt += `\n    { "action": "remove", "entity": "NPC Name" }  // Remove NPC`;
+        finalPrompt += `\n  ]`;
+        finalPrompt += `\n- CRITICAL: For "zone" and "anchor" in map_actions, use ONLY exact, concise noun names from the spatial context. DO NOT invent descriptive sentences. (e.g. use "Стол", not "У стола рядом с Анной").`;
+    }
+
+    // МОДУЛЬ 2: Контекстные уведомления
+    if (settings.modules?.notifications !== false) {
+        const deviceName = settings.prompts?.notificationDeviceName || 'Смартфон';
+        finalPrompt += `\n\nNOTIFICATION RULES (Device: "${deviceName}"):`;
+        finalPrompt += `\n- Sometimes generate incoming messages/notifications for the Player via their "${deviceName}".`;
+        finalPrompt += `\n- CRITICAL: Only send messages from characters/factions/systems NOT currently present in the scene/location.`;
+        finalPrompt += `\n- STRICTLY FORBIDDEN to send messages from characters who are near the Player. They interact by voice.`;
+        finalPrompt += `\n- Use characters from the broader story, lore, or past scenes who are far away, OR use system/anonymous notifications.`;
+        finalPrompt += `\n- Adapt message style to device type (PDA = dry report, Smartphone = casual SMS, Letter = formal tone).`;
+        finalPrompt += `\n- Return in JSON: "notifications": [{"sender": "Name/System", "text": "message"}]`;
+    }
+
+    // МОДУЛЬ 3: Инвентарь
+    if (settings.modules?.trackPlayerInventory || settings.modules?.trackBotInventory) {
+        finalPrompt += `\n\nINVENTORY RULES:`;
+        finalPrompt += `\n- Track inventory carefully. If someone picks up/buys an item — add it. If drops/spends — remove it. DO NOT invent items from thin air.`;
+        if (settings.modules?.trackBotInventory) {
+            const wealth = (settings.prompts?.botWealthStatus || '').trim();
+            if (wealth) {
+                finalPrompt += `\n\nBOT INVENTORY LIMITATION: The bot's current wealth/social status is "${wealth}". The bot CANNOT produce, find, or use items from its inventory that do not logically match this status. Restrict generated items accordingly.`;
+            }
+        }
+        finalPrompt += `\n- When inventory changes, USE ONLY the "inventory_actions" array inside [HUD_PROG] block.`;
+        finalPrompt += `\n- STRICTLY FORBIDDEN: Do NOT create "inventory", "player_inventory", "bot_inventory", or any inventory fields inside [HUD_CORE] or inside character objects.`;
+        finalPrompt += `\n- Format: "inventory_actions": [{"entity": "Player|Bot", "action": "add|remove", "item": "Item name"}]`;
+    }
+
+    // Инструкция по формату ответа
     if (settings.requestSettings?.sendWithMain && !settings.requestSettings?.lightMode) {
-        finalPrompt += `\n\nWrite your normal roleplay response first. Then at the very end, append the JSON block wrapped in tags EXACTLY like this (no other text after):\n${openTag}\n{your json here}\n${closeTag}`;
+        finalPrompt += `\n\nWrite your normal roleplay response first. Then at the very end, append the data blocks. Each block must be wrapped in its own tags. Do NOT combine them into one JSON. Example format:`;
+        finalPrompt += `\n\nYour RP text here...`;
+        finalPrompt += `\n${HUD_TAGS.core.open}\n{...}\n${HUD_TAGS.core.close}`;
+        finalPrompt += `\n${HUD_TAGS.prog.open}\n{...}\n${HUD_TAGS.prog.close}`;
+        finalPrompt += `\n\nDo NOT put any text after the closing tags.`;
+
+        // Fallback: также просим старые теги для совместимости
+        finalPrompt += `\n\nALTERNATIVELY, you may use the old format with ${openTag}...${closeTag} wrapping a single combined JSON if that's easier for you.`;
     } else {
         finalPrompt += "\n\nReturn ONLY valid JSON. No prose, no markdown, no code blocks. Raw JSON only.";
     }
 
     return finalPrompt;
+}
+
+// ========================================================================
+// МОДУЛЬНЫЙ ПАРСИНГ
+// ========================================================================
+
+/**
+ * Извлечь JSON из всех поддерживаемых тегов в тексте.
+ * Ищет [HUD_CORE], [HUD_PROG], [HUD_CUSTOM] + fallback на старые теги.
+ * Возвращает слитый объект или null.
+ */
+function parseModularJson(text, fallbackOpenTag, fallbackCloseTag) {
+    if (!text) return null;
+
+    const cleanJson = cleanJsonString;
+    let merged = {};
+
+    // 1. Ищем новые модульные теги
+    for (const [moduleName, tags] of Object.entries(HUD_TAGS)) {
+        const escaped = {
+            open: tags.open.replace(/[.*+?${}()|[\]\\]/g, '\\$&'),
+            close: tags.close.replace(/[.*+?${}()|[\]\\]/g, '\\$&')
+        };
+        const regex = new RegExp(`${escaped.open}\\s*(\\{[\\s\\S]*?\\})\\s*${escaped.close}`, 'i');
+        const match = text.match(regex);
+        if (match) {
+            try {
+                const obj = JSON.parse(cleanJson(match[1]));
+                Object.assign(merged, obj);
+            } catch (e) {
+                console.warn(`[NHUD] Failed to parse ${moduleName} block:`, e);
+            }
+        }
+    }
+
+    // 2. Fallback: старые теги [NHUD]...[/NHUD]
+    if (Object.keys(merged).length === 0) {
+        const legacyResult = parseJsonFromMessage(text, fallbackOpenTag, fallbackCloseTag);
+        if (legacyResult) {
+            Object.assign(merged, legacyResult);
+        }
+    }
+
+    // 3. Fallback: голый JSON в тексте
+    if (Object.keys(merged).length === 0) {
+        const codeBlockMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+        if (codeBlockMatch && codeBlockMatch[1]) {
+            try { Object.assign(merged, JSON.parse(cleanJson(codeBlockMatch[1].trim()))); } catch (e) { }
+        }
+    }
+    if (Object.keys(merged).length === 0) {
+        const rawMatch = text.match(/\{[\s\S]*\}/);
+        if (rawMatch) {
+            try { Object.assign(merged, JSON.parse(cleanJson(rawMatch[0]))); } catch (e) { }
+        }
+    }
+
+    return Object.keys(merged).length > 0 ? merged : null;
 }
 
 jQuery(async () => {
@@ -615,6 +1110,34 @@ jQuery(async () => {
         UI.buildFloatingWidget();
         UI.applyDesignTheme();
 
+        // Инициализация панели уведомлений (создаём DOM сразу, а не при первом уведомлении)
+        showNotification.__init = true; // флаг чтобы showNotification не дублировал DOM
+        if (!notifStylesInjected) {
+            $('<style id="nhud-notif-styles">').text(NOTIF_CSS).appendTo('head');
+            $('body').append(`
+                <div id="nhud-notif-container"></div>
+                <div id="nhud-notif-panel">
+                    <div id="nhud-notif-panel-header">
+                        <span>📨 Уведомления</span>
+                        <button id="nhud-notif-panel-close">✕</button>
+                    </div>
+                    <div id="nhud-notif-panel-body">
+                        <div id="nhud-notif-panel-empty">Нет уведомлений</div>
+                    </div>
+                </div>
+            `);
+            $('#nhud-notif-panel-close').on('click', () => $('#nhud-notif-panel').fadeOut(200));
+            notifStylesInjected = true;
+        }
+
+        // Загружаем историю уведомлений из chatData
+        try {
+            const chatId = NarrativeStorage.getCurrentChatId();
+            const chatData = getSettings().chatData?.[chatId];
+            if (chatData?.notifHistory) notifHistory = chatData.notifHistory.slice(0, 50);
+        } catch(e) {}
+        renderNotifPanel();
+
         // 🔥 МГНОВЕННЫЙ СИНХРОННЫЙ ПЕРЕХВАТЧИК ГЕНЕРАЦИИ
         eventSource.on(event_types.GENERATION_STARTED, () => {
             injectPromptIntoRequest();
@@ -640,14 +1163,14 @@ jQuery(async () => {
                 if (settings.requestSettings.lightMode) {
                     runLightModeUpdate(lastIndex, message.mes);
                     const { openTag, closeTag, autoRemoveTags } = settings.jsonParser;
-                    if (autoRemoveTags && message.mes.includes(openTag)) {
-                        const cleanedText = removeTagsFromMessage(message.mes, openTag, closeTag);
+                    if (autoRemoveTags && (message.mes.includes(openTag) || message.mes.includes('[HUD_CORE]'))) {
+                        const cleanedText = removeAllHudTags(message.mes, openTag, closeTag);
                         if (cleanedText !== message.mes) {
                             message.mes = cleanedText;
                             const messageElement = $(`.mes[mesid="${lastIndex}"] .mes_text`);
                             if (messageElement.length) {
                                 const html = messageElement.html();
-                                const cleanedHtml = removeTagsFromMessage(html, openTag, closeTag);
+                                const cleanedHtml = removeAllHudTags(html, openTag, closeTag);
                                 if (cleanedHtml !== html) messageElement.html(cleanedHtml);
                             }
                         }
@@ -661,13 +1184,13 @@ jQuery(async () => {
                     const rawText = messageElement.length ? messageElement.text() : message.mes;
 
                     // Пробуем парсить из DOM (там теги могут быть)
-                    let jsonData = parseJsonFromMessage(rawText, openTag, closeTag);
-                    if (!jsonData) jsonData = parseJsonFromMessage(rawHtml, openTag, closeTag);
-                    if (!jsonData) jsonData = parseJsonFromMessage(message.mes, openTag, closeTag);
+                    let jsonData = parseModularJson(rawText, openTag, closeTag);
+                    if (!jsonData) jsonData = parseModularJson(rawHtml, openTag, closeTag);
+                    if (!jsonData) jsonData = parseModularJson(message.mes, openTag, closeTag);
                     // Fallback — ищем голый JSON
                     if (!jsonData) {
                         const jsonMatch = rawText.match(/\{[\s\S]*\}/);
-                        if (jsonMatch) { try { jsonData = JSON.parse(jsonMatch[0]); } catch(e) {} }
+                        if (jsonMatch) { try { jsonData = JSON.parse(cleanJsonString(jsonMatch[0])); } catch(e) {} }
                     }
 
                     if (jsonData) {
@@ -681,11 +1204,11 @@ jQuery(async () => {
                     // Удаляем теги из DOM и из message.mes
                     if (autoRemoveTags) {
                         if (messageElement.length) {
-                            const cleanedHtml = removeTagsFromMessage(rawHtml, openTag, closeTag);
+                            const cleanedHtml = removeAllHudTags(rawHtml, openTag, closeTag);
                             if (cleanedHtml !== rawHtml) messageElement.html(cleanedHtml);
                         }
-                        if (message.mes.includes(openTag)) {
-                            message.mes = removeTagsFromMessage(message.mes, openTag, closeTag);
+                        if (message.mes.includes(openTag) || message.mes.includes('[HUD_CORE]')) {
+                            message.mes = removeAllHudTags(message.mes, openTag, closeTag);
                         }
                     }
                 } else if (settings.autoSend) {
@@ -699,6 +1222,8 @@ jQuery(async () => {
         eventSource.on(event_types.CHAT_CHANGED, () => {
             setTimeout(() => {
                 const settings = getSettings();
+                // Сохраняем глобальные данные, которые не должны сбрасываться при смене чата
+                const savedPlayerOutfitText = settings.liveData?.playerOutfitText || '';
                 // Сбрасываем liveData но сохраняем ключи кастомных блоков
                 const freshLive = JSON.parse(JSON.stringify(defaultSettings.liveData));
                 // Добавляем слоты для всех promptBlocks (включая кастомные типа dogBarbos)
@@ -709,6 +1234,8 @@ jQuery(async () => {
                         }
                     });
                 }
+                // Восстанавливаем глобальный наряд игрока
+                freshLive.playerOutfitText = savedPlayerOutfitText;
                 settings.liveData = freshLive;
                 saveSettingsDebounced();
 
@@ -721,6 +1248,14 @@ jQuery(async () => {
                 UI.renderInfoBlocks(); MsgUI.updateAllJsonEditButtons(); UI.renderTrackers();
                 UI.renderCharacters(); MsgUI.updateHistoryButtons(); UI.renderRelationships();
                 
+                // Загружаем историю уведомлений для нового чата
+                try {
+                    const newChatId = NarrativeStorage.getCurrentChatId();
+                    const newChatData = getSettings().chatData?.[newChatId];
+                    notifHistory = newChatData?.notifHistory ? newChatData.notifHistory.slice(0, 50) : [];
+                } catch(e) { notifHistory = []; }
+                renderNotifPanel();
+
                 injectPromptIntoRequest(); // Сразу готовим промпт для нового чата!
             }, 600);
         });
@@ -805,11 +1340,11 @@ jQuery(async () => {
                     if (mesEl.length) {
                         const rawText = mesEl.text();
                         const rawHtml = mesEl.html();
-                        let jsonData = parseJsonFromMessage(rawText, openTag, closeTag)
-                            || parseJsonFromMessage(rawHtml, openTag, closeTag);
+                        let jsonData = parseModularJson(rawText, openTag, closeTag)
+                            || parseModularJson(rawHtml, openTag, closeTag);
                         if (!jsonData) {
                             const m = rawText.match(/\{[\s\S]*\}/);
-                            if (m) { try { jsonData = JSON.parse(m[0]); } catch(e) {} }
+                            if (m) { try { jsonData = JSON.parse(cleanJsonString(m[0])); } catch(e) {} }
                         }
                         if (jsonData) {
                             applyJsonUpdate(jsonData, msgIdToUse, swipeId);
@@ -845,6 +1380,11 @@ jQuery(async () => {
             MsgUI.updateAllJsonEditButtons(); MsgUI.updateHistoryButtons(); UI.renderTrackers();
             UI.renderRelationships(); UI.renderCharacters(); UI.renderInfoBlocks();
             injectPromptIntoRequest(); // Инициируем сразу при загрузке
+
+            // Инициализация интеграции карты
+            import('./map/MapIntegration.js').then(m => {
+                m.initMapIntegration(setExtensionPrompt, extension_prompt_types.IN_CHAT, extension_prompt_roles.SYSTEM);
+            });
         }, 1000);
 
     } catch (err) { console.error(`[${extensionName}] ❌ Failed:`, err); }

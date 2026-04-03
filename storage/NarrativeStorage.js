@@ -296,6 +296,7 @@ export const NarrativeStorage = {
         characters: liveData.characters || {},
         relHistory: liveData.relHistory || {},
         ignoredCharacters: liveData.ignoredCharacters || [],
+        playerOutfitText: liveData.playerOutfitText || "",
     };
     extension_settings[extensionName] = settings;
     saveSettingsDebounced();

@@ -37,8 +37,20 @@ export function stripHtml(str) {
     return str.replace(/<[^>]+>/gm, '').replace(/&[a-z0-9#]+;/gi, ' ').trim();
 }
 
+export function cleanJsonString(s) {
+    return s
+        .replace(/[\u2800-\u28FF]/g, ' ')   // Braille blanks → пробел
+        .replace(/[\u200B-\u200F\u2028-\u202F\u2060-\u206F\uFEFF]/g, '') // Zero-width chars
+        .replace(/\u00A0/g, ' ')             // NBSP → пробел
+        .replace(/\r\n/g, '\n');             // CRLF → LF
+}
+
 export function parseJsonFromMessage(text, openTag, closeTag) {
     if (!text) return null;
+
+    // Очистка невидимых символов (braille blanks U+2800, zero-width и т.д.)
+    const cleanJson = cleanJsonString;
+
     const openEscaped = escapeRegex(openTag);
     const closeEscaped = escapeRegex(closeTag);
     
@@ -46,12 +58,12 @@ export function parseJsonFromMessage(text, openTag, closeTag) {
     const match = text.match(regex);
     
     if (match) {
-        try { return JSON.parse(match[1]); } catch(e) { console.warn("[NHUD] Failed to parse JSON from tags:", e); }
+        try { return JSON.parse(cleanJson(match[1])); } catch(e) { console.warn("[NHUD] Failed to parse JSON from tags:", e); }
     }
     
     const jsonMatch = text.match(/\{[\s\S]*\}/);
     if (jsonMatch) {
-        try { return JSON.parse(jsonMatch[0]); } catch(e) { return null; }
+        try { return JSON.parse(cleanJson(jsonMatch[0])); } catch(e) { return null; }
     }
     return null;
 }

@@ -130,7 +130,7 @@ export function ensureCharInLive() {
     const existingKey = findCharacterKey(live.characters, charName);
     
     if (!existingKey) {
-        live.characters[charName] = { outfit: "", state: "", thoughts: "", relationship: 50, relationship_status: "", relationship_thoughts: "", relationship_hint: "" };
+        live.characters[charName] = { outfit: { head: '', torso: '', legs: '', feet: '', accessories: '' }, state: "", thoughts: "", relationship: 50, relationship_status: "", relationship_thoughts: "", relationship_hint: "" };
     } else if (existingKey !== charName) {
         live.characters[charName] = live.characters[existingKey];
         delete live.characters[existingKey];
@@ -182,6 +182,7 @@ export function restoreLiveData() {
         }
         if (saved.relHistory)          settings.liveData.relHistory          = saved.relHistory;
         if (saved.ignoredCharacters)   settings.liveData.ignoredCharacters   = saved.ignoredCharacters;
+        if (saved.playerOutfitText)    settings.liveData.playerOutfitText    = saved.playerOutfitText;
         saveSettingsDebounced();
     }
 }
