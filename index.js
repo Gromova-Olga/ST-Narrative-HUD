@@ -751,6 +751,11 @@ function buildCorePrompt(settings) {
     if (settings.modules?.datetime !== false) {
         skeleton += `,\n  "datetime": "date and time in ${lang}",\n  "location": "location in ${lang}",\n  "weather": "weather in ${lang}"`;
     }
+    // ДОБАВЛЯЕМ ВОТ ЭТО:
+    if (settings.modules?.map) {
+        skeleton += `,\n  "map_actions": [ { "action": "move", "entity": "Игрок", "zone": "zone_name", "anchor": "anchor_name" } ]`;
+    }
+    
     skeleton += `\n}`;
 
     const tags = HUD_TAGS.core;
@@ -872,7 +877,7 @@ function buildProgressionPrompt(settings) {
     if (settings.modules?.calendar !== false) progFields.push(`  "calendar_event": { "date": "DD.MM.YYYY", "desc": "Event description in ${lang}" }`);
     if (settings.modules?.achievements !== false) progFields.push(`  "achievement": { "title": "Achievement title", "desc": "Description", "icon": "🏆" }`);
     if (settings.modules?.hero !== false) progFields.push(`  "xp_gained": "small|medium|large"`);
-    if (settings.modules?.map) progFields.push(`  "map_actions": [ { "action": "move", "entity": "Игрок/Бот/NPC", "zone": "zone_name", "anchor": "anchor_name_or_null" }, { "action": "spawn", "entity": "NPC Name", "zone": "zone_name" }, { "action": "remove", "entity": "NPC Name" } ]`);
+    //if (settings.modules?.map) progFields.push(`  "map_actions": [ { "action": "move", "entity": "Игрок/Бот/NPC", "zone": "zone_name", "anchor": "anchor_name_or_null" }, { "action": "spawn", "entity": "NPC Name", "zone": "zone_name" }, { "action": "remove", "entity": "NPC Name" } ]`);
     if (settings.modules?.trackPlayerInventory || settings.modules?.trackBotInventory) progFields.push(`  "inventory_actions": [ { "action": "add", "entity": "Player", "item": "Item name in ${lang}" }, { "action": "remove", "entity": "Bot", "item": "Item name in ${lang}" } ]`);
     if (settings.modules?.notifications !== false) progFields.push(`  "notifications": [ { "sender": "Absent NPC Name or System", "text": "Message text in ${lang}" } ]`);
 
@@ -971,6 +976,8 @@ export function buildDynamicPrompt(settings) {
         finalPrompt += `\n    { "action": "remove", "entity": "NPC Name" }  // Remove NPC`;
         finalPrompt += `\n  ]`;
         finalPrompt += `\n- CRITICAL: For "zone" and "anchor" in map_actions, use ONLY exact, concise noun names from the spatial context. DO NOT invent descriptive sentences. (e.g. use "Стол", not "У стола рядом с Анной").`;
+        finalPrompt += `\n- CRITICAL: For "zone" and "anchor" in map_actions, use ONLY exact, concise noun names from the spatial context.`;
+        finalPrompt += `\n- You MUST update the "map_actions" array inside [HUD_CORE] every turn to reflect the CURRENT positions of the active characters, even if they haven't moved.`;
     }
 
     // МОДУЛЬ 2: Контекстные уведомления
