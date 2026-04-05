@@ -39,9 +39,22 @@ function hexToRgba(hex, alpha) {
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
-function getBgString(color, opacity, image) {
-    if (image) return `url('${image}') center/cover no-repeat`;
-    return hexToRgba(color || '#000000', opacity !== undefined ? opacity : 0.95);
+function getBgString(color, alpha, image) {
+    let a = alpha !== undefined ? parseFloat(alpha) : 0.95;
+    if (isNaN(a)) a = 0.95;
+    
+    if (image && image.trim() !== '') {
+        // Инвертируем ползунок: чем меньше прозрачность в UI, тем плотнее слой тонировки
+        let overlayOpacity = 1 - a; 
+        
+        // Создаем цветной слой на основе выбранного цвета (или дефолтного темного)
+        let overlayColor = hexToRgba(color, overlayOpacity);
+        
+        // Накладываем цветной полупрозрачный градиент ПОВЕРХ картинки
+        return `linear-gradient(${overlayColor}, ${overlayColor}), url('${image}') center / cover no-repeat`;
+    }
+    
+    return hexToRgba(color, a);
 }
 // ---------------------------------------------------------
 
