@@ -980,29 +980,29 @@ export function buildGlobalSettingsModal() {
     // ДОБАВИЛ СЮДА ВСЕ НОВЫЕ ПОЛЯ ДЛЯ КРАСИВОГО СЕЙВА
     const binds = {
         borderColor: '#nhud-d-border', textMuted: '#nhud-d-textMu', accent: '#nhud-d-accent', customCss: '#nhud-d-css',
-        
+    
         leftBgC: '#nhud-d-leftBgC', leftBgO: '#nhud-d-leftBgO', leftBgI: '#nhud-d-leftBgI', 
         leftTxtC: '#nhud-d-leftTxtC', leftTxtS: '#nhud-d-leftTxtS',
         leftHeadC: '#nhud-d-leftHeadC', leftHeadO: '#nhud-d-leftHeadO', leftHeadTxtC: '#nhud-d-leftHeadTxtC', leftHeadS: '#nhud-d-leftHeadS',
         leftInpC: '#nhud-d-leftInpC', leftInpO: '#nhud-d-leftInpO',
-        
+    
         hudBgC: '#nhud-d-hudBgC', hudBgO: '#nhud-d-hudBgO', hudBgI: '#nhud-d-hudBgI', 
         hudTxtC: '#nhud-d-hudTxtC', hudTxtS: '#nhud-d-hudTxtS',
         hudInpC: '#nhud-d-hudInpC', hudInpO: '#nhud-d-hudInpO',
-        
+    
         cenBgC: '#nhud-d-cenBgC', cenBgO: '#nhud-d-cenBgO', cenBgI: '#nhud-d-cenBgI', 
         cenTxtC: '#nhud-d-cenTxtC', cenTxtS: '#nhud-d-cenTxtS',
         cenHeadC: '#nhud-d-cenHeadC', cenHeadO: '#nhud-d-cenHeadO', cenHeadTxtC: '#nhud-d-cenHeadTxtC', cenHeadS: '#nhud-d-cenHeadS',
         cenInpC: '#nhud-d-cenInpC', cenInpO: '#nhud-d-cenInpO',
-        
+    
         popBgC: '#nhud-d-popBgC', popBgO: '#nhud-d-popBgO', popBgI: '#nhud-d-popBgI', 
         popTxtC: '#nhud-d-popTxtC', popTxtS: '#nhud-d-popTxtS',
         popHeadC: '#nhud-d-popHeadC', popHeadO: '#nhud-d-popHeadO',
         popInpC: '#nhud-d-popInpC', popInpO: '#nhud-d-popInpO', promptWidth: '#nhud-d-prmW',
-        
+    
         widBgColor: '#nhud-d-widC', widBgOpacity: '#nhud-d-widO', widBgImage: '#nhud-d-widI', 
         widTxtC: '#nhud-d-widTxtC', widTxtS: '#nhud-d-widTxtS',
-        
+    
         barColorStart: '#nhud-d-barS', barColorEnd: '#nhud-d-barE'
     };
 
