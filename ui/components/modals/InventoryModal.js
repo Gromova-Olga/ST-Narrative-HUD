@@ -40,6 +40,7 @@ export function renderInventory() {
         `);
 
         const buildList = (title, key, icon) => {
+            if (!inv[key]) inv[key] = []; // Защита от undefined
             let html = `<div style="background:rgba(255,255,255,0.03); padding:8px; border-radius:6px; border:1px solid #3a3050;">
                 <div style="font-size:11px; color:#a0a0b8; text-transform:uppercase; margin-bottom:6px; font-weight:bold;">${icon} ${title}</div>
                 <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:6px;">`;
@@ -62,14 +63,35 @@ export function renderInventory() {
         content.append(buildList("Транспорт", "vehicles", "🚗"));
         content.append(buildList("Недвижимость", "estate", "🏠"));
 
-        content.find('#nhud-inv-money').on('change', e => { inv.money = parseInt(e.target.value)||0; import('../../../../../script.js').then(s=>s.saveSettingsDebounced()); });
-        content.find('#nhud-inv-currency').on('change', e => { inv.currency = e.target.value; import('../../../../../script.js').then(s=>s.saveSettingsDebounced()); });
+        // Хелпер для обновления боковой панели, если она открыта
+        const syncSettingsPanel = () => {
+            if ($("#nhud-settings-panel").is(":visible")) {
+                import('../../SettingsUI.js').then(ui => {
+                    if (typeof ui.renderSettingsProperty === 'function') ui.renderSettingsProperty();
+                });
+            }
+        };
+
+        content.find('#nhud-inv-money').on('input', e => { 
+            inv.money = parseInt(e.target.value)||0; 
+            import('../../../../../script.js').then(s=>s.saveSettingsDebounced()); 
+            $('#nhud-settings-money').val(inv.money); // Синхрон визуала
+        });
+        
+        content.find('#nhud-inv-currency').on('input', e => { 
+            inv.currency = e.target.value; 
+            import('../../../../../script.js').then(s=>s.saveSettingsDebounced()); 
+            $('#nhud-settings-currency').val(inv.currency); // Синхрон визуала
+        });
+        
         content.find('.nhud-inv-del').on('click', function() {
             const key = $(this).data('key');
             inv[key].splice(parseInt($(this).data('idx')), 1);
             import('../../../../../script.js').then(s=>s.saveSettingsDebounced());
             renderInventory();
+            syncSettingsPanel();
         });
+        
         content.find('.nhud-inv-add').on('click', function() {
             const key = $(this).data('key');
             const val = content.find(`#nhud-inv-add-val-${key}`).val().trim();
@@ -77,6 +99,7 @@ export function renderInventory() {
                 inv[key].push(key === 'items' ? val : { name: val, desc: '', active: false });
                 import('../../../../../script.js').then(s=>s.saveSettingsDebounced());
                 renderInventory();
+                syncSettingsPanel();
             }
         });
     });

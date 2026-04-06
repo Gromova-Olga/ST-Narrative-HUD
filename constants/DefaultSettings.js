@@ -48,9 +48,11 @@ export const defaultSettings = {
         enableOutfitStats: false,
         enableOutfitTracking: true,
         notifications: true,
-        trackPlayerInventory: false,
-        trackBotInventory: false,
-        injectPlayerOutfit: false
+        trackPlayerInventory: true,
+        trackBotInventory: true,
+        injectPlayerOutfit: true,
+        botTrackers: true,
+        map: true
     },
     trackers: [
         { id: "health",  label: "Здоровье", max: 100, color: "#e05252" },
@@ -59,6 +61,10 @@ export const defaultSettings = {
         { id: "hygiene", label: "Гигиена",  max: 100, color: "#52e0a3" },
         { id: "mood",    label: "Настроение", max: 100, color: "#e052a8" },
         { id: "mana",    label: "Мана",     max: 100, color: "#a352e0" }
+    ],
+    botTrackers: [
+        { id: "health_bot",  label: "Здоровье", max: 100, color: "#e05252" },
+        { id: "peckish",   label: "Голод", max: 100, color: "#8a0303" } 
     ],
     characters: [],
     liveData: {

@@ -312,6 +312,19 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
             if (charData.relationship_thoughts)      live.characters[name].relationship_thoughts      = stripHtml(charData.relationship_thoughts);
             if (charData.relationship_hint)          live.characters[name].relationship_hint          = stripHtml(charData.relationship_hint);
             if (charData.relationship_change_reason) live.characters[name].relationship_change_reason = stripHtml(charData.relationship_change_reason);
+            // НОВОЕ: Парсинг трекеров бота
+            if (settings.modules?.botTrackers && charData.trackers && typeof charData.trackers === 'object') {
+                if (live.characters[name].botTrackersEnabled !== false) { // Проверяем локальный рубильник
+                    if (!live.characters[name].trackerValues) live.characters[name].trackerValues = {};
+                    
+                    Object.entries(charData.trackers).forEach(([tId, tVal]) => {
+                        // Ищем лимит трекера, чтобы ИИ не накрутил лишнего
+                        let def = live.characters[name].customTrackers?.find(t => t.id === tId) || settings.botTrackers?.find(t => t.id === tId);
+                        let max = def ? def.max : 100;
+                        live.characters[name].trackerValues[tId] = Math.min(max, Math.max(0, parseInt(tVal) || 0));
+                    });
+                }
+            }
         });
 
         // Персистим в chatData чтобы персонажи не пропадали между сценами
@@ -386,6 +399,22 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
 
     if (jsonData.xp_gained) {
         import('./core/StateManager.js').then(m => { const leveledUp = m.addHeroXp(jsonData.xp_gained); if (leveledUp) UI.showAchievementPopup({ title: "УРОВЕНЬ ПОВЫШЕН!", desc: "Вы получили 1 очко характеристик!", icon: "🌟" }); });
+    }
+
+    if (jsonData.skill_xp_gained && Array.isArray(jsonData.skill_xp_gained)) {
+        import('./core/StateManager.js').then(m => {
+            if (m.addSkillXp) {
+                jsonData.skill_xp_gained.forEach(skData => {
+                    if (!skData.name) return;
+                    const res = m.addSkillXp(skData.name, skData.amount);
+                    if (res && res.leveledUp) {
+                        UI.showAchievementPopup({ title: "НАВЫК ПОВЫШЕН!", desc: `«${skData.name}» достиг ${res.level} уровня!`, icon: "✨" });
+                    }
+                });
+                import('./ui/HeroSettings.js').then(hs => { if(hs.renderSettingsHeroSheet) hs.renderSettingsHeroSheet(); });
+                import('./ui/Modules.js').then(mod => { if(mod.renderHeroSheet) mod.renderHeroSheet(); });
+            }
+        });
     }
 
     if (jsonData.quests && Array.isArray(jsonData.quests)) {
@@ -595,6 +624,7 @@ export async function sendToAPI(manualTrigger = false) {
 
 export function buildMemoryInjectionBlock() {
     const live = getLive();
+    const settings = getSettings(); // Добавили получение настроек
     if (!live || !live.characters || Object.keys(live.characters).length === 0) return "";
 
     let memoryText = "\n[CURRENT DYNAMIC MEMORY & CHARACTER STATES]\n";
@@ -614,6 +644,20 @@ export function buildMemoryInjectionBlock() {
         if (charData.relationship_change_reason) {
             details.push(`Recent relationship shift reason: "${charData.relationship_change_reason}"`);
         }
+
+        // --- НОВОЕ: Добавляем трекеры бота в память ИИ ---
+        if (settings.modules?.botTrackers !== false && charData.botTrackersEnabled !== false) {
+            const trackersToRender = charData.customTrackers?.length > 0 ? charData.customTrackers : (settings.botTrackers || []);
+            let trkStrings = [];
+            trackersToRender.forEach(t => {
+                const val = charData.trackerValues?.[t.id] !== undefined ? charData.trackerValues[t.id] : t.max;
+                trkStrings.push(`${t.id}: ${val}/${t.max}`);
+            });
+            if (trkStrings.length > 0) {
+                details.push(`Trackers: ${trkStrings.join(', ')}`);
+            }
+        }
+        // ---------------------------------------------------
 
         if (details.length > 0) {
             charBlock += details.join(" | ");
@@ -708,6 +752,9 @@ function removeAllHudTags(text, legacyOpenTag, legacyCloseTag) {
 function buildCorePrompt(settings) {
     const lang = settings.prompts.language || 'Russian';
     let prompt = '';
+    
+    // Получаем имя игрока для жесткого разделения в промпте
+    const userName = getUserName() || 'Player'; 
 
     // Трекеры
     if (settings.modules?.trackers !== false) {
@@ -715,8 +762,9 @@ function buildCorePrompt(settings) {
         const live = getLive();
         const trackers = getChatTrackers();
         if (trackers && trackers.length > 0) {
-            const currentVals = trackers.map(t => `${t.label}: ${live.trackerValues[t.id] ?? t.max}/${t.max}`).join(', ');
-            prompt += `Current tracker values: ${currentVals}\n`;
+            // ИСПРАВЛЕНИЕ 1: Передаем ИИ ключ (id) вместе с названием, чтобы он понял, что "hunger" = "Сытость"
+            const currentVals = trackers.map(t => `"${t.id}" (${t.label}): ${live.trackerValues[t.id] ?? t.max}/${t.max}`).join(', ');
+            prompt += `Current tracker values for ${userName}: ${currentVals}\n`;
         }
     }
 
@@ -737,7 +785,11 @@ function buildCorePrompt(settings) {
     // JSON-скелет для CORE
     const statsHint = settings.modules?.enableOutfitStats ? ' (add stats in parentheses, e.g. "Leather jacket (+10 Armor)")' : '';
     const outfitSchema = `"outfit": {"head": "description in ${lang}${statsHint}", "torso": "description in ${lang}${statsHint}", "legs": "description in ${lang}${statsHint}", "feet": "description in ${lang}${statsHint}", "accessories": "description in ${lang}${statsHint}"}`;
-    let skeleton = `{\n  "characters": [\n    {\n      "name": "CharacterName",\n      "state": "current state in ${lang}",\n      ${outfitSchema},\n      "thoughts": "thoughts about user in ${lang}",\n      "relationship": 50,\n      "relationship_status": "status in ${lang}",\n      "relationship_thoughts": "thoughts in ${lang}",\n      "relationship_hint": "hint in ${lang}",\n      "relationship_change_reason": "reason in ${lang}"\n    }\n  ]`;
+    
+    // ИСПРАВЛЕНИЕ 2: Прямо в скелете пишем, что брать нужно только ключи из памяти
+    const botTrackersHint = settings.modules?.botTrackers !== false ? ',\n      "trackers": { "ONLY_keys_from_memory": 85 }' : '';
+    
+    let skeleton = `{\n  "characters": [\n    {\n      "name": "CharacterName",\n      "state": "current state in ${lang}",\n      ${outfitSchema},\n      "thoughts": "thoughts about user in ${lang}",\n      "relationship": 50,\n      "relationship_status": "status in ${lang}",\n      "relationship_thoughts": "thoughts in ${lang}",\n      "relationship_hint": "hint in ${lang}",\n      "relationship_change_reason": "reason in ${lang}"${botTrackersHint}\n    }\n  ]`;
 
     if (settings.modules?.trackers !== false) {
         const trackers = getChatTrackers();
@@ -751,15 +803,23 @@ function buildCorePrompt(settings) {
     if (settings.modules?.datetime !== false) {
         skeleton += `,\n  "datetime": "date and time in ${lang}",\n  "location": "location in ${lang}",\n  "weather": "weather in ${lang}"`;
     }
-    // ДОБАВЛЯЕМ ВОТ ЭТО:
     if (settings.modules?.map) {
-        skeleton += `,\n  "map_actions": [ { "action": "move", "entity": "Игрок", "zone": "zone_name", "anchor": "anchor_name" } ]`;
+        skeleton += `,\n  "map_actions": [ { "action": "move", "entity": "${userName}", "zone": "zone_name", "anchor": "anchor_name" } ]`;
     }
     
     skeleton += `\n}`;
 
     const tags = HUD_TAGS.core;
     prompt += `\n\nCRITICAL: All text values MUST be in ${lang}.`;
+    
+    // ИСПРАВЛЕНИЕ 3: Жесткое словесное разделение Игрока и NPC
+    if (settings.modules?.botTrackers !== false) {
+        prompt += `\nCRITICAL NPC TRACKERS: Do NOT invent trackers for NPCs in the "characters" array. ONLY use tracker keys explicitly listed in their [CURRENT DYNAMIC MEMORY] block. If an NPC has no trackers in memory, OMIT their "trackers" field entirely.`;
+    }
+    if (settings.modules?.trackers !== false) {
+        prompt += `\nCRITICAL PLAYER TRACKERS: The main "trackers" object at the root of [HUD_CORE] belongs EXCLUSIVELY to ${userName} (the Player). You MUST dynamically update ${userName}'s trackers based on the narrative. Ensure you map the labels (like "Сытость") to the correct JSON keys (like "hunger").`;
+    }
+
     prompt += `\n\nYou MUST output this block in EVERY response. Wrap it in ${tags.open}...${tags.close} tags:\n${tags.open}\n${skeleton}\n${tags.close}`;
 
     return prompt;
@@ -780,6 +840,7 @@ function buildProgressionPrompt(settings) {
     if (settings.modules?.quests && settings.prompts?.questsPrompt) prompt += settings.prompts.questsPrompt + "\n";
     if (settings.modules?.achievements && settings.prompts?.achievementsPrompt) prompt += settings.prompts.achievementsPrompt + "\n";
     if (settings.modules?.hero && settings.prompts?.heroPrompt) prompt += settings.prompts.heroPrompt + "\n";
+    if (settings.modules?.heroSkills !== false) prompt += "Did the user successfully use a specific skill? If YES: return JSON array 'skill_xp_gained' with objects {name(exact skill name), amount('small'|'medium'|'large')}. If NO: omit the field entirely.\n";
     if (settings.modules?.factions && settings.prompts?.factionsPrompt) prompt += settings.prompts.factionsPrompt + "\n";
 
     // Контекстные данные из chatData
@@ -802,9 +863,24 @@ function buildProgressionPrompt(settings) {
         if (settings.modules?.hero) {
             const sheet = chatData.heroSheet;
             if (sheet) {
-                prompt += `\n[User Character Stats: Level ${sheet.level} | ` +
+                let promptHero = `\n[User Character Stats: Level ${sheet.level} | ` +
                     Object.entries(sheet.stats).map(([k, v]) => `${k.replace(/[^а-яА-Яa-zA-Z\s]/g, '').trim()}: ${v}`).join(', ') +
                     `. Take these into account for action outcomes.]\n`;
+                
+                // НОВОЕ: Внедряем скиллы и дисциплины
+                if (sheet.skills && sheet.skills.length > 0) {
+                    promptHero += `[User Skills / Disciplines]\n`;
+                    sheet.skills.forEach(sk => {
+                        promptHero += `- ${sk.name} (Lvl ${sk.level}, XP: ${sk.xp || 0}/${sk.level * 100})`;
+                        // Если глазик включен, отправляем описание. Например: "Доминирование: Позволяет внушать мысли смертным..."
+                        if (sk.showDesc && sk.desc) {
+                            promptHero += `: ${sk.desc}`;
+                        }
+                        promptHero += `\n`;
+                    });
+                    promptHero += `[End Skills]\n`;
+                }
+                prompt += promptHero;
             }
         }
 
@@ -877,6 +953,7 @@ function buildProgressionPrompt(settings) {
     if (settings.modules?.calendar !== false) progFields.push(`  "calendar_event": { "date": "DD.MM.YYYY", "desc": "Event description in ${lang}" }`);
     if (settings.modules?.achievements !== false) progFields.push(`  "achievement": { "title": "Achievement title", "desc": "Description", "icon": "🏆" }`);
     if (settings.modules?.hero !== false) progFields.push(`  "xp_gained": "small|medium|large"`);
+    if (settings.modules?.heroSkills !== false) progFields.push(`  "skill_xp_gained": [ { "name": "SkillName", "amount": "small|medium|large" } ]`);
     //if (settings.modules?.map) progFields.push(`  "map_actions": [ { "action": "move", "entity": "Игрок/Бот/NPC", "zone": "zone_name", "anchor": "anchor_name_or_null" }, { "action": "spawn", "entity": "NPC Name", "zone": "zone_name" }, { "action": "remove", "entity": "NPC Name" } ]`);
     if (settings.modules?.trackPlayerInventory || settings.modules?.trackBotInventory) progFields.push(`  "inventory_actions": [ { "action": "add", "entity": "Player", "item": "Item name in ${lang}" }, { "action": "remove", "entity": "Bot", "item": "Item name in ${lang}" } ]`);
     if (settings.modules?.notifications !== false) progFields.push(`  "notifications": [ { "sender": "Absent NPC Name or System", "text": "Message text in ${lang}" } ]`);

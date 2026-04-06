@@ -231,5 +231,78 @@ export function renderSettingsTrackers() {
             relList.append(card);
         });
     }
+    // --- 4. КРАСИВЫЙ БЛОК ТРЕКЕРОВ БОТОВ (ГАРМОШКА В ПЕРСОНАЖАХ) ---
+    const relContainer = $("#nhud-settings-rel-container");
+    if (relContainer.length && $("#nhud-settings-bta-container").length === 0) {
+        // Добавляем HTML гармошки ровно под блоком отношений
+        relContainer.after(`
+            <div id="nhud-settings-bta-container" style="padding-top:10px;">
+                <details open style="border:1px solid var(--nhud-border); border-radius:4px; padding:5px; background:rgba(0,0,0,0.2);">
+                    <summary style="font-weight:bold; color:#52a8e0; cursor:pointer; padding:5px; outline:none; user-select:none;">🤖 Состояние и Трекеры NPC</summary>
+                    <div id="nhud-settings-bta-list" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+                </details>
+            </div>
+        `);
+    }
+
+    const btaList = $("#nhud-settings-bta-list");
+    if (btaList.length) {
+        btaList.empty();
+        let hasTrackers = false;
+
+        // charNames уже вычислены чуть выше в функции, используем их
+        charNames.forEach(name => {
+            const char = live.characters[name];
+            if (char.botTrackersEnabled === false) return; // Пропускаем, если трекеры для этого бота выключены
+
+            const trackersToRender = char.customTrackers?.length > 0 ? char.customTrackers : (getSettings().botTrackers || []);
+            if (trackersToRender.length === 0) return;
+
+            hasTrackers = true;
+            
+            // Карточка персонажа
+            const card = $(`
+                <div style="background:rgba(255,255,255,0.02); padding:8px 10px; border-radius:6px; border:1px solid #3a3050;">
+                    <div style="font-weight:bold; color:#e0d0a0; font-size:12px; margin-bottom:8px;">${name}</div>
+                    <div class="nhud-bta-trackers-wrapper"></div>
+                </div>
+            `);
+
+            const tWrapper = card.find('.nhud-bta-trackers-wrapper');
+            
+            // Рисуем сами полоски трекеров
+            trackersToRender.forEach(t => {
+                const val = char.trackerValues?.[t.id] !== undefined ? char.trackerValues[t.id] : t.max;
+                const pct = Math.max(0, Math.min(100, Math.round((val / t.max) * 100)));
+                
+                const tRow = $(`
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <span style="font-size:11px; color:#c0b0a0; width:90px; overflow:hidden; text-overflow:ellipsis;" title="${t.label}">${t.label}</span>
+                        <div style="flex:1; height:6px; background:#1a1628; border-radius:3px; overflow:hidden; border:1px solid #2a2040;">
+                            <div style="width:${pct}%; height:100%; background:${t.color || '#e05252'}; transition:0.3s;"></div>
+                        </div>
+                        <input type="number" class="nhud-bta-val" value="${val}" min="0" max="${t.max}" style="width:40px; padding:2px; font-size:10px; text-align:center; background:rgba(0,0,0,0.4); color:#fff; border:1px solid #4a3050; border-radius:4px;" />
+                    </div>
+                `);
+
+                // Если ты поменяешь значение ручками — всё сохранится и обновится
+                tRow.find('.nhud-bta-val').on('change', function() {
+                    if (!char.trackerValues) char.trackerValues = {};
+                    char.trackerValues[t.id] = Math.min(Math.max(0, parseInt($(this).val()) || 0), t.max);
+                    import('../../../../../../script.js').then(s => { if(s.saveSettingsDebounced) s.saveSettingsDebounced(); });
+                    renderSettingsTrackers(); 
+                    import('../../UIManager.js').then(ui => { if(ui.renderMiniBots) ui.renderMiniBots(); });
+                });
+                
+                tWrapper.append(tRow);
+            });
+            btaList.append(card);
+        });
+
+        // Заглушка, если трекеров пока нет
+        if (!hasTrackers) {
+            btaList.append('<div style="color:#606080; font-size:11px; text-align:center; padding:10px;">Нет активных трекеров для персонажей в сцене.</div>');
+        }
+    }
 }
 

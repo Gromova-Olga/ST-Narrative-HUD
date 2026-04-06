@@ -3635,6 +3635,7 @@ html.theme-glass .nhud-char-avatar-placeholder, body.theme-glass .nhud-char-avat
    ========================================================================== */
 /* 1. Расширяем эффект стекла на специфичные окна (Герой, Инвентарь, Кодекс и т.д.) */
 html.theme-glass #nhud-hero-sheet, body.theme-glass #nhud-hero-sheet,
+html.theme-glass #nhud-mini-bots, body.theme-glass #nhud-mini-bots,
 html.theme-glass #nhud-quest-panel, body.theme-glass #nhud-quest-panel,
 html.theme-glass #nhud-notif-panel, body.theme-glass #nhud-notif-panel,
 html.theme-glass #nhud-calendar-panel, body.theme-glass #nhud-calendar-panel,
@@ -4753,7 +4754,8 @@ input[type="number"].nhud-rel-val-input {
    ========================================================================== */
 @media screen and (max-width: 1000px) {
     #nhud-notif-panel,
-    #nhud-map-container {
+    #nhud-map-container,
+    #nhud-mini-bots {
         position: fixed !important;
         left: 2vw !important;
         width: 96vw !important;
@@ -4766,3 +4768,14 @@ input[type="number"].nhud-rel-val-input {
         z-index: 10005 !important; /* Поверх всех остальных панелей */
     }
 }
+
+/* Броня от кастомных тем: принудительная подсветка активных вкладок */
+.nhud-tab.active, 
+.nhud-s-tab.active, 
+.nhud-g-tab.active {
+    background: var(--SmartThemeBlurTintColor, rgba(255, 255, 255, 0.15)) !important;
+    color: var(--text-color, #ffffff) !important;
+    border-left-color: var(--SmartThemeBorderColor, #52a8e0) !important;
+    opacity: 1 !important;
+    box-shadow: inset 2px 0 0 var(--SmartThemeBorderColor, #52a8e0) !important;
+}   

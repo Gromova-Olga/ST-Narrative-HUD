@@ -848,12 +848,13 @@ export function renderSettingsTrackers() {
     
     const isDynamic = getSettings().design?.barDynamic !== false;
 
+    // --- 1. РЕНДЕР ТРЕКЕРОВ ИГРОКА ---
     trackers.forEach((tracker, idx) => {
         const currentVal = live.trackerValues[tracker.id] !== undefined ? live.trackerValues[tracker.id] : tracker.max;
         const colorPickerStyle = isDynamic ? 'display:none;' : 'display:block;';
 
         const row = $(`
-            <div class="nhud-settings-tracker-row" data-idx="${idx}">
+            <div class="nhud-settings-tracker-row" data-idx="${idx}" style="display:flex; gap:6px; margin-bottom:8px; align-items:center;">
                 <input class="nhud-s-label nhud-input" type="text" placeholder="Название" value="${tracker.label}" style="flex:1;" />
                 <input class="nhud-s-id nhud-input" type="text" placeholder="id" value="${tracker.id}" style="width:70px;" />
                 <div style="display:flex; flex-direction:column; gap:2px;">
@@ -864,8 +865,8 @@ export function renderSettingsTrackers() {
                     <span style="font-size:0.6em; color:#606080; line-height:1;">Макс.</span>
                     <input class="nhud-s-max nhud-input" type="number" min="1" value="${tracker.max}" style="width:45px; padding:4px;" />
                 </div>
-                <input class="nhud-s-color" type="color" value="${tracker.color}" style="${colorPickerStyle}" />
-                <button class="nhud-s-delete nhud-s-delete-btn">✕</button>
+                <input class="nhud-s-color" type="color" value="${tracker.color}" style="width:28px; height:28px; padding:0; border:none; border-radius:4px; cursor:pointer; margin-top:10px; ${colorPickerStyle}" />
+                <button class="nhud-s-delete nhud-s-delete-btn" style="width:24px; padding:2px 0; margin-top:10px;">✕</button>
             </div>
         `);
         
@@ -893,33 +894,86 @@ export function renderSettingsTrackers() {
         list.append(row);
     });
 
+    // --- 2. РЕНДЕР ШАБЛОНОВ ДЛЯ БОТОВ (НОВОЕ) ---
+    let botContainer = $("#nhud-settings-bot-trackers-container");
+    if (!botContainer.length) {
+        $("#nhud-add-tracker").after(`
+            <div id="nhud-settings-bot-trackers-container" style="margin-top:20px; border-top:1px dashed var(--nhud-border); padding-top:15px;">
+                <div style="font-weight:bold; color:#52a8e0; margin-bottom:10px;">🤖 Шаблоны кастомных трекеров NPC</div>
+                <div style="font-size:11px; color:#a08080; margin-bottom:10px;">Эти трекеры будут добавлены всем активным NPC. ИИ сможет ими управлять.</div>
+                <div id="nhud-settings-bot-tracker-list"></div>
+                <button id="nhud-add-bot-tracker" class="nhud-add-btn" style="background:rgba(82, 168, 224, 0.15); border-color:#3a5a80; color:#80b0e0;">+ Добавить шаблон NPC</button>
+            </div>
+        `);
+
+        $("#nhud-add-bot-tracker").on("click", () => {
+            const settings = getSettings();
+            if (!settings.botTrackers) settings.botTrackers = [];
+            settings.botTrackers.push({ id: `bot_stat_${Date.now()}`, label: "Новый стат", max: 100, color: "#e05252" });
+            import('../../../../../../script.js').then(s => { if (s.saveSettingsDebounced) s.saveSettingsDebounced(); });
+            renderSettingsTrackers();
+        });
+    }
+
+    const botList = $("#nhud-settings-bot-tracker-list");
+    botList.empty();
+    const botTrackers = getSettings().botTrackers || [];
+
+    botTrackers.forEach((tracker, idx) => {
+        const row = $(`
+            <div class="nhud-settings-tracker-row" style="display:flex; gap:6px; margin-bottom:8px; align-items:center; background:rgba(0,0,0,0.2); padding:6px; border-radius:4px; border:1px solid #2a3040;">
+                <input class="nhud-bot-t-label nhud-input" type="text" placeholder="Название" value="${tracker.label}" style="flex:1;" />
+                <input class="nhud-bot-t-id nhud-input" type="text" placeholder="id (для JSON)" value="${tracker.id}" style="width:100px;" />
+                <div style="display:flex; flex-direction:column; gap:2px;">
+                    <span style="font-size:0.6em; color:#606080; line-height:1;">Макс.</span>
+                    <input class="nhud-bot-t-max nhud-input" type="number" min="1" value="${tracker.max}" style="width:50px; padding:4px;" />
+                </div>
+                <input class="nhud-bot-t-color" type="color" value="${tracker.color}" style="width:28px; height:28px; padding:0; border:none; border-radius:4px; cursor:pointer; margin-top:10px;" title="Цвет полоски" />
+                <button class="nhud-bot-t-delete nhud-s-delete-btn" style="width:24px; padding:2px 0; margin-top:10px;">✕</button>
+            </div>
+        `);
+
+        row.find(".nhud-bot-t-label").on("input", e => { botTrackers[idx].label = e.target.value; import('../../../../../../script.js').then(s => { if (s.saveSettingsDebounced) s.saveSettingsDebounced(); }); });
+        row.find(".nhud-bot-t-id").on("input", e => { botTrackers[idx].id = e.target.value; import('../../../../../../script.js').then(s => { if (s.saveSettingsDebounced) s.saveSettingsDebounced(); }); });
+        row.find(".nhud-bot-t-max").on("input", e => { botTrackers[idx].max = parseInt(e.target.value) || 100; import('../../../../../../script.js').then(s => { if (s.saveSettingsDebounced) s.saveSettingsDebounced(); }); });
+        row.find(".nhud-bot-t-color").on("input", e => { botTrackers[idx].color = e.target.value; import('../../../../../../script.js').then(s => { if (s.saveSettingsDebounced) s.saveSettingsDebounced(); }); });
+        row.find(".nhud-bot-t-delete").on("click", () => {
+            botTrackers.splice(idx, 1);
+            import('../../../../../../script.js').then(s => { if (s.saveSettingsDebounced) s.saveSettingsDebounced(); });
+            renderSettingsTrackers();
+        });
+
+        botList.append(row);
+    });
+
+    // --- 3. БЛОК ОТНОШЕНИЙ ---
     const placeholder = $("#nhud-settings-rel-container-placeholder");
     if (placeholder.length && placeholder.find("#nhud-settings-rel-container").length === 0) {
         placeholder.html(`
-            <div id="nhud-settings-rel-container" class="nhud-rel-container">
-                <details open class="nhud-details-card">
-                    <summary class="nhud-acc-header">❤️ Отношения с персонажами</summary>
-                    <div class="nhud-rel-actions">
-                        <button id="nhud-s-rel-statuses-btn" class="nhud-add-btn nhud-rel-statuses-btn" title="Настроить статусы отношений">🏷️ Статусы</button>
+            <div id="nhud-settings-rel-container" style="padding-top:5px;">
+                <details open style="border:1px solid var(--nhud-border); border-radius:4px; padding:5px; background:rgba(0,0,0,0.2);">
+                    <summary style="font-weight:bold; color:var(--nhud-accent); cursor:pointer; padding:5px; outline:none; user-select:none;">❤️ Отношения с персонажами</summary>
+                    <div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; margin:10px 0;">
+                        <button id="nhud-s-rel-statuses-btn" class="nhud-add-btn" style="margin:0; padding:4px 8px; background:rgba(200, 100, 150, 0.15); border:1px solid #803a5a; color:#e080b0; transition:0.2s;" title="Настроить статусы отношений">🏷️ Статусы</button>
                         
                         <div style="display:flex; gap:6px; align-items:center; flex-wrap:wrap;">
-                            <button id="nhud-open-analytics-btn" class="nhud-add-btn nhud-analytics-btn">📈 Аналитика</button>
-                            <label class="nhud-hints-toggle-label">
+                            <button id="nhud-open-analytics-btn" class="nhud-add-btn" style="margin:0; padding:4px 8px; background:rgba(82, 168, 224, 0.15); border:1px solid #3a5a80; color:#80b0e0; transition:0.2s;">📈 Аналитика</button>
+                            <label style="font-size:0.75em; color:#d0d0a0; display:flex; gap:6px; cursor:pointer; align-items:center; background:rgba(200,200,100,0.1); padding:4px 8px; border-radius:4px; border:1px solid #606040; white-space:nowrap;">
                                 <input type="checkbox" id="nhud-s-rel-hints-toggle" />
                                 💡 Подсказки
                             </label>
                         </div>
                     </div>
-                    <div id="nhud-s-rel-statuses-wrapper" class="nhud-rel-statuses-wrapper">
-                        <div class="nhud-rel-statuses-title">Доступные статусы (через запятую):</div>
-                        <textarea id="nhud-s-rel-statuses" class="nhud-textarea nhud-rel-statuses-textarea" rows="2" placeholder="Враг, Незнакомец, Друг..."></textarea>
+                    <div id="nhud-s-rel-statuses-wrapper" style="display:none; margin-bottom:10px; padding:8px; background:rgba(0,0,0,0.2); border:1px dashed #803a5a; border-radius:4px;">
+                        <div style="font-size:0.7em; color:#e080b0; margin-bottom:4px; text-transform:uppercase;">Доступные статусы (через запятую):</div>
+                        <textarea id="nhud-s-rel-statuses" class="nhud-textarea" rows="2" style="width:100%; box-sizing:border-box; font-size:0.8em; color:#a090c0; border-color:#803a5a; resize:vertical;" placeholder="Враг, Незнакомец, Друг..."></textarea>
                     </div>
                     <div id="nhud-settings-rel-list"></div>
                 </details>
             </div>
         `);
 
-        if (getSettings().modules.analytics === false) {
+        if (getSettings().modules?.analytics === false) {
             $("#nhud-open-analytics-btn").hide();
         }
 
@@ -968,49 +1022,49 @@ export function renderSettingsTrackers() {
             
             const globalChar = getSettings().characters.find(c => c.name?.toLowerCase() === name.toLowerCase()) || {};
             const avatarHtml = globalChar.avatar 
-                ? `<img src="${globalChar.avatar}" class="nhud-rel-avatar-img" onerror="this.style.display='none'"/>`
-                : `<div class="nhud-rel-avatar-placeholder">${name[0].toUpperCase()}</div>`;
+                ? `<img src="${globalChar.avatar}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"/>`
+                : `<div style="width:100%;height:100%;background:#1a1628;color:#6060a0;display:flex;align-items:center;justify-content:center;font-weight:bold;">${name[0].toUpperCase()}</div>`;
 
-            let barColorClass = "nhud-rel-bar-fill-medium"; 
-            if (relVal < 30) barColorClass = "nhud-rel-bar-fill-low"; 
-            else if (relVal < 45) barColorClass = "nhud-rel-bar-fill-medium-low"; 
-            else if (relVal >= 80) barColorClass = "nhud-rel-bar-fill-high"; 
-            else if (relVal >= 60) barColorClass = "nhud-rel-bar-fill-medium-high"; 
+            let barColor = "#a090c0"; 
+            if (relVal < 30) barColor = "#e05252"; 
+            else if (relVal < 45) barColor = "#e0a352"; 
+            else if (relVal >= 80) barColor = "#e052a8"; 
+            else if (relVal >= 60) barColor = "#52e0a3"; 
 
             const card = $(`
-                <div class="nhud-rel-card">
-                    <div class="nhud-rel-card-header">
-                        <div class="nhud-rel-avatar">
+                <div style="display:flex; flex-direction:column; gap:8px; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px; border:1px solid #3a3050; margin-bottom:10px;">
+                    <div style="display:flex; gap:10px; align-items:flex-start;">
+                        <div style="width:42px; height:42px; border-radius:4px; overflow:hidden; border:1px solid #4a4060; flex-shrink:0;">
                             ${avatarHtml}
                         </div>
                         <div style="flex:1; min-width:0;">
                             <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
-                                <span class="nhud-rel-name">${name}</span>
+                                <span style="font-weight:bold; color:#e0d0a0; font-size:0.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</span>
                                 <div style="display:flex; gap:4px; align-items:center;">
-                                    ${getSettings().modules.analytics !== false ? `<button class="nhud-s-rel-journal-btn nhud-rel-action-btn" data-name="${name}" title="Открыть журнал связей">📜</button>` : ''}
-                                    <button class="nhud-s-rel-hide-scene-btn nhud-rel-action-btn" data-name="${name}" title="Убрать из текущей сцены (сохранится во вкладке Персонажи)">✕</button>
-                                    <button class="nhud-s-rel-toggle-btn nhud-rel-action-btn ${char.ignoreRelationship ? 'nhud-rel-toggle-btn-ignored' : ''}" data-name="${name}" title="Скрыть полоску из HUD">${char.ignoreRelationship ? '👁️‍🗨️' : '👁️'}</button>
-                                    <input class="nhud-input nhud-rel-status-input" value="${status}" placeholder="Статус..." />
+                                    ${getSettings().modules?.analytics !== false ? `<button class="nhud-s-rel-journal-btn" data-name="${name}" title="Открыть журнал связей" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 4px; transition:0.2s;">📜</button>` : ''}
+                                    <button class="nhud-s-rel-hide-scene-btn" data-name="${name}" title="Убрать из текущей сцены (сохранится во вкладке Персонажи)" style="background:none; border:none; color:#e05252; cursor:pointer; font-size:14px; padding:0 4px; transition:0.2s;">✕</button>
+                                    <button class="nhud-s-rel-toggle-btn" data-name="${name}" title="Скрыть полоску из HUD" style="background:none; border:none; cursor:pointer; font-size:14px; padding:0 4px; transition:0.2s; filter: grayscale(${char.ignoreRelationship ? '100%' : '0'});">${char.ignoreRelationship ? '👁️‍🗨️' : '👁️'}</button>
+                                    <textarea class="nhud-input nhud-s-rel-status" style="width:110px; padding:2px 4px; font-size:0.75em; text-align:right; color:#c0b0a0; border-color:#4a3030; resize:vertical; min-height:24px; line-height:1.2; font-family:inherit; background:transparent;" placeholder="Статус..." rows="2">${status}</textarea>
                                 </div>
                             </div>
-                            <div class="nhud-rel-bar-container">
-                                <div class="nhud-rel-bar">
-                                    <div class="nhud-rel-bar-fill ${barColorClass}" style="width:${relVal}%;"></div>
+                            <div style="display:flex; align-items:center; gap:6px;">
+                                <div style="flex:1; height:6px; background:#1a1628; border-radius:3px; overflow:hidden; border:1px solid #2a2040;">
+                                    <div style="width:${relVal}%; height:100%; background:${barColor};"></div>
                                 </div>
-                                <input class="nhud-input nhud-rel-val-input" type="number" min="0" max="100" value="${relVal}" />
+                                <input class="nhud-input nhud-s-rel-val" type="number" min="0" max="100" value="${relVal}" style="width:40px; padding:2px; font-size:0.75em; text-align:center;" />
                             </div>
                         </div>
                     </div>
                     
                     <div>
-                        <div class="nhud-rel-section-title">💭 Отношение к тебе</div>
-                        <textarea class="nhud-textarea nhud-rel-thoughts" rows="2" placeholder="Что персонаж думает о тебе...">${thoughts}</textarea>
+                        <div style="font-size:0.65em; color:#52a8e0; text-transform:uppercase; margin-bottom:2px; font-weight:bold;">💭 Отношение к тебе</div>
+                        <textarea class="nhud-textarea nhud-s-rel-thoughts" rows="2" style="font-size:0.75em; padding:4px; border-color:#203050; color:#a0c0e0;" placeholder="Что персонаж думает о тебе...">${thoughts}</textarea>
                     </div>
                     
                     ${relSettings.hintsEnabled ? `
                     <div style="margin-top:2px;">
-                        <div class="nhud-rel-section-title">💡 Цель / Подсказка</div>
-                        <textarea class="nhud-textarea nhud-rel-hint" rows="2" placeholder="Возможное действие...">${hint}</textarea>
+                        <div style="font-size:0.65em; color:#d0d0a0; text-transform:uppercase; margin-bottom:2px; font-weight:bold;">💡 Цель / Подсказка</div>
+                        <textarea class="nhud-textarea nhud-s-rel-hint" rows="2" style="font-size:0.75em; padding:4px; border-color:#606040; color:#e0e0b0; background:#202015;" placeholder="Возможное действие...">${hint}</textarea>
                     </div>` : ''}
                 </div>
             `);
@@ -1020,9 +1074,13 @@ export function renderSettingsTrackers() {
                 live.characters[name].isHiddenFromScene = true;
                 saveSettingsDebounced();
                 renderSettingsTrackers();
-                renderCharacters();
-                renderRelationships();
-                renderSettingsCharacterAccordion(); 
+                import('../../UIManager.js').then(ui => {
+                    if (ui.renderCharacters) ui.renderCharacters();
+                    if (ui.renderRelationships) ui.renderRelationships();
+                });
+                import('../../SettingsUI.js').then(su => {
+                    if (su.renderSettingsCharacterAccordion) su.renderSettingsCharacterAccordion(); 
+                });
             });
 
             card.find('.nhud-s-rel-journal-btn').on('click', function(e) {
@@ -1035,13 +1093,16 @@ export function renderSettingsTrackers() {
                 live.characters[name].ignoreRelationship = !live.characters[name].ignoreRelationship;
                 saveSettingsDebounced();
                 renderSettingsTrackers();
-                renderRelationships();
-                if (typeof renderMiniSims === 'function') renderMiniSims();
+                import('../../UIManager.js').then(ui => {
+                    if (ui.renderRelationships) ui.renderRelationships();
+                    if (ui.renderMiniSims) ui.renderMiniSims();
+                });
             });
 
             card.find('.nhud-s-rel-val').on('input', e => {
                 live.characters[name].relationship = Math.min(Math.max(0, parseInt(e.target.value) || 0), 100);
-                saveSettingsDebounced(); renderRelationships();
+                saveSettingsDebounced(); 
+                import('../../UIManager.js').then(ui => { if(ui.renderRelationships) ui.renderRelationships(); });
             });
             
             card.find('.nhud-s-rel-status').on('input', e => {
@@ -1058,6 +1119,79 @@ export function renderSettingsTrackers() {
 
             relList.append(card);
         });
+    }
+    // --- 4. КРАСИВЫЙ БЛОК ТРЕКЕРОВ БОТОВ (ГАРМОШКА В ПЕРСОНАЖАХ) ---
+    const relContainer = $("#nhud-settings-rel-container");
+    if (relContainer.length && $("#nhud-settings-bta-container").length === 0) {
+        // Добавляем HTML гармошки ровно под блоком отношений
+        relContainer.after(`
+            <div id="nhud-settings-bta-container" style="padding-top:10px;">
+                <details open style="border:1px solid var(--nhud-border); border-radius:4px; padding:5px; background:rgba(0,0,0,0.2);">
+                    <summary style="font-weight:bold; color:#52a8e0; cursor:pointer; padding:5px; outline:none; user-select:none;">🤖 Состояние и Трекеры NPC</summary>
+                    <div id="nhud-settings-bta-list" style="margin-top:10px; display:flex; flex-direction:column; gap:8px;"></div>
+                </details>
+            </div>
+        `);
+    }
+
+    const btaList = $("#nhud-settings-bta-list");
+    if (btaList.length) {
+        btaList.empty();
+        let hasTrackers = false;
+
+        // charNames уже вычислены чуть выше в функции, используем их
+        charNames.forEach(name => {
+            const char = live.characters[name];
+            if (char.botTrackersEnabled === false) return; // Пропускаем, если трекеры для этого бота выключены
+
+            const trackersToRender = char.customTrackers?.length > 0 ? char.customTrackers : (getSettings().botTrackers || []);
+            if (trackersToRender.length === 0) return;
+
+            hasTrackers = true;
+            
+            // Карточка персонажа
+            const card = $(`
+                <div style="background:rgba(255,255,255,0.02); padding:8px 10px; border-radius:6px; border:1px solid #3a3050;">
+                    <div style="font-weight:bold; color:#e0d0a0; font-size:12px; margin-bottom:8px;">${name}</div>
+                    <div class="nhud-bta-trackers-wrapper"></div>
+                </div>
+            `);
+
+            const tWrapper = card.find('.nhud-bta-trackers-wrapper');
+            
+            // Рисуем сами полоски трекеров
+            trackersToRender.forEach(t => {
+                const val = char.trackerValues?.[t.id] !== undefined ? char.trackerValues[t.id] : t.max;
+                const pct = Math.max(0, Math.min(100, Math.round((val / t.max) * 100)));
+                
+                const tRow = $(`
+                    <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                        <span style="font-size:11px; color:#c0b0a0; width:90px; overflow:hidden; text-overflow:ellipsis;" title="${t.label}">${t.label}</span>
+                        <div style="flex:1; height:6px; background:#1a1628; border-radius:3px; overflow:hidden; border:1px solid #2a2040;">
+                            <div style="width:${pct}%; height:100%; background:${t.color || '#e05252'}; transition:0.3s;"></div>
+                        </div>
+                        <input type="number" class="nhud-bta-val" value="${val}" min="0" max="${t.max}" style="width:40px; padding:2px; font-size:10px; text-align:center; background:rgba(0,0,0,0.4); color:#fff; border:1px solid #4a3050; border-radius:4px;" />
+                    </div>
+                `);
+
+                // Если ты поменяешь значение ручками — всё сохранится и обновится
+                tRow.find('.nhud-bta-val').on('change', function() {
+                    if (!char.trackerValues) char.trackerValues = {};
+                    char.trackerValues[t.id] = Math.min(Math.max(0, parseInt($(this).val()) || 0), t.max);
+                    import('../../../../../../script.js').then(s => { if(s.saveSettingsDebounced) s.saveSettingsDebounced(); });
+                    renderSettingsTrackers(); 
+                    import('../../UIManager.js').then(ui => { if(ui.renderMiniBots) ui.renderMiniBots(); });
+                });
+                
+                tWrapper.append(tRow);
+            });
+            btaList.append(card);
+        });
+
+        // Заглушка, если трекеров пока нет
+        if (!hasTrackers) {
+            btaList.append('<div style="color:#606080; font-size:11px; text-align:center; padding:10px;">Нет активных трекеров для персонажей в сцене.</div>');
+        }
     }
 }
 
@@ -1471,25 +1605,47 @@ export function renderAutoInventories() {
     const pList = $('#nhud-settings-player-inv-list');
     pList.empty();
     if (chatData) {
-        if (!Array.isArray(chatData.playerInventory)) chatData.playerInventory = [];
-        chatData.playerInventory.forEach((item, idx) => {
+        if (!chatData.inventory) chatData.inventory = { money: 0, currency: "Золото", items: [], estate: [], vehicles: [] };
+        const inv = chatData.inventory;
+
+        // Миграция старых данных из playerInventory в inventory.items
+        if (chatData.playerInventory && chatData.playerInventory.length > 0) {
+            if (!Array.isArray(inv.items)) inv.items = [];
+            inv.items = [...new Set([...inv.items, ...chatData.playerInventory])];
+            delete chatData.playerInventory; // удаляем старый массив
+            saveSettingsDebounced();
+        }
+
+        if (!Array.isArray(inv.items)) inv.items = [];
+        inv.items.forEach((item, idx) => {
+            const itemName = typeof item === 'object' ? (item.name || JSON.stringify(item)) : item;
             pList.append(`<div class="nhud-inv-item-row">
-                <span>${item}</span>
+                <span>${itemName}</span>
                 <button class="nhud-pinv-del nhud-s-delete" data-idx="${idx}">✕</button>
             </div>`);
         });
+        
         pList.find('.nhud-pinv-del').on('click', function() {
-            chatData.playerInventory.splice(parseInt($(this).data('idx')), 1);
+            inv.items.splice(parseInt($(this).data('idx')), 1);
             saveSettingsDebounced();
             renderAutoInventories();
+            // Обновляем плавающее окно, если оно открыто
+            if ($("#nhud-inventory-modal").is(":visible")) {
+                import('./components/modals/InventoryModal.js').then(m => m.renderInventory());
+            }
         });
+        
         $('#nhud-add-player-inv-btn').off('click').on('click', () => {
             const val = $('#nhud-add-player-inv-input').val().trim();
             if (val) {
-                if (!chatData.playerInventory.includes(val)) chatData.playerInventory.push(val);
+                if (!inv.items.includes(val)) inv.items.push(val);
                 saveSettingsDebounced();
                 renderAutoInventories();
                 $('#nhud-add-player-inv-input').val('');
+                // Обновляем плавающее окно, если оно открыто
+                if ($("#nhud-inventory-modal").is(":visible")) {
+                    import('./components/modals/InventoryModal.js').then(m => m.renderInventory());
+                }
             }
         });
     }
@@ -1499,6 +1655,22 @@ export function renderAutoInventories() {
     bList.empty();
 
     if (chatData) {
+        // --- ФИКС ДЕНЕГ БОТА ---
+        // Инициализируем переменные, если их еще нет в базе
+        if (chatData.botMoney === undefined) chatData.botMoney = 0;
+        if (chatData.botCurrency === undefined) chatData.botCurrency = "Валюта";
+
+        // Привязываем значения к инпутам и вешаем обработчики сохранения
+        $("#nhud-settings-bot-money").val(chatData.botMoney).off('change').on('change', e => { 
+            chatData.botMoney = parseInt(e.target.value) || 0; 
+            saveSettingsDebounced(); 
+        });
+        $("#nhud-settings-bot-currency").val(chatData.botCurrency).off('change').on('change', e => { 
+            chatData.botCurrency = e.target.value; 
+            saveSettingsDebounced(); 
+        });
+        // -----------------------
+
         if (!Array.isArray(chatData.botInventory)) chatData.botInventory = [];
         chatData.botInventory.forEach((item, idx) => {
             bList.append(`<div class="nhud-inv-item-row">
@@ -1529,3 +1701,21 @@ export { renderSettingsHeroSheet } from "./HeroSettings.js";
 export { renderSettingsQuests } from "./QuestSettings.js";
 export { renderSettingsCodex } from "./CodexSettings.js";
 export { renderSettingsCalendar } from "./CalendarSettings.js";
+
+// --- БРОНЕБОЙНЫЙ ФИКС ЗАЛИПАНИЯ ВКЛАДОК ---
+document.addEventListener('click', function(e) {
+    // Ищем вкладку по ПРАВИЛЬНОМУ классу .nhud-tab
+    const tab = e.target.closest('.nhud-tab, .nhud-s-tab, .nhud-g-tab');
+    if (!tab) return;
+
+    // Ищем любой родительский контейнер, где лежат вкладки
+    const menuContainer = tab.closest('#nhud-settings-panel, #nhud-global-settings, .nhud-left-panel, .nhud-sidebar');
+    if (menuContainer) {
+        // Сдираем active со всех
+        menuContainer.querySelectorAll('.nhud-tab, .nhud-s-tab, .nhud-g-tab').forEach(t => {
+            t.classList.remove('active');
+        });
+        // Вешаем только на нажатую
+        tab.classList.add('active');
+    }
+}, true);

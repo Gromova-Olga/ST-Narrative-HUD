@@ -521,6 +521,7 @@ export function buildFloatingWidget() {
                 <div class="nhud-w-btn" id="nhud-w-hud" title="HUD">📊</div>
                 <div class="nhud-w-btn" id="nhud-w-sims" title="Отношения">❤️</div>
                 <div class="nhud-w-btn" id="nhud-w-conn" title="Подключение">🔌</div>
+                <div class="nhud-w-btn nhud-w-btn-bots" id="nhud-w-bots" title="Трекеры NPC">🤖</div>
                 <div class="nhud-w-btn nhud-w-btn-hero" id="nhud-w-hero" title="Прокачка">🧬</div>
                 <div class="nhud-w-btn nhud-w-btn-inv" id="nhud-w-inv" title="Инвентарь">🎒</div>
                 <div class="nhud-w-btn nhud-w-btn-quests" id="nhud-w-quests" title="Квесты">📜</div>
@@ -559,9 +560,11 @@ export function buildFloatingWidget() {
     $("#nhud-w-hud").on("click", (e) => { e.stopPropagation(); $("#narrative-hud-sidebar").fadeToggle(200); });
     $("#nhud-w-sims").on("click", (e) => { e.stopPropagation(); toggleMiniSims(); });
     $("#nhud-w-conn").on("click", (e) => { e.stopPropagation(); toggleMiniConn(); });
+    $("#nhud-w-bots").on("click", (e) => { e.stopPropagation(); import('./components/panels/MiniPanels.js').then(m => m.toggleMiniBots()); });
     $("#nhud-w-hero").on("click", (e) => { e.stopPropagation(); toggleHeroSheet(); });
     $("#nhud-w-inv").on("click", (e) => { e.stopPropagation(); toggleInventory(); });
     $("#nhud-w-quests").on("click", (e) => { e.stopPropagation(); toggleQuestLog(); });
+    $("#nhud-w-calendar").on("click", (e) => { e.stopPropagation(); toggleCalendar(); }); // <--- ДОБАВИТЬ ЭТУ СТРОКУ
     $("#nhud-w-codex").on("click", (e) => { e.stopPropagation(); toggleCodex(); });
     $("#nhud-w-notifs").on("click", (e) => { e.stopPropagation(); $("#nhud-notif-panel").fadeToggle(200); });
 
@@ -842,9 +845,12 @@ export function buildGlobalSettingsModal() {
                         <div class="nhud-modules-extra-section">
                             <label class="nhud-checkbox-group nhud-checkbox-pink"><input type="checkbox" id="nhud-m-outfitStats" ${m.enableOutfitStats ? 'checked' : ''}> 👗 Статы одежды (описание + бонусы)</label>
                             <label class="nhud-checkbox-group nhud-checkbox-pink"><input type="checkbox" id="nhud-m-outfitTrack" ${m.enableOutfitTracking !== false ? 'checked' : ''}> 👗 Отслеживание гардероба ИИ</label>
+                            <label class="nhud-checkbox-group nhud-checkbox-danger"><input type="checkbox" id="nhud-m-botTrackers" ${m.botTrackers !== false ? 'checked' : ''}> 🤖 Кастомные трекеры для NPC</label>
+                            <label class="nhud-checkbox-group nhud-checkbox-blue"><input type="checkbox" id="nhud-m-heroSkills" ${m.heroSkills !== false ? 'checked' : ''}> 🌀 Навыки / Дисциплины Героя</label>
                             <label class="nhud-checkbox-group nhud-checkbox-blue"><input type="checkbox" id="nhud-m-notifications" ${m.notifications !== false ? 'checked' : ''}> 📨 Контекстные уведомления</label>
                             <label class="nhud-checkbox-group nhud-checkbox-green"><input type="checkbox" id="nhud-m-trackPlayer" ${m.trackPlayerInventory !== false ? 'checked' : ''}> 🎒 Авто-инвентарь Игрока</label>
                             <label class="nhud-checkbox-group nhud-checkbox-gold"><input type="checkbox" id="nhud-m-trackBot" ${m.trackBotInventory !== false ? 'checked' : ''}> 🤖 Авто-инвентарь Бота</label>
+                            <label class="nhud-checkbox-group nhud-checkbox-blue"><input type="checkbox" id="nhud-m-map" ${m.map !== false ? 'checked' : ''}> 🗺️ Интерактивная карта (и модуль в промпте)</label>
                             <label class="nhud-checkbox-group nhud-checkbox-purple"><input type="checkbox" id="nhud-m-injectOutfit" ${m.injectPlayerOutfit ? 'checked' : ''}> 👤 Инжекция гардероба Игрока в промпт</label>
                             <div class="nhud-field-inline">
                                 <label class="nhud-label-tiny">📱 Название устройства связи</label>
@@ -944,7 +950,7 @@ export function buildGlobalSettingsModal() {
     function saveAndApply() { saveSettingsDebounced(); applyDesignTheme(); updateGlobalTokenTracker(); }
     updateGlobalTokenTracker(); // Запускаем при открытии
 
-    const modBinds = { trackers: '#nhud-m-trackers', relationships: '#nhud-m-rel', characters: '#nhud-m-chars', thoughts: '#nhud-m-thoughts', customBlocks: '#nhud-m-blocks', datetime: '#nhud-m-date', analytics: '#nhud-m-analytics', loreInjection: '#nhud-m-lore', achievements: '#nhud-m-achievements', hero: '#nhud-m-hero', inventory: '#nhud-m-inv', quests: '#nhud-m-quests', codex: '#nhud-m-codex', factions: '#nhud-m-factions', calendar: '#nhud-m-calendar', enableOutfitStats: '#nhud-m-outfitStats', enableOutfitTracking: '#nhud-m-outfitTrack', notifications: '#nhud-m-notifications', trackPlayerInventory: '#nhud-m-trackPlayer', trackBotInventory: '#nhud-m-trackBot', injectPlayerOutfit: '#nhud-m-injectOutfit' };
+    const modBinds = { trackers: '#nhud-m-trackers', relationships: '#nhud-m-rel', characters: '#nhud-m-chars', thoughts: '#nhud-m-thoughts', customBlocks: '#nhud-m-blocks', datetime: '#nhud-m-date', analytics: '#nhud-m-analytics', loreInjection: '#nhud-m-lore', achievements: '#nhud-m-achievements', hero: '#nhud-m-hero', inventory: '#nhud-m-inv', quests: '#nhud-m-quests', codex: '#nhud-m-codex', factions: '#nhud-m-factions', calendar: '#nhud-m-calendar', enableOutfitStats: '#nhud-m-outfitStats', enableOutfitTracking: '#nhud-m-outfitTrack', notifications: '#nhud-m-notifications', trackPlayerInventory: '#nhud-m-trackPlayer', trackBotInventory: '#nhud-m-trackBot', injectPlayerOutfit: '#nhud-m-injectOutfit', botTrackers: '#nhud-m-botTrackers', heroSkills: '#nhud-m-heroSkills', map: '#nhud-m-map' };
     for (const [key, id] of Object.entries(modBinds)) {
         $(id).on("change", e => { getSettings().modules[key] = e.target.checked; saveAndApply(); });
     }
