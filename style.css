@@ -4761,7 +4761,7 @@ input[type="number"].nhud-rel-val-input {
     #nhud-notif-panel,
     #nhud-map-container,
     #nhud-mini-bots,
-    #nhud-w-ach {
+    #nhud-achievements-window { /* 👈 ИСПРАВИЛ КНОПКУ НА ОКНО */
         position: fixed !important;
         left: 2vw !important;
         width: 96vw !important;
