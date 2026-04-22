@@ -19,6 +19,9 @@ export function getSettings() {
     });
 
     if (!s.trackers)          s.trackers        = JSON.parse(JSON.stringify(defaultSettings.trackers));
+    if (!s.botTrackers) {
+        s.botTrackers = defaultSettings.botTrackers ? JSON.parse(JSON.stringify(defaultSettings.botTrackers)) : [];
+    }
     if (!s.characters)        s.characters      = [];
     if (!s.liveData)          s.liveData        = JSON.parse(JSON.stringify(defaultSettings.liveData));
     if (!s.liveData.trackerValues) s.liveData.trackerValues = {};
@@ -130,7 +133,19 @@ export function ensureCharInLive() {
     const existingKey = findCharacterKey(live.characters, charName);
     
     if (!existingKey) {
-        live.characters[charName] = { outfit: { head: '', torso: '', legs: '', feet: '', accessories: '' }, state: "", thoughts: "", relationship: 50, relationship_status: "", relationship_thoughts: "", relationship_hint: "" };
+        live.characters[charName] = { 
+            outfit: { head: '', torso: '', legs: '', feet: '', accessories: '' }, 
+            state: "", 
+            thoughts: "", 
+            relationship: 50, 
+            relationship_status: "", 
+            relationship_thoughts: "", 
+            relationship_hint: "",
+            // НОВЫЕ ПОЛЯ ДЛЯ БОТА:
+            botTrackersEnabled: true, // Локальный переключатель (по умолчанию вкл)
+            trackerValues: {},        // Текущие значения трекеров бота (например, { "health_bot": 80 })
+            customTrackers: []        // Массив, если захочешь дать конкретному боту уникальный трекер, которого нет в глобальном botTrackers
+        };
     } else if (existingKey !== charName) {
         live.characters[charName] = live.characters[existingKey];
         delete live.characters[existingKey];
@@ -398,4 +413,59 @@ export function addCalendarEvent(eventData) {
     calendar.sort((a, b) => a.realDate - b.realDate);
     import('../../../../../script.js').then(s => s.saveSettingsDebounced());
     return true;
+}
+
+// ─── BOT TRACKERS (Трекеры NPC) ───
+export function getBotTrackerValue(charName, trackerId) {
+    const live = getLive();
+    const settings = getSettings();
+    
+    const charData = live.characters[charName];
+    if (!charData) return null; // Если бота нет, возвращаем null
+
+    // Ищем трекер в локальных кастомных (если есть) или в глобальных шаблонах ботов
+    let trackerDef = charData.customTrackers?.find(t => t.id === trackerId);
+    if (!trackerDef) {
+        trackerDef = settings.botTrackers.find(t => t.id === trackerId);
+    }
+    
+    if (!trackerDef) return null;
+
+    // Возвращаем текущее значение или максимум по умолчанию
+    return charData.trackerValues?.[trackerId] !== undefined
+        ? charData.trackerValues[trackerId]
+        : trackerDef.max;
+}
+
+// --- ОПЫТ НАВЫКОВ ---
+export function addSkillXp(skillName, amountStr) {
+    const sheet = getHeroSheet();
+    if (!sheet || !sheet.skills) return false;
+    
+    // Ищем скилл без учета регистра
+    const skill = sheet.skills.find(s => s.name.toLowerCase().trim() === skillName.toLowerCase().trim());
+    if (!skill) return false;
+
+    if (skill.xp === undefined) skill.xp = 0;
+
+    // Определяем количество опыта
+    let num = 10; // small
+    if (amountStr === 'medium') num = 25;
+    if (amountStr === 'large') num = 50;
+    if (typeof amountStr === 'number') num = amountStr;
+
+    skill.xp += num;
+    let leveledUp = false;
+    let nextLvlXp = skill.level * 100;
+
+    // Если опыта хватило на левелап (или даже несколько)
+    while (skill.xp >= nextLvlXp) {
+        skill.xp -= nextLvlXp;
+        skill.level++;
+        leveledUp = true;
+        nextLvlXp = skill.level * 100;
+    }
+
+    import('../../../../../script.js').then(s => { if(s.saveSettingsDebounced) s.saveSettingsDebounced(); });
+    return { leveledUp, level: skill.level };
 }

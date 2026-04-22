@@ -193,6 +193,9 @@ export function buildSidebar() {
     renderTrackers(); renderCharacters(); renderInfoBlocks();
     renderInfoBlockButtons(); renderProfileSelect();
     if (typeof makeWindowDraggable === "function") makeWindowDraggable("nhud-infoblock-popup", "nhud-infoblock-popup-header");
+    // Применяем тему уведомлений при старте
+    const savedNotifTheme = getSettings().ui?.notificationTheme || 'theme-pda';
+    setNotificationTheme(savedNotifTheme);
 }
 
 // ─── Info Blocks ────────────────────────────────────────────────────────
@@ -521,12 +524,16 @@ export function buildFloatingWidget() {
                 <div class="nhud-w-btn" id="nhud-w-hud" title="HUD">📊</div>
                 <div class="nhud-w-btn" id="nhud-w-sims" title="Отношения">❤️</div>
                 <div class="nhud-w-btn" id="nhud-w-conn" title="Подключение">🔌</div>
+                <div class="nhud-w-btn nhud-w-btn-bots" id="nhud-w-bots" title="Трекеры NPC">🤖</div>
                 <div class="nhud-w-btn nhud-w-btn-hero" id="nhud-w-hero" title="Прокачка">🧬</div>
                 <div class="nhud-w-btn nhud-w-btn-inv" id="nhud-w-inv" title="Инвентарь">🎒</div>
                 <div class="nhud-w-btn nhud-w-btn-quests" id="nhud-w-quests" title="Квесты">📜</div>
                 <div class="nhud-w-btn nhud-w-btn-calendar" id="nhud-w-calendar" title="Календарь">📅</div>
                 <div class="nhud-w-btn nhud-w-btn-codex" id="nhud-w-codex" title="Кодекс">📖</div>
                 <div class="nhud-w-btn nhud-w-btn-notifs" id="nhud-w-notifs" title="Уведомления">🔔</div>
+                <div class="nhud-w-btn nhud-w-btn-infoblocks" id="nhud-w-infoblocks" title="Инфоблоки">🧩</div>
+                <div class="nhud-w-btn nhud-w-btn-comics" id="nhud-w-comics" title="Генератор Артов">🖼️</div>
+                <div class="nhud-w-btn nhud-w-btn-ach" id="nhud-w-ach" title="Достижения (Зал Славы)">🏆</div>
             </div>
             <button id="nhud-w-rotate" class="nhud-w-rotate" title="Сменить раскладку">⟳</button>
         </div>
@@ -537,9 +544,11 @@ export function buildFloatingWidget() {
         $("<style id='nhud-widget-styles'>").text(`
             .nhud-w-btn:hover { background: var(--nhud-border, #501020) !important; box-shadow: inset 0 0 5px rgba(255,100,100,0.3); }
             #nhud-widget-container:active { cursor: grabbing !important; }
-            .nhud-layout-square { grid-template-columns: 1fr 1fr; width:60px; }
-            .nhud-layout-vertical { grid-template-columns: 1fr; width:30px; }
-            .nhud-layout-horizontal { grid-template-columns: repeat(10, 1fr); width:300px; }
+            
+            /* ЖЕСТКО ЗАДАЕМ 2 КОЛОНКИ ДЛЯ КВАДРАТНОГО РЕЖИМА */
+            .nhud-layout-square { grid-template-columns: repeat(2, 1fr); width: 60px; }
+            .nhud-layout-vertical { grid-template-columns: 1fr; width: 30px; }
+            .nhud-layout-horizontal { grid-template-columns: repeat(14, 1fr); width: 420px; }
         `).appendTo("head");
     }
 
@@ -559,12 +568,22 @@ export function buildFloatingWidget() {
     $("#nhud-w-hud").on("click", (e) => { e.stopPropagation(); $("#narrative-hud-sidebar").fadeToggle(200); });
     $("#nhud-w-sims").on("click", (e) => { e.stopPropagation(); toggleMiniSims(); });
     $("#nhud-w-conn").on("click", (e) => { e.stopPropagation(); toggleMiniConn(); });
+    $("#nhud-w-bots").on("click", (e) => { e.stopPropagation(); import('./components/panels/MiniPanels.js').then(m => m.toggleMiniBots()); });
     $("#nhud-w-hero").on("click", (e) => { e.stopPropagation(); toggleHeroSheet(); });
     $("#nhud-w-inv").on("click", (e) => { e.stopPropagation(); toggleInventory(); });
     $("#nhud-w-quests").on("click", (e) => { e.stopPropagation(); toggleQuestLog(); });
+    $("#nhud-w-calendar").on("click", (e) => { e.stopPropagation(); toggleCalendar(); }); 
     $("#nhud-w-codex").on("click", (e) => { e.stopPropagation(); toggleCodex(); });
     $("#nhud-w-notifs").on("click", (e) => { e.stopPropagation(); $("#nhud-notif-panel").fadeToggle(200); });
-
+    $("#nhud-w-infoblocks").on("click", (e) => { e.stopPropagation(); toggleMiniInfoBlocks(); });
+    $("#nhud-w-comics").on("click", (e) => { e.stopPropagation(); toggleMiniComics(); });
+    
+    // Биндим ачивки на новое парящее окно
+    $("#nhud-w-ach").on("click", (e) => { 
+        e.stopPropagation(); 
+        toggleAchievementsWindow(); 
+    });
+;
     makeWindowDraggable("nhud-widget-container", "nhud-widget-container");
 }
 
@@ -840,12 +859,24 @@ export function buildGlobalSettingsModal() {
                         <label class="nhud-checkbox-group"><input type="checkbox" id="nhud-m-blocksUI" ${m.beautifulBlocks !== false ? 'checked' : ''}> ✨ Красивые инфоблоки внутри чата (БЕЗ токенов)</label>
 
                         <div class="nhud-modules-extra-section">
+                            <label class="nhud-checkbox-group nhud-checkbox-blue"><input type="checkbox" id="nhud-m-map" ${m.map !== false ? 'checked' : ''}> 🗺️ Интерактивная карта (и модуль в промпте)</label>
                             <label class="nhud-checkbox-group nhud-checkbox-pink"><input type="checkbox" id="nhud-m-outfitStats" ${m.enableOutfitStats ? 'checked' : ''}> 👗 Статы одежды (описание + бонусы)</label>
                             <label class="nhud-checkbox-group nhud-checkbox-pink"><input type="checkbox" id="nhud-m-outfitTrack" ${m.enableOutfitTracking !== false ? 'checked' : ''}> 👗 Отслеживание гардероба ИИ</label>
-                            <label class="nhud-checkbox-group nhud-checkbox-blue"><input type="checkbox" id="nhud-m-notifications" ${m.notifications !== false ? 'checked' : ''}> 📨 Контекстные уведомления</label>
-                            <label class="nhud-checkbox-group nhud-checkbox-green"><input type="checkbox" id="nhud-m-trackPlayer" ${m.trackPlayerInventory !== false ? 'checked' : ''}> 🎒 Авто-инвентарь Игрока</label>
                             <label class="nhud-checkbox-group nhud-checkbox-gold"><input type="checkbox" id="nhud-m-trackBot" ${m.trackBotInventory !== false ? 'checked' : ''}> 🤖 Авто-инвентарь Бота</label>
+                            <label class="nhud-checkbox-group nhud-checkbox-danger"><input type="checkbox" id="nhud-m-botTrackers" ${m.botTrackers !== false ? 'checked' : ''}> 🤖 Кастомные трекеры для NPC</label>
+                            <label class="nhud-checkbox-group nhud-checkbox-blue"><input type="checkbox" id="nhud-m-heroSkills" ${m.heroSkills !== false ? 'checked' : ''}> 🌀 Навыки / Дисциплины Героя</label>
+                            <label class="nhud-checkbox-group nhud-checkbox-green"><input type="checkbox" id="nhud-m-trackPlayer" ${m.trackPlayerInventory !== false ? 'checked' : ''}> 🎒 Авто-инвентарь Игрока</label>
                             <label class="nhud-checkbox-group nhud-checkbox-purple"><input type="checkbox" id="nhud-m-injectOutfit" ${m.injectPlayerOutfit ? 'checked' : ''}> 👤 Инжекция гардероба Игрока в промпт</label>
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+                                <label class="nhud-checkbox-group nhud-checkbox-blue" style="margin-bottom: 0;">
+                                    <input type="checkbox" id="nhud-m-notifications" ${m.notifications !== false ? 'checked' : ''}> 📨 Контекстные уведомления
+                                </label>
+                                <select id="nhud-ui-notifTheme" class="nhud-select" style="padding: 2px 5px; font-size: 0.9em; max-width: 120px;">
+                                    <option value="theme-pda" ${ui.notificationTheme === 'theme-pda' ? 'selected' : ''}>ПДА</option>
+                                    <option value="theme-tg" ${ui.notificationTheme === 'theme-tg' ? 'selected' : ''}>Telegram</option>
+                                    <option value="theme-fantasy" ${ui.notificationTheme === 'theme-fantasy' ? 'selected' : ''}>Свиток</option>
+                                </select>
+                            </div>
                             <div class="nhud-field-inline">
                                 <label class="nhud-label-tiny">📱 Название устройства связи</label>
                                 <input id="nhud-p-deviceName" class="nhud-input" type="text" value="${p.notificationDeviceName || 'Смартфон'}" />
@@ -944,7 +975,7 @@ export function buildGlobalSettingsModal() {
     function saveAndApply() { saveSettingsDebounced(); applyDesignTheme(); updateGlobalTokenTracker(); }
     updateGlobalTokenTracker(); // Запускаем при открытии
 
-    const modBinds = { trackers: '#nhud-m-trackers', relationships: '#nhud-m-rel', characters: '#nhud-m-chars', thoughts: '#nhud-m-thoughts', customBlocks: '#nhud-m-blocks', datetime: '#nhud-m-date', analytics: '#nhud-m-analytics', loreInjection: '#nhud-m-lore', achievements: '#nhud-m-achievements', hero: '#nhud-m-hero', inventory: '#nhud-m-inv', quests: '#nhud-m-quests', codex: '#nhud-m-codex', factions: '#nhud-m-factions', calendar: '#nhud-m-calendar', enableOutfitStats: '#nhud-m-outfitStats', enableOutfitTracking: '#nhud-m-outfitTrack', notifications: '#nhud-m-notifications', trackPlayerInventory: '#nhud-m-trackPlayer', trackBotInventory: '#nhud-m-trackBot', injectPlayerOutfit: '#nhud-m-injectOutfit' };
+    const modBinds = { trackers: '#nhud-m-trackers', relationships: '#nhud-m-rel', characters: '#nhud-m-chars', thoughts: '#nhud-m-thoughts', customBlocks: '#nhud-m-blocks', datetime: '#nhud-m-date', analytics: '#nhud-m-analytics', loreInjection: '#nhud-m-lore', achievements: '#nhud-m-achievements', hero: '#nhud-m-hero', inventory: '#nhud-m-inv', quests: '#nhud-m-quests', codex: '#nhud-m-codex', factions: '#nhud-m-factions', calendar: '#nhud-m-calendar', enableOutfitStats: '#nhud-m-outfitStats', enableOutfitTracking: '#nhud-m-outfitTrack', notifications: '#nhud-m-notifications', trackPlayerInventory: '#nhud-m-trackPlayer', trackBotInventory: '#nhud-m-trackBot', injectPlayerOutfit: '#nhud-m-injectOutfit', botTrackers: '#nhud-m-botTrackers', heroSkills: '#nhud-m-heroSkills', map: '#nhud-m-map' };
     for (const [key, id] of Object.entries(modBinds)) {
         $(id).on("change", e => { getSettings().modules[key] = e.target.checked; saveAndApply(); });
     }
@@ -965,6 +996,7 @@ export function buildGlobalSettingsModal() {
 
     $("#nhud-d-tabsMode").on("change", e => { getSettings().ui.tabsMode = e.target.value; saveAndApply(); });
     $("#nhud-d-thoughtsMode").on("change", e => { getSettings().ui.thoughtsMode = e.target.value; saveAndApply(); renderCharacters(); });
+    $("#nhud-ui-notifTheme").on("change", e => { getSettings().ui.notificationTheme = e.target.value; saveAndApply(); setNotificationTheme(e.target.value); });
     // Логика переключения тем
     $("#nhud-global-settings").off("click", ".nhud-theme-btn").on("click", ".nhud-theme-btn", function() {
         const themeName = $(this).data("theme");
@@ -1064,6 +1096,24 @@ export function buildGlobalSettingsModal() {
         startInteractiveTour();
     });
 }
+
+export function setNotificationTheme(themeName) {
+    const panel = document.getElementById('nhud-notif-panel'); 
+    const toastContainer = document.getElementById('nhud-notif-container'); // Нашли контейнер тостов
+
+    // Меняем тему у главного окна
+    if (panel) {
+        panel.classList.remove('theme-pda', 'theme-tg', 'theme-fantasy');
+        if (themeName) panel.classList.add(themeName);
+    }
+
+    // Меняем тему у всплывающих уведомлений
+    if (toastContainer) {
+        toastContainer.classList.remove('theme-pda', 'theme-tg', 'theme-fantasy');
+        if (themeName) toastContainer.classList.add(themeName);
+    }
+}
+
 // =========================================================================
 // УПРАВЛЕНИЕ ГЛОБАЛЬНЫМИ НАСТРОЙКАМИ И ИНТЕРАКТИВНЫЙ ТУР
 // =========================================================================
@@ -1111,4 +1161,221 @@ export function openGlobalSettings() {
 
 export function closeGlobalSettings() {
     $("#nhud-global-settings").fadeOut(200);
+}
+
+// =========================================================================
+// МИНИ-ПАНЕЛИ (Инфоблоки, Арты, Ачивки) - ЧИСТАЯ СТРУКТУРА
+// =========================================================================
+
+export function toggleMiniInfoBlocks() {
+    let panel = $("#nhud-mini-infoblocks");
+    const savedTheme = localStorage.getItem('nhud_saved_theme') || '';
+
+    if (!panel.length) {
+        $("body").append(`
+            <div id="nhud-mini-infoblocks" class="nhud-mini-panel ${savedTheme}" style="display:none; position:fixed; top:20vh; left:calc(50% - 125px); width:250px; z-index:9998; border-radius:8px; overflow:hidden; display:flex; flex-direction:column;">
+                <div class="nhud-mini-header" id="nhud-mini-infoblocks-header" style="padding:10px 15px; cursor:grab; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                    <span style="font-weight:bold; font-size:12px;">🧩 Ваши Инфоблоки</span>
+                    <button class="nhud-close-btn" style="background:none;border:none;color:#e05252;cursor:pointer;font-size:16px;">✕</button>
+                </div>
+                <div class="nhud-mini-body" id="nhud-mini-infoblocks-body" style="padding:10px; display:flex; flex-direction:column; gap:5px; flex:1; overflow-y:auto;">
+                    </div>
+            </div>
+        `);
+        if (typeof makeWindowDraggable === "function") makeWindowDraggable("nhud-mini-infoblocks", "nhud-mini-infoblocks-header");
+        $("#nhud-mini-infoblocks .nhud-close-btn").on("click", () => $("#nhud-mini-infoblocks").fadeOut(150));
+        panel = $("#nhud-mini-infoblocks");
+    }
+    
+    panel.removeClass('classic glass cyber fantasy theme-classic theme-glass theme-cyber theme-fantasy').addClass(savedTheme).addClass('theme-' + savedTheme.replace('theme-', '')); 
+    
+    if (panel.is(":visible")) {
+        panel.fadeOut(150);
+    } else {
+        const body = $("#nhud-mini-infoblocks-body");
+        body.empty();
+        const settings = getSettings();
+        
+        const activeBlocks = settings.promptBlocks.filter(b => b.enabled);
+        if (activeBlocks.length === 0) {
+            body.append('<div style="text-align:center; color:#8080a0; font-size:12px; padding:10px;">Активных блоков нет. Включите их в настройках.</div>');
+        } else {
+            activeBlocks.forEach(block => {
+                const btn = $(`<button class="nhud-send-btn" style="text-align:left; padding:6px 10px;">${block.label}</button>`);
+                btn.on("click", function(e) {
+                    e.stopPropagation();
+                    const live = getLive();
+                    const popup = $("#nhud-infoblock-popup");
+                    const isSame = popup.is(":visible") && popup.attr("data-current") === block.id;
+                    
+                    popup.css({ top: "25vh", left: "calc(50vw - 150px)" });
+
+                    if (isSame) {
+                        popup.fadeOut(150).removeAttr("data-current"); 
+                    } else {
+                        let themeClass = "nhud-theme-default";
+                        if (block.id.includes('monolog')) { themeClass = "nhud-theme-monolog"; }
+                        else if (block.id.includes('comment')) { themeClass = "nhud-theme-comment"; }
+                        else if (block.id.includes('diar')) { themeClass = "nhud-theme-diar"; }
+                        else if (block.id.includes('skill')) { themeClass = "nhud-theme-skill"; }
+
+                        $("#nhud-infoblock-popup-header").attr("class", `nhud-infoblock-popup-header ${themeClass}`);
+                        $("#nhud-infoblock-popup-title").text(block.label);
+                        $("#nhud-infoblock-popup-content").html(formatPopupText(live.infoBlocks[block.id]));
+                        popup.attr("data-current", block.id).fadeIn(150);
+                    }
+                });
+                body.append(btn);
+            });
+        }
+        panel.fadeIn(150);
+    }
+}
+
+export function toggleMiniComics() {
+    let panel = $("#nhud-mini-comics");
+    const savedTheme = localStorage.getItem('nhud_saved_theme') || '';
+
+    if (!panel.length) {
+        $("body").append(`
+            <div id="nhud-mini-comics" class="nhud-mini-panel ${savedTheme}" style="display:none; position:fixed; top:20vh; left:calc(50% - 150px); width:300px; z-index:9998; border-radius:8px; overflow:hidden; display:flex; flex-direction:column;">
+                <div class="nhud-mini-header" id="nhud-mini-comics-header" style="padding:10px 15px; cursor:grab; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
+                    <span style="font-weight:bold; font-size:12px;">🖼️ Генератор Артов</span>
+                    <button class="nhud-close-btn" style="background:none;border:none;color:#e05252;cursor:pointer;font-size:16px;">✕</button>
+                </div>
+                <div class="nhud-mini-body" style="padding:15px; display:flex; flex-direction:column; gap:10px; flex:1; overflow-y:auto;">
+                    <label class="nhud-checkbox-group nhud-checkbox-pink">
+                        <input type="checkbox" id="nhud-mini-comics-enable"> Включить авто-промпты для картинок
+                    </label>
+                    <div>
+                        <div style="font-size:11px; color:#a08080; margin-bottom:4px;">Системный промпт модуля:</div>
+                        <textarea id="nhud-mini-comics-prompt" class="nhud-textarea" rows="4" style="width:100%; box-sizing:border-box;"></textarea>
+                    </div>
+                </div>
+            </div>
+        `);
+        if (typeof makeWindowDraggable === "function") makeWindowDraggable("nhud-mini-comics", "nhud-mini-comics-header");
+        $("#nhud-mini-comics .nhud-close-btn").on("click", () => $("#nhud-mini-comics").fadeOut(150));
+        
+        $("#nhud-mini-comics-enable").on("change", function() {
+            getSettings().modules.comics = $(this).is(":checked");
+            import('../../../../../script.js').then(m => m.saveSettingsDebounced());
+        });
+        
+        $("#nhud-mini-comics-prompt").on("input", function() {
+            if(!getSettings().prompts) getSettings().prompts = {};
+            getSettings().prompts.comicsPrompt = $(this).val();
+            import('../../../../../script.js').then(m => m.saveSettingsDebounced());
+        });
+        
+        panel = $("#nhud-mini-comics");
+    }
+    
+    panel.removeClass('classic glass cyber fantasy theme-classic theme-glass theme-cyber theme-fantasy').addClass(savedTheme).addClass('theme-' + savedTheme.replace('theme-', ''));
+
+    if (panel.is(":visible")) {
+        panel.fadeOut(150);
+    } else {
+        const s = getSettings();
+        $("#nhud-mini-comics-enable").prop("checked", !!s.modules?.comics);
+        const defaultComicsPrompt = "VISUAL PROMPT RULE: If the scene has a vivid cinematic moment, output a \"comics\" array containing exact prompts for an image generator (describe lighting, angle, character appearance, background).";
+        $("#nhud-mini-comics-prompt").val(s.prompts?.comicsPrompt !== undefined ? s.prompts.comicsPrompt : defaultComicsPrompt);
+        
+        panel.fadeIn(150);
+    }
+}
+
+export function toggleAchievementsWindow() {
+    let panel = $("#nhud-achievements-window");
+    const savedTheme = localStorage.getItem('nhud_saved_theme') || '';
+    
+    if (!panel.length) {
+        $("body").append(`
+            <div id="nhud-achievements-window" class="nhud-mini-panel ${savedTheme}" style="display:none; position:fixed; top:15vh; left:calc(50% - 200px); width:400px; max-height:70vh; z-index:9998; border-radius:8px; flex-direction:column; overflow:hidden;">
+                
+                <div class="nhud-mini-header" id="nhud-achievements-header" style="display:flex; justify-content:space-between; align-items:center; padding:10px 15px; cursor:grab; flex-shrink:0;">
+                    <span style="font-weight:bold; font-size:14px; text-transform:uppercase; letter-spacing:1px;">🏆 Зал Славы</span>
+                    <button class="nhud-close-btn" style="background:none;border:none;color:#e05252;cursor:pointer;font-size:16px;">✕</button>
+                </div>
+                
+                <div id="nhud-achievements-body" style="flex:1; overflow-y:auto; padding:15px; display:flex; flex-direction:column; gap:10px;">
+                    </div>
+            </div>
+        `);
+        
+        if (typeof makeWindowDraggable === "function") {
+            makeWindowDraggable("nhud-achievements-window", "nhud-achievements-header");
+        }
+        
+        $("#nhud-achievements-window .nhud-close-btn").on("click", () => $("#nhud-achievements-window").fadeOut(150));
+        panel = $("#nhud-achievements-window");
+    }
+
+    panel.removeClass('classic glass cyber fantasy theme-classic theme-glass theme-cyber theme-fantasy').addClass(savedTheme).addClass('theme-' + savedTheme.replace('theme-', ''));
+
+    if (panel.is(":visible")) {
+        panel.fadeOut(150);
+    } else {
+        renderAchievementsList(); 
+        panel.css("display", "flex").hide().fadeIn(150);
+    }
+}
+
+function renderAchievementsList() {
+    const body = $("#nhud-achievements-body");
+    body.empty(); 
+    
+    const chatId = NarrativeStorage.getCurrentChatId();
+    const chatData = getSettings().chatData?.[chatId] || {};
+    const achs = chatData.achievements || [];
+
+    if (achs.length === 0) {
+        body.append(`
+            <div style="text-align:center; opacity:0.7; padding:30px 20px; font-size:13px; line-height:1.5;">
+                Вы еще не получили ни одного достижения в этом чате.<br>Удивите систему своими действиями!
+            </div>
+        `);
+        return;
+    }
+
+    const reversedAchs = [...achs].reverse();
+
+    reversedAchs.forEach((ach, idx) => {
+        const actualIndex = achs.length - 1 - idx;
+        const icon = ach.icon || "🏆";
+        const title = ach.title || "Неизвестное достижение";
+        const desc = ach.desc || "Описание отсутствует.";
+        const date = ach.date || "Неизвестно";
+        
+        // Карточки ачивок тоже очистил от жестких цветов, чтобы они подхватывали тему
+        const card = $(`
+            <div class="nhud-achievement-card" style="display:flex; gap:15px; align-items:center; transition:0.2s; position:relative; margin-bottom:0;">
+                <button class="nhud-ach-del-btn" data-idx="${actualIndex}" style="position:absolute; top:8px; right:8px; background:none; border:none; color:#a08080; cursor:pointer; font-size:12px; transition:0.2s;" title="Удалить достижение">✕</button>
+                <div class="nhud-achievement-icon" style="font-size:32px; line-height:1; filter:drop-shadow(0 0 8px rgba(255,215,0,0.4));">${icon}</div>
+                <div style="flex:1; padding-right:20px;">
+                    <div class="nhud-achievement-title" style="margin-bottom:4px;">${title}</div>
+                    <div class="nhud-achievement-desc" style="line-height:1.4;">${desc}</div>
+                    <div class="nhud-achievement-date" style="margin-top:6px;">Получено: ${date}</div>
+                </div>
+            </div>
+        `);
+        
+        card.find('.nhud-ach-del-btn').hover(
+            function() { $(this).css({color: '#e05252'}); },
+            function() { $(this).css({color: '#a08080'}); }
+        );
+
+        body.append(card);
+    });
+
+    body.find('.nhud-ach-del-btn').on('click', function(e) {
+        e.stopPropagation();
+        if (!confirm("Вы уверены, что хотите удалить это достижение из Зала Славы?")) return;
+        
+        const idx = $(this).data('idx');
+        achs.splice(idx, 1);
+        
+        import('../../../../../script.js').then(m => m.saveSettingsDebounced());
+        renderAchievementsList();
+    });
 }

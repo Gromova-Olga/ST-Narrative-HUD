@@ -1519,37 +1519,9 @@ export function renderCodex() {
     });
 }
 
+// В файле ui/UIManager.js
 export function toggleNotifs() {
-    let popup = $("#nhud-notif-panel");
-    
-    // Если окна еще нет на странице - создаем его
-    if (!popup.length) {
-        $("body").append(`
-            <div id="nhud-notif-panel" style="display:none;">
-                <div id="nhud-notif-panel-header">
-                    <span>📨 Уведомления</span>
-                    <button id="nhud-notif-panel-close">✕</button>
-                </div>
-                <div id="nhud-notif-panel-body">
-                    <div id="nhud-notif-panel-empty">Нет уведомлений</div>
-                </div>
-            </div>
-        `);
-        
-        // Сразу же привязываем перетаскивание!
-        if (typeof makeWindowDraggable === "function") {
-            makeWindowDraggable("nhud-notif-panel", "nhud-notif-panel-header");
-        }
-        
-        // Обработчик закрытия
-        $("#nhud-notif-panel-close").on('click', () => $('#nhud-notif-panel').fadeOut(200));
-        
-        popup = $("#nhud-notif-panel");
-    }
-    
-    // Показываем или скрываем
-    if (popup.is(":visible")) popup.fadeOut(200);
-    else popup.fadeIn(200);
+    $("#nhud-notif-panel").fadeToggle(200);
 }
 
 // =========================================================================

@@ -3635,6 +3635,7 @@ html.theme-glass .nhud-char-avatar-placeholder, body.theme-glass .nhud-char-avat
    ========================================================================== */
 /* 1. Расширяем эффект стекла на специфичные окна (Герой, Инвентарь, Кодекс и т.д.) */
 html.theme-glass #nhud-hero-sheet, body.theme-glass #nhud-hero-sheet,
+html.theme-glass #nhud-mini-bots, body.theme-glass #nhud-mini-bots,
 html.theme-glass #nhud-quest-panel, body.theme-glass #nhud-quest-panel,
 html.theme-glass #nhud-notif-panel, body.theme-glass #nhud-notif-panel,
 html.theme-glass #nhud-calendar-panel, body.theme-glass #nhud-calendar-panel,
@@ -4632,7 +4633,8 @@ body[class*="theme-"] details.mes_reasoning_details summary,
 #nhud-settings-panel, #nhud-settings-panel *,
 #nhud-global-settings, #nhud-global-settings *,
 .nhud-infoblock-popup, .nhud-infoblock-popup *,
-.nhud-settings-content, .nhud-proxy-modal-content {
+.nhud-settings-content, .nhud-proxy-modal-content,
+.nhud-mini-panel, .nhud-mini-panel * {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
 }
@@ -4647,7 +4649,9 @@ body[class*="theme-"] details.mes_reasoning_details summary,
 .nhud-infoblock-popup::-webkit-scrollbar,
 .nhud-infoblock-popup *::-webkit-scrollbar,
 .nhud-settings-content::-webkit-scrollbar,
-.nhud-proxy-modal-content::-webkit-scrollbar {
+.nhud-proxy-modal-content::-webkit-scrollbar,
+.nhud-mini-panel::-webkit-scrollbar,
+.nhud-mini-panel *::-webkit-scrollbar {
     display: none !important;
 }
 
@@ -4752,8 +4756,12 @@ input[type="number"].nhud-rel-val-input {
    📱 ФИКС НОВЫХ ВСПЛЫВАЮЩИХ ОКОН (Карта и Уведомления)
    ========================================================================== */
 @media screen and (max-width: 1000px) {
+    #nhud-mini-comics,
+    #nhud-mini-infoblocks,
     #nhud-notif-panel,
-    #nhud-map-container {
+    #nhud-map-container,
+    #nhud-mini-bots,
+    #nhud-w-ach {
         position: fixed !important;
         left: 2vw !important;
         width: 96vw !important;
@@ -4765,4 +4773,517 @@ input[type="number"].nhud-rel-val-input {
         margin: 0 !important;
         z-index: 10005 !important; /* Поверх всех остальных панелей */
     }
+}
+
+/* Броня от кастомных тем: принудительная подсветка активных вкладок */
+.nhud-tab.active, 
+.nhud-s-tab.active, 
+.nhud-g-tab.active {
+    background: var(--SmartThemeBlurTintColor, rgba(255, 255, 255, 0.15)) !important;
+    color: var(--text-color, #ffffff) !important;
+    border-left-color: var(--SmartThemeBorderColor, #52a8e0) !important;
+    opacity: 1 !important;
+    box-shadow: inset 2px 0 0 var(--SmartThemeBorderColor, #52a8e0) !important;
+}
+
+#nhud-notif-panel {
+    resize: both;
+    overflow: auto;        /* без этого resize не работает */
+    display: flex;
+    flex-direction: column;
+}
+
+#nhud-notif-panel-header {
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;        /* хедер не сжимается */
+}
+
+#nhud-notif-panel-body {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0;         /* важно для flex + overflow */
+}
+
+/* =========================================================================
+   NHUD NOTIFICATIONS: БАЗОВЫЕ НАСТРОЙКИ
+   ========================================================================= */
+#nhud-notif-panel {
+    /* Контейнер для позиционирования поверх интерфейса ST */
+    position: fixed;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* =========================================================================
+   ТЕМА 1: ПДА / S.T.A.L.K.E.R.
+   ========================================================================= */
+.theme-pda .nhud-panel {
+    font-family: 'Share Tech Mono', monospace;
+    background: #0d1208;
+    border: 1px solid #3a5a1a;
+    border-top: 2px solid #5aaa2a;
+    border-radius: 2px;
+    width: 340px;
+    min-height: 150px;
+    max-height: 420px;
+    box-shadow: 0 0 20px rgba(90,170,42,0.15), inset 0 0 30px rgba(0,0,0,0.5);
+    display: flex;
+    flex-direction: column;
+    resize: both;
+    overflow: auto;
+    position: relative;
+}
+.theme-pda .nhud-panel::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+    pointer-events: none;
+    z-index: 1;
+}
+.theme-pda .nhud-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    background: #0a1a05;
+    border-bottom: 1px solid #2a4a10;
+    cursor: grab;
+    user-select: none;
+    flex-shrink: 0;
+    position: relative;
+    z-index: 2;
+}
+.theme-pda .nhud-header-left { display: flex; align-items: center; gap: 8px; }
+.theme-pda .nhud-header-info { display: flex; flex-direction: column; }
+
+/* Блик ПДА */
+.theme-pda .nhud-icon {
+    width: 6px; height: 6px;
+    background: #5aaa2a;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #5aaa2a;
+    animation: pda-blink 1.2s ease-in-out infinite;
+}
+@keyframes pda-blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.2; }
+}
+
+.theme-pda .nhud-title { font-size: 11px; color: #7acc40; letter-spacing: 2px; text-transform: uppercase; }
+.theme-pda .nhud-close {
+    background: none; border: 1px solid #2a4a10; color: #5a8a30; cursor: pointer;
+    font-size: 10px; padding: 2px 6px; font-family: 'Share Tech Mono', monospace; transition: 0.15s;
+}
+.theme-pda .nhud-close:hover { background: #1a3a08; color: #7acc40; border-color: #5aaa2a; }
+
+.theme-pda .nhud-body { flex: 1; overflow-y: auto; padding: 8px; min-height: 0; position: relative; z-index: 2; }
+.theme-pda .nhud-body::-webkit-scrollbar { width: 4px; }
+.theme-pda .nhud-body::-webkit-scrollbar-track { background: #0a1a05; }
+.theme-pda .nhud-body::-webkit-scrollbar-thumb { background: #2a4a10; }
+
+.theme-pda .nhud-entry {
+    border: 1px solid #1a3a08; border-left: 2px solid #5aaa2a; background: rgba(0,20,0,0.6);
+    padding: 7px 10px; margin-bottom: 5px; position: relative;
+}
+.theme-pda .nhud-entry-top { display: flex; justify-content: space-between; margin-bottom: 4px; }
+.theme-pda .nhud-sender { font-size: 10px; color: #5aaa2a; letter-spacing: 1px; }
+.theme-pda .nhud-time { font-size: 9px; color: #2a5a10; }
+.theme-pda .nhud-text { font-size: 11px; color: #90cc60; line-height: 1.5; }
+.theme-pda .nhud-meta { font-size: 9px; color: #2a5a10; margin-top: 3px; }
+.theme-pda .nhud-del {
+    position: absolute; bottom: 4px; right: 5px; top: auto;
+    opacity: 0; /* Скрываем по умолчанию */
+    background: none; border: none;
+    color: #2a4a10; cursor: pointer; font-size: 12px; transition: 0.15s;
+}
+.theme-pda .nhud-entry:hover .nhud-del { opacity: 1; } /* Показываем при наведении */
+.theme-pda .nhud-del:hover { color: #aa4422; }
+
+/* Скрываем ненужное в ПДА */
+.theme-pda .nhud-subtitle, .theme-pda .nhud-entry-avatar, .theme-pda .nhud-corner { display: none; }
+
+
+/* =========================================================================
+   ТЕМА 2: СОВРЕМЕННЫЙ МЕССЕНДЖЕР (Telegram / Glass)
+   ========================================================================= */
+
+/* Восстанавливаем фон панели и ресайз */
+.theme-tg .nhud-panel {
+    background: rgba(18, 18, 22, 0.85) !important; /* Темная стеклянная подложка */
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6) !important;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    display: flex; flex-direction: column;
+    width: 380px; min-height: 200px; max-height: 85vh;
+    resize: both !important;
+    overflow: hidden !important; 
+}
+
+/* Шапка панели (Крестик жестко выровнен вправо) */
+.theme-tg .nhud-header {
+    display: flex !important;
+    flex-direction: row !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 12px 16px;
+    cursor: grab; flex-shrink: 0;
+    width: 100%; box-sizing: border-box;
+}
+.theme-tg .nhud-header-left { display: flex; align-items: center; gap: 8px; }
+.theme-tg .nhud-title { font-size: 13px; font-weight: 600; color: rgba(255,255,255,0.9); text-transform: uppercase; letter-spacing: 1px; }
+.theme-tg .nhud-icon { display: none; }
+
+/* Главный крестик окна (Появляется при наведении на шапку) */
+.theme-tg .nhud-close {
+    background: transparent; border: none; color: #8b9faf; cursor: pointer;
+    font-size: 16px; transition: 0.2s; opacity: 0; margin: 0; padding: 0 4px;
+}
+.theme-tg .nhud-header:hover .nhud-close { opacity: 1; }
+.theme-tg .nhud-close:hover { color: #fff; }
+
+/* Тело панели */
+.theme-tg .nhud-body {
+    flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px;
+}
+.theme-tg .nhud-body::-webkit-scrollbar { width: 4px; }
+.theme-tg .nhud-body::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+
+/* Карточка сообщения */
+.theme-tg .nhud-entry, .theme-tg .nhud-toast {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 10px;
+    padding: 12px;
+    display: flex; gap: 12px; align-items: flex-start;
+    position: relative; transition: 0.2s;
+}
+.theme-tg .nhud-entry:hover { background: rgba(255, 255, 255, 0.08); }
+
+/* Аватарка - Синее Облачко (Без уродливого белого квадрата) */
+.theme-tg .nhud-entry-avatar, .theme-tg .nhud-toast-avatar {
+    width: 36px; height: 36px;
+    background: rgba(44, 165, 224, 0.15); /* Легкий синий фон */
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+}
+.theme-tg .nhud-entry-avatar::after, .theme-tg .nhud-toast-avatar::after {
+    content: '💬';
+    font-size: 16px;
+}
+
+/* Текст */
+.theme-tg .nhud-entry-content, .theme-tg .nhud-toast-content { flex: 1; min-width: 0; }
+.theme-tg .nhud-entry-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+.theme-tg .nhud-sender, .theme-tg .nhud-toast-sender { font-size: 13px; font-weight: 600; color: #2ca5e0; }
+.theme-tg .nhud-time, .theme-tg .nhud-toast-meta { font-size: 11px; color: rgba(255, 255, 255, 0.3); }
+.theme-tg .nhud-text, .theme-tg .nhud-toast-text { font-size: 13px; color: rgba(255, 255, 255, 0.85); line-height: 1.4; }
+.theme-tg .nhud-meta { display: none; }
+
+/* Крестик удаления отдельного сообщения */
+.theme-tg .nhud-del {
+    position: absolute; bottom: 6px; right: 8px; top: auto;
+    opacity: 0; background: none; border: none; color: #8b9faf;
+    cursor: pointer; font-size: 14px; transition: 0.2s;
+}
+.theme-tg .nhud-entry:hover .nhud-del { opacity: 1; }
+.theme-tg .nhud-del:hover { color: #e05252; }
+
+/* Скрытие артефактов от других тем */
+.theme-tg .nhud-corner { display: none; }
+
+
+/* =========================================================================
+   ТЕМА 3: ФЭНТЕЗИ СВИТОК
+   ========================================================================= */
+.theme-fantasy .nhud-panel {
+    font-family: 'IM Fell English', Georgia, serif;
+    background: radial-gradient(ellipse at top, #1a0f2e 0%, #0d0818 60%), #0d0818;
+    border: 1px solid #5a3a7a; border-top: 2px solid #9a6ac0; border-radius: 4px;
+    width: 340px; min-height: 150px; max-height: 420px;
+    box-shadow: 0 0 30px rgba(120,60,180,0.2), 0 0 60px rgba(120,60,180,0.08), inset 0 0 40px rgba(0,0,0,0.4);
+    display: flex; flex-direction: column; resize: both; overflow: auto; position: relative;
+}
+.theme-fantasy .nhud-panel::before {
+    content: ''; position: absolute; top: 0; left: 0; right: 0; height: 60px;
+    background: linear-gradient(to bottom, rgba(154,106,192,0.08), transparent); pointer-events: none;
+}
+
+/* Угловые украшения */
+.theme-fantasy .nhud-corner {
+    position: absolute; width: 16px; height: 16px; border-color: #7a4a9a; border-style: solid; z-index: 3; pointer-events: none;
+}
+.theme-fantasy .nhud-corner.tl { top: 3px; left: 3px; border-width: 1px 0 0 1px; }
+.theme-fantasy .nhud-corner.tr { top: 3px; right: 3px; border-width: 1px 1px 0 0; }
+.theme-fantasy .nhud-corner.bl { bottom: 3px; left: 3px; border-width: 0 0 1px 1px; }
+.theme-fantasy .nhud-corner.br { bottom: 3px; right: 3px; border-width: 0 1px 1px 0; }
+
+.theme-fantasy .nhud-header {
+    display: flex; justify-content: space-between; align-items: center; padding: 10px 16px;
+    background: rgba(0,0,0,0.3); border-bottom: 1px solid #3a2050; cursor: grab; user-select: none; flex-shrink: 0; position: relative; z-index: 2;
+}
+.theme-fantasy .nhud-title { font-size: 14px; color: #c8a0e8; font-style: italic; letter-spacing: 1px; text-shadow: 0 0 10px rgba(180,120,240,0.5); }
+.theme-fantasy .nhud-close {
+    background: none; border: 1px solid #3a2050; color: #7a4a9a; cursor: pointer; font-size: 12px;
+    padding: 2px 8px; font-family: 'IM Fell English', serif; border-radius: 2px; transition: 0.2s;
+}
+.theme-fantasy .nhud-close:hover { background: rgba(120,60,180,0.2); color: #c8a0e8; border-color: #7a4a9a; box-shadow: 0 0 8px rgba(120,60,180,0.3); }
+
+.theme-fantasy .nhud-body { flex: 1; overflow-y: auto; padding: 10px; min-height: 0; position: relative; z-index: 2; }
+.theme-fantasy .nhud-body::-webkit-scrollbar { width: 4px; }
+.theme-fantasy .nhud-body::-webkit-scrollbar-track { background: rgba(0,0,0,0.3); }
+.theme-fantasy .nhud-body::-webkit-scrollbar-thumb { background: #3a2050; border-radius: 2px; }
+
+.theme-fantasy .nhud-entry {
+    background: rgba(20,10,35,0.7); border: 1px solid #2a1540; border-left: 2px solid #7a4a9a;
+    border-radius: 3px; padding: 8px 10px; margin-bottom: 6px; position: relative; box-shadow: inset 0 0 15px rgba(0,0,0,0.3);
+}
+.theme-fantasy .nhud-entry-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 2px; }
+.theme-fantasy .nhud-sender { font-size: 12px; color: #c8a0e8; font-style: italic; margin-bottom: 4px; text-shadow: 0 0 6px rgba(180,120,240,0.3); }
+.theme-fantasy .nhud-time { font-size: 10px; color: #4a3060; font-style: italic; }
+.theme-fantasy .nhud-text { font-size: 12px; color: #b090c8; line-height: 1.6; }
+.theme-fantasy .nhud-meta { font-size: 10px; color: #4a3060; margin-top: 4px; font-style: italic; }
+.theme-fantasy .nhud-del {
+    position: absolute; bottom: 5px; right: 6px; top: auto;
+    opacity: 0; /* Скрываем по умолчанию */
+    background: none; border: none;
+    color: #3a2050; cursor: pointer; font-size: 12px; transition: 0.2s;
+}
+.theme-fantasy .nhud-entry:hover .nhud-del { opacity: 1; } /* Показываем при наведении */
+.theme-fantasy .nhud-del:hover { color: #c04060; text-shadow: 0 0 5px rgba(200,60,100,0.5); }
+
+/* Анимация искр */
+@keyframes sparkle {
+    0%, 100% { opacity: 0; transform: scale(0); }
+    50% { opacity: 1; transform: scale(1); }
+}
+
+/* Скрываем ненужное в Фэнтези */
+.theme-fantasy .nhud-subtitle, .theme-fantasy .nhud-entry-avatar, .theme-fantasy .nhud-icon { display: none; }
+
+/* =========================================================================
+   СКРЫТИЕ ПОЛЗУНКОВ ПРОКРУТКИ ВО ВСЕХ ТЕМАХ
+   ========================================================================= */
+
+/* Прячем скроллбар для Chrome, Safari и Edge */
+.theme-pda .nhud-body::-webkit-scrollbar,
+.theme-tg .nhud-body::-webkit-scrollbar,
+.theme-fantasy .nhud-body::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+}
+
+/* Прячем скроллбар для Firefox и старых браузеров */
+.theme-pda .nhud-body,
+.theme-tg .nhud-body,
+.theme-fantasy .nhud-body {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+}
+
+/* =========================================================================
+   ВСПЛЫВАЮЩИЕ УВЕДОМЛЕНИЯ (ТОСТЫ) ДЛЯ ВСЕХ ТЕМ
+   ========================================================================= */
+
+/* --- ТЕМА 1: ПДА --- */
+.theme-pda .nhud-toast {
+    font-family: 'Share Tech Mono', monospace;
+    background: #0d1208;
+    border: 1px solid #3a5a1a;
+    border-left: 2px solid #5aaa2a;
+    border-radius: 2px;
+    padding: 10px 14px;
+    width: 280px;
+    box-shadow: 0 0 15px rgba(90,170,42,0.2);
+    position: relative;
+    overflow: hidden;
+}
+.theme-pda .nhud-toast::before {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px);
+    pointer-events: none;
+}
+.theme-pda .nhud-toast-sender { font-size: 11px; color: #5aaa2a; letter-spacing: 1px; margin-bottom: 3px; text-transform: uppercase; }
+.theme-pda .nhud-toast-text { font-size: 12px; color: #90cc60; line-height: 1.4; }
+.theme-pda .nhud-toast-meta { font-size: 10px; color: #2a5a10; margin-top: 4px; }
+.theme-pda .nhud-toast-avatar { display: none; } /* В ПДА аватарки не нужны */
+
+
+/* --- ТЕМА 2: TELEGRAM (GLASSMORPHISM) --- */
+.theme-tg .nhud-toast {
+    background: rgba(25, 25, 25, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 16px; /* Современные скругления */
+    padding: 12px 14px;
+    width: 320px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    display: flex; gap: 12px; align-items: center;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+}
+/* Синее облачко вместо белого квадрата */
+.theme-tg .nhud-toast-avatar {
+    width: 38px; height: 38px;
+    background: rgba(44, 165, 224, 0.15);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0;
+}
+.theme-tg .nhud-toast-avatar::after {
+    content: '💬';
+    font-size: 18px;
+}
+.theme-tg .nhud-toast-content { flex: 1; min-width: 0; }
+.theme-tg .nhud-toast-sender { font-size: 14px; font-weight: 600; color: #ffffff; letter-spacing: 0.2px; margin-bottom: 2px; }
+.theme-tg .nhud-toast-text { font-size: 13px; color: rgba(255, 255, 255, 0.85); line-height: 1.4; }
+.theme-tg .nhud-toast-meta { font-size: 11px; color: rgba(255, 255, 255, 0.4); margin-top: 4px; }
+
+
+/* --- ТЕМА 3: ФЭНТЕЗИ (СВИТОК) --- */
+.theme-fantasy .nhud-toast {
+    font-family: 'IM Fell English', Georgia, serif;
+    background: linear-gradient(135deg, #1a0f2e, #0d0818);
+    border: 1px solid #5a3a7a;
+    border-left: 2px solid #9a6ac0;
+    border-radius: 4px;
+    padding: 12px 16px;
+    width: 300px;
+    box-shadow: 0 4px 20px rgba(120,60,180,0.3), inset 0 0 20px rgba(0,0,0,0.4);
+    position: relative; overflow: hidden;
+}
+.theme-fantasy .nhud-toast::before {
+    content: '✦'; position: absolute; top: 8px; right: 10px;
+    color: #5a3a7a; font-size: 12px; animation: sparkle 2s ease-in-out infinite;
+}
+.theme-fantasy .nhud-toast-sender { font-size: 13px; color: #c8a0e8; font-style: italic; margin-bottom: 4px; text-shadow: 0 0 6px rgba(180,120,240,0.4); }
+.theme-fantasy .nhud-toast-text { font-size: 13px; color: #b090c8; line-height: 1.5; }
+.theme-fantasy .nhud-toast-meta { font-size: 11px; color: #4a3060; margin-top: 4px; font-style: italic; }
+.theme-fantasy .nhud-toast-avatar { display: none; }
+
+
+/* =========================================================================
+   ФИКС "МАТРЕШКИ" (УБИРАЕМ ДВОЙНОЕ ОКНО И РАЗРЕШАЕМ РЕСАЙЗ)
+   ========================================================================= */
+
+/* 1. Делаем внешний контейнер абсолютно прозрачным "призраком".
+   Он будет только служить якорем для перетаскивания, не мешая размерам. */
+#nhud-notif-panel {
+    width: auto !important;
+    height: auto !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    resize: none !important;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+/* 2. Снимаем жесткие лимиты по высоте и ширине с самих тем, 
+   чтобы ты могла растягивать их на весь экран, если захочешь. */
+.theme-pda .nhud-panel,
+.theme-tg .nhud-panel,
+.theme-fantasy .nhud-panel {
+    max-height: 85vh !important;
+    max-width: 90vw !important;
+}
+
+/* =========================================================================
+   ЖЕЛЕЗОБЕТОННАЯ СВЯЗКА ПАРЯЩИХ ОКОН С ТЕМАМИ (БЕЗ ОТСЕБЯТИНЫ)
+   ========================================================================= */
+
+/* 1. ДЕФОЛТНАЯ ТЕМА (Подхватывает стандартные переменные мода) */
+.nhud-mini-panel {
+    background: var(--nhud-cen-bg, #151220) !important;
+    border: 1px solid var(--nhud-border, #4a1525) !important;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.9) !important;
+}
+.nhud-mini-panel .nhud-mini-header {
+    background: var(--nhud-cen-head, linear-gradient(180deg, #2a101a, #1a0a10)) !important;
+    border-bottom: 1px solid var(--nhud-border, #4a1525) !important;
+}
+.nhud-mini-panel .nhud-mini-header span {
+    color: var(--nhud-cen-text, #e0c0c0) !important;
+}
+.nhud-mini-panel .nhud-mini-body,
+.nhud-mini-panel #nhud-achievements-body {
+    background: rgba(0,0,0,0.2) !important;
+    color: var(--nhud-cen-text, #e0c0c0) !important;
+}
+
+/* 2. ТЕМА: FANTASY (Свиток) */
+html.theme-fantasy .nhud-mini-panel, body.theme-fantasy .nhud-mini-panel {
+    font-family: 'Georgia', 'Times New Roman', serif !important;
+    background-color: #e2d5c3 !important;
+    background-image: url('./ui_image/Paper_Page_01_Fold.png') !important;
+    border: 6px solid #1a110e !important;
+    box-shadow: inset 0 0 0 2px #6b4e31, inset 0 0 40px rgba(43, 26, 16, 0.4), 0 10px 40px rgba(0,0,0,0.9) !important;
+    border-radius: 0 !important;
+}
+html.theme-fantasy .nhud-mini-panel .nhud-mini-header, body.theme-fantasy .nhud-mini-panel .nhud-mini-header {
+    background-image: url('./ui_image/Wood_Planks_07_Moss_2.png') !important;
+    background-color: #211510 !important;
+    border-bottom: 1px solid #4a3219 !important;
+}
+html.theme-fantasy .nhud-mini-panel .nhud-mini-header span, body.theme-fantasy .nhud-mini-panel .nhud-mini-header span {
+    color: #ffeed3 !important;
+    text-shadow: -1px -1px 0 #1a0a05, 1px -1px 0 #1a0a05, -1px 1px 0 #1a0a05, 1px 1px 0 #1a0a05, 3px 3px 5px rgba(0,0,0,0.9) !important;
+    font-family: 'Philosopher', 'Georgia', serif !important;
+}
+html.theme-fantasy .nhud-mini-panel .nhud-mini-body, body.theme-fantasy .nhud-mini-panel #nhud-achievements-body {
+    background-color: transparent !important;
+    background-image: url('./ui_image/Wood_Planks_05_Wide_1.png') !important;
+}
+
+/* 3. ТЕМА: CYBER (Терминал) */
+html.theme-cyber .nhud-mini-panel, body.theme-cyber .nhud-mini-panel {
+    font-family: 'Consolas', 'Courier New', monospace !important;
+    background-color: #090e13 !important;
+    background-image: linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px) !important;
+    background-size: 20px 20px !important;
+    border: 2px solid #00FFFF !important;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.1), inset 0 0 20px rgba(0, 255, 255, 0.05) !important;
+    border-radius: 4px !important;
+}
+html.theme-cyber .nhud-mini-panel .nhud-mini-header, body.theme-cyber .nhud-mini-panel .nhud-mini-header {
+    background: rgba(0, 255, 255, 0.05) !important;
+    border-bottom: 1px solid #00FFFF !important;
+}
+html.theme-cyber .nhud-mini-panel .nhud-mini-header span, body.theme-cyber .nhud-mini-panel .nhud-mini-header span {
+    color: #00FFFF !important;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5) !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+    font-family: 'Chakra Petch', 'Consolas', monospace !important;
+}
+
+/* 4. ТЕМА: GLASS (Стекло) */
+html.theme-glass .nhud-mini-panel, body.theme-glass .nhud-mini-panel {
+    background: linear-gradient(135deg, rgba(40, 25, 50, 0.25), rgba(15, 10, 25, 0.35)) !important;
+    backdrop-filter: blur(24px) saturate(150%) !important;
+    -webkit-backdrop-filter: blur(24px) saturate(150%) !important;
+    border: 1px solid rgba(255, 255, 255, 0.05) !important;
+    border-top: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border-left: 1px solid rgba(255, 255, 255, 0.1) !important;
+    box-shadow: inset 1px 1px 2px rgba(255, 255, 255, 0.15), inset -1px -1px 2px rgba(0, 0, 0, 0.2), 0 15px 40px rgba(0, 0, 0, 0.5) !important;
+    border-radius: 8px !important;
+}
+html.theme-glass .nhud-mini-panel .nhud-mini-header, body.theme-glass .nhud-mini-panel .nhud-mini-header {
+    background: linear-gradient(to bottom, rgba(255, 255, 255, 0.12), rgba(0, 0, 0, 0.15)) !important;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+html.theme-glass .nhud-mini-panel .nhud-mini-header span, body.theme-glass .nhud-mini-panel .nhud-mini-header span {
+    color: #ffffff !important;
+    text-shadow: 0 2px 5px rgba(0, 0, 0, 0.8), 0 0 10px rgba(0, 0, 0, 0.5) !important;
+    font-weight: bold !important;
 }

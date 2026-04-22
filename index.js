@@ -10,6 +10,7 @@ import { CharacterModel } from "./core/CharacterModel.js";
 import { AIParser } from "./core/AIParser.js";
 import { getUserName, getCharName, showStatus, stripHtml, parseJsonFromMessage, removeTagsFromMessage, getCurrentSwipeId, getCurrentMessageInfo, cleanJsonString } from "./utils/helpers.js";
 import { getSettings, getLive, getChatTrackers, ensureCharInLive, deduplicateCharacters, restoreLiveData, restoreLastSwipeInfoBlocks } from "./core/StateManager.js";
+import { makeWindowDraggable } from "./ui/Popups.js";
 
 // Подключаем интерфейс
 import * as UI from "./ui/UIManager.js";
@@ -22,36 +23,20 @@ import * as SetUI from "./ui/SettingsUI.js";
 
 let notifStylesInjected = false;
 const NOTIF_CSS = `
+    /* Контейнер для всплывающих тостов (внизу справа) */
     #nhud-notif-container {
         position: fixed; bottom: 20px; right: 20px; z-index: 99999;
         display: flex; flex-direction: column-reverse; gap: 8px;
         pointer-events: none;
     }
+
+    /* Технические стили и анимации тостов */
     .nhud-toast {
         pointer-events: auto;
-        background: rgba(20, 10, 15, 0.95);
-        border: 1px solid var(--nhud-border, #4a1525);
-        border-left: 3px solid #80a0d0;
-        border-radius: 6px; padding: 10px 14px;
-        max-width: 320px; min-width: 200px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.6);
         animation: nhud-toast-in 0.3s ease-out;
-        font-family: sans-serif;
     }
     .nhud-toast.removing {
         animation: nhud-toast-out 0.3s ease-in forwards;
-    }
-    .nhud-toast-sender {
-        font-size: 11px; font-weight: bold;
-        color: #80a0d0;
-        margin-bottom: 4px;
-    }
-    .nhud-toast-text {
-        font-size: 13px; color: var(--nhud-text-main, #e0c0c0);
-        line-height: 1.4;
-    }
-    .nhud-toast-device {
-        font-size: 9px; color: #606080; margin-top: 4px;
     }
     @keyframes nhud-toast-in {
         from { opacity: 0; transform: translateX(50px); }
@@ -61,44 +46,15 @@ const NOTIF_CSS = `
         from { opacity: 1; transform: translateX(0); }
         to { opacity: 0; transform: translateX(50px); }
     }
+
+    /* Центрирование главного окна уведомлений */
     #nhud-notif-panel {
-        display: none; position: fixed; top: 50%; left: 50%;
-        transform: translate(-50%, -50%); z-index: 99998;
-        width: 400px; max-height: 500px;
-        background: rgba(20, 10, 15, 0.97);
-        border: 1px solid var(--nhud-border, #4a1525);
-        border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.9);
-        font-family: sans-serif; overflow: hidden;
-        display: flex; flex-direction: column;
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 99998;
     }
-    #nhud-notif-panel-header {
-        display: flex; justify-content: space-between; align-items: center;
-        padding: 10px 14px; background: rgba(0,0,0,0.4);
-        border-bottom: 1px solid var(--nhud-border);
-    }
-    #nhud-notif-panel-header span { font-weight: bold; color: #80a0d0; font-size: 14px; }
-    #nhud-notif-panel-close {
-        background: none; border: none; color: #a08080; cursor: pointer; font-size: 16px;
-    }
-    #nhud-notif-panel-body {
-        flex: 1; overflow-y: auto; padding: 10px;
-    }
-    .nhud-notif-entry {
-        background: rgba(0,0,0,0.3); border: 1px solid #2a2040;
-        border-radius: 4px; padding: 8px 10px; margin-bottom: 6px;
-        position: relative;
-    }
-    .nhud-notif-entry-sender { font-size: 11px; font-weight: bold; color: #80a0d0; }
-    .nhud-notif-entry-text { font-size: 12px; color: #c0c0e0; margin-top: 3px; }
-    .nhud-notif-entry-time { font-size: 9px; color: #606080; margin-top: 3px; }
-    .nhud-notif-del {
-        position: absolute; top: 4px; right: 6px;
-        background: none; border: none; color: #605060; cursor: pointer;
-        font-size: 14px; line-height: 1; padding: 2px 4px; border-radius: 3px;
-        transition: 0.15s;
-    }
-    .nhud-notif-del:hover { color: #e05252; background: rgba(224,82,82,0.15); }
-    #nhud-notif-panel-empty { text-align: center; color: #606080; padding: 30px; font-size: 13px; }
 `;
 
 let notifHistory = [];
@@ -106,21 +62,33 @@ let notifHistory = [];
 export function showNotification(sender, text) {
     if (!notifStylesInjected) {
         $('<style id="nhud-notif-styles">').text(NOTIF_CSS).appendTo('head');
+        const savedTheme = typeof getSettings === 'function' ? (getSettings().ui?.notificationTheme || 'theme-pda') : 'theme-pda';
+        
         $('body').append(`
-            <div id="nhud-notif-container"></div>
-            <div id="nhud-notif-panel">
-                <div id="nhud-notif-panel-header">
-                    <span>📨 Уведомления</span>
-                    <button id="nhud-notif-panel-close">✕</button>
-                </div>
-                <div id="nhud-notif-panel-body">
-                    <div id="nhud-notif-panel-empty">Нет уведомлений</div>
+            <div id="nhud-notif-container" class="${savedTheme}"></div>
+            <div id="nhud-notif-panel" class="${savedTheme}" style="display:none;">
+                <div class="nhud-panel">
+                    <div class="nhud-corner tl"></div><div class="nhud-corner tr"></div>
+                    <div class="nhud-corner bl"></div><div class="nhud-corner br"></div>
+                    <div class="nhud-header" id="nhud-notif-panel-header">
+                        <div class="nhud-header-left">
+                            <div class="nhud-icon"></div>
+                            <div class="nhud-header-info">
+                                <span class="nhud-title">// УВЕДОМЛЕНИЯ</span>
+                            </div>
+                        </div>
+                        <button class="nhud-close" id="nhud-notif-panel-close">✕</button>
+                    </div>
+                    <div class="nhud-body" id="nhud-notif-panel-body">
+                        <div id="nhud-notif-panel-empty" style="text-align:center; padding:20px; opacity:0.5;">Нет уведомлений</div>
+                    </div>
                 </div>
             </div>
         `);
         $('#nhud-notif-panel-close').on('click', () => $('#nhud-notif-panel').fadeOut(200));
         notifStylesInjected = true;
     }
+    window.testNotif = showNotification;
 
     const settings = getSettings();
     const deviceName = settings.prompts?.notificationDeviceName || 'Смартфон';
@@ -146,9 +114,12 @@ export function showNotification(sender, text) {
     // Toast
     const toast = $(`
         <div class="nhud-toast">
-            <div class="nhud-toast-sender">📨 ${sender}</div>
-            <div class="nhud-toast-text">${text}</div>
-            <div class="nhud-toast-device">via ${deviceName} · ${time}</div>
+            <div class="nhud-toast-avatar"></div>
+            <div class="nhud-toast-content">
+                <div class="nhud-toast-sender">${sender}</div>
+                <div class="nhud-toast-text">${text}</div>
+                <div class="nhud-toast-meta">via ${deviceName} · ${time}</div>
+            </div>
         </div>
     `);
 
@@ -180,16 +151,25 @@ function renderNotifPanel() {
     for (let i = 0; i < notifHistory.length; i++) {
         const n = notifHistory[i];
         const entry = $(`
-            <div class="nhud-notif-entry" data-notif-idx="${i}">
-                <button class="nhud-notif-del" title="Удалить">✕</button>
-                <div class="nhud-notif-entry-sender">📨 ${n.sender}</div>
-                <div class="nhud-notif-entry-text">${n.text}</div>
-                <div class="nhud-notif-entry-time">via ${n.device} · ${n.time}</div>
+            <div class="nhud-entry" data-notif-idx="${i}">
+                <div class="nhud-entry-avatar"></div>
+                <div class="nhud-entry-content">
+                    <div class="nhud-entry-top">
+                        <span class="nhud-sender">${n.sender}</span>
+                        <span class="nhud-time">${n.time}</span>
+                    </div>
+                    <div class="nhud-text">${n.text}</div>
+                    <div class="nhud-meta">via ${n.device}</div>
+                </div>
+                <button class="nhud-del" title="Удалить">✕</button>
             </div>
         `);
-        entry.find('.nhud-notif-del').on('click', function(e) {
+        entry.find('.nhud-del').on('click', function(e) {
             e.stopPropagation();
-            const idx = parseInt($(this).closest('.nhud-notif-entry').attr('data-notif-idx'));
+            
+            // ВАЖНО: здесь мы ищем новый класс .nhud-entry
+            const idx = parseInt($(this).closest('.nhud-entry').attr('data-notif-idx'));
+            
             if (!isNaN(idx) && idx >= 0 && idx < notifHistory.length) {
                 notifHistory.splice(idx, 1);
                 // Обновляем сохранённые данные
@@ -201,6 +181,8 @@ function renderNotifPanel() {
                         saveSettingsDebounced();
                     }
                 } catch(e) { console.warn('[NHUD] Failed to save notifHistory:', e); }
+                
+                // Перерисовываем панель
                 renderNotifPanel();
             }
         });
@@ -272,8 +254,24 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
             }
             const name = existingKey || rawName;
 
-            if (!live.characters[name]) live.characters[name] = {};
-            live.characters[name].isHiddenFromScene = false;
+            // 1. ГАРАНТИРОВАННО СОЗДАЕМ В БАЗЕ (чтобы не пропадали из папки настроек)
+            if (!live.characters[name]) {
+                live.characters[name] = {};
+            }
+
+            // 2. УМНАЯ СИСТЕМА ПРИСУТСТВИЯ
+            if (charData.in_scene === false) {
+                live.characters[name].isHiddenFromScene = true;
+                // Персонаж сохранен в базу, но на экран не пойдет. Прерываем обновление статов:
+                return; 
+            } else if (charData.in_scene === true) {
+                live.characters[name].isHiddenFromScene = false; // Достаем из скрытых
+            } else {
+                // Если in_scene нет, но перс был скрыт игроком или логикой — оставляем скрытым
+                if (live.characters[name].isHiddenFromScene) {
+                    return; 
+                }
+            }
             if (charData.outfit !== undefined && charData.outfit !== '') {
                 if (typeof charData.outfit === 'object') {
                     // Новый формат: объект со слотами { head, torso, legs, feet, accessories }
@@ -298,20 +296,60 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
             if (charData.thoughts !== undefined && charData.thoughts !== '') live.characters[name].thoughts = stripHtml(charData.thoughts);
 
             if (charData.relationship !== undefined) {
-                const newVal = Math.min(100, Math.max(0, parseInt(charData.relationship) || 50));
+                // Берем "сырое" значение от ИИ (например, 110)
+                const rawNewVal = parseInt(charData.relationship) || 50;
+                // Обрезаем его для интерфейса (не больше 100, не меньше 0)
+                const clampedNewVal = Math.min(100, Math.max(0, rawNewVal));
+                
                 let oldVal = live.characters[name].relationship ?? 50;
-                if (newVal !== oldVal) {
+                
+                // Считаем дельту по сырым значениям! (110 - 100 = +10)
+                let delta = rawNewVal - oldVal;
+                let reasonText = stripHtml(charData.relationship_change_reason || "Действия повлияли на отношение");
+
+                // Ищем предыдущую причину, чтобы не спамить одинаковыми на капе в 100
+                let lastReason = "";
+                if (live.relHistory && live.relHistory[name] && live.relHistory[name].length > 0) {
+                    lastReason = live.relHistory[name][live.relHistory[name].length - 1].reason;
+                }
+
+                // Записываем в журнал, если: 
+                // 1) Дельта не ноль (реально поменялись цифры)
+                // ИЛИ 2) Уперлись в край (100 или 0), но ИИ выдал НОВУЮ, осмысленную причину
+                let isCapUpdate = (clampedNewVal === 100 || clampedNewVal === 0) && reasonText !== lastReason && reasonText !== "Действия повлияли на отношение";
+
+                if (delta !== 0 || isCapUpdate) {
                     if (!live.relHistory) live.relHistory = {};
                     if (!live.relHistory[name]) live.relHistory[name] = [];
                     live.relHistory[name] = live.relHistory[name].filter(e => String(e.messageId) !== String(messageId));
-                    live.relHistory[name].push({ messageId, delta: newVal - oldVal, val: newVal, reason: stripHtml(charData.relationship_change_reason || "Действия повлияли на отношение"), time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) });
+                    
+                    live.relHistory[name].push({ 
+                        messageId, 
+                        delta: delta, // Сохраняем сырую дельту (покажет +10)
+                        val: clampedNewVal, // Итог всегда обрезан (100)
+                        reason: reasonText, 
+                        time: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) 
+                    });
                 }
-                live.characters[name].relationship = newVal;
+                live.characters[name].relationship = clampedNewVal;
             }
             if (charData.relationship_status)        live.characters[name].relationship_status        = stripHtml(charData.relationship_status);
             if (charData.relationship_thoughts)      live.characters[name].relationship_thoughts      = stripHtml(charData.relationship_thoughts);
             if (charData.relationship_hint)          live.characters[name].relationship_hint          = stripHtml(charData.relationship_hint);
             if (charData.relationship_change_reason) live.characters[name].relationship_change_reason = stripHtml(charData.relationship_change_reason);
+            // НОВОЕ: Парсинг трекеров бота
+            if (settings.modules?.botTrackers && charData.trackers && typeof charData.trackers === 'object') {
+                if (live.characters[name].botTrackersEnabled !== false) { // Проверяем локальный рубильник
+                    if (!live.characters[name].trackerValues) live.characters[name].trackerValues = {};
+                    
+                    Object.entries(charData.trackers).forEach(([tId, tVal]) => {
+                        // Ищем лимит трекера, чтобы ИИ не накрутил лишнего
+                        let def = live.characters[name].customTrackers?.find(t => t.id === tId) || settings.botTrackers?.find(t => t.id === tId);
+                        let max = def ? def.max : 100;
+                        live.characters[name].trackerValues[tId] = Math.min(max, Math.max(0, parseInt(tVal) || 0));
+                    });
+                }
+            }
         });
 
         // Персистим в chatData чтобы персонажи не пропадали между сценами
@@ -386,6 +424,22 @@ export function applyJsonUpdate(jsonData, messageId, swipeId) {
 
     if (jsonData.xp_gained) {
         import('./core/StateManager.js').then(m => { const leveledUp = m.addHeroXp(jsonData.xp_gained); if (leveledUp) UI.showAchievementPopup({ title: "УРОВЕНЬ ПОВЫШЕН!", desc: "Вы получили 1 очко характеристик!", icon: "🌟" }); });
+    }
+
+    if (jsonData.skill_xp_gained && Array.isArray(jsonData.skill_xp_gained)) {
+        import('./core/StateManager.js').then(m => {
+            if (m.addSkillXp) {
+                jsonData.skill_xp_gained.forEach(skData => {
+                    if (!skData.name) return;
+                    const res = m.addSkillXp(skData.name, skData.amount);
+                    if (res && res.leveledUp) {
+                        UI.showAchievementPopup({ title: "НАВЫК ПОВЫШЕН!", desc: `«${skData.name}» достиг ${res.level} уровня!`, icon: "✨" });
+                    }
+                });
+                import('./ui/HeroSettings.js').then(hs => { if(hs.renderSettingsHeroSheet) hs.renderSettingsHeroSheet(); });
+                import('./ui/Modules.js').then(mod => { if(mod.renderHeroSheet) mod.renderHeroSheet(); });
+            }
+        });
     }
 
     if (jsonData.quests && Array.isArray(jsonData.quests)) {
@@ -595,6 +649,7 @@ export async function sendToAPI(manualTrigger = false) {
 
 export function buildMemoryInjectionBlock() {
     const live = getLive();
+    const settings = getSettings(); // Добавили получение настроек
     if (!live || !live.characters || Object.keys(live.characters).length === 0) return "";
 
     let memoryText = "\n[CURRENT DYNAMIC MEMORY & CHARACTER STATES]\n";
@@ -615,6 +670,20 @@ export function buildMemoryInjectionBlock() {
             details.push(`Recent relationship shift reason: "${charData.relationship_change_reason}"`);
         }
 
+        // --- НОВОЕ: Добавляем трекеры бота в память ИИ ---
+        if (settings.modules?.botTrackers !== false && charData.botTrackersEnabled !== false) {
+            const trackersToRender = charData.customTrackers?.length > 0 ? charData.customTrackers : (settings.botTrackers || []);
+            let trkStrings = [];
+            trackersToRender.forEach(t => {
+                const val = charData.trackerValues?.[t.id] !== undefined ? charData.trackerValues[t.id] : t.max;
+                trkStrings.push(`${t.id}: ${val}/${t.max}`);
+            });
+            if (trkStrings.length > 0) {
+                details.push(`Trackers: ${trkStrings.join(', ')}`);
+            }
+        }
+        // ---------------------------------------------------
+
         if (details.length > 0) {
             charBlock += details.join(" | ");
             memoryText += charBlock + "\n";
@@ -634,9 +703,10 @@ export function injectPromptIntoRequest() {
     if (settings.requestSettings?.sendWithMain && !settings.requestSettings?.lightMode) {
         finalPrompt += buildDynamicPrompt(settings);
     }
+    //console.log("[NHUD DEBUG] Итоговый промпт расширения:", finalPrompt);
 
     try {
-        setExtensionPrompt('narrative-hud-parser', finalPrompt ? finalPrompt : '', extension_prompt_types.IN_CHAT, 1, false, extension_prompt_roles.SYSTEM);
+        setExtensionPrompt('narrative-hud-parser', finalPrompt ? finalPrompt : '', extension_prompt_types.IN_CHAT, 0, false, extension_prompt_roles.USER);
 
         let lorePrompt = "";
         if (settings.modules?.loreInjection) {
@@ -688,11 +758,12 @@ function removeAllHudTags(text, legacyOpenTag, legacyCloseTag) {
     if (!text) return text;
     let cleaned = text;
 
-    // Удаляем новые модульные теги
+    // Удаляем новые модульные теги вместе с их скрытым div-контейнером
     for (const tags of Object.values(HUD_TAGS)) {
         const openEsc = tags.open.replace(/[.*+?${}()|[\]\\]/g, '\\$&');
         const closeEsc = tags.close.replace(/[.*+?${}()|[\]\\]/g, '\\$&');
-        cleaned = cleaned.replace(new RegExp(`${openEsc}[\\s\\S]*?${closeEsc}`, 'gi'), '');
+        const regex = new RegExp(`(?:<div[^>]*>\\s*)?${openEsc}[\\s\\S]*?${closeEsc}(?:\\s*<\\/div>)?`, 'gi');
+        cleaned = cleaned.replace(regex, '');
     }
 
     // Удаляем старые теги (fallback)
@@ -702,12 +773,59 @@ function removeAllHudTags(text, legacyOpenTag, legacyCloseTag) {
 }
 
 /**
+ * Хирургическое скрытие HUD-тегов из DOM без перерисовки HTML.
+ * Защищает теги картинок от уничтожения и двойной генерации (не триггерит MutationObserver).
+ */
+function hideHudSurgically(messageElement) {
+    if (!messageElement || !messageElement.length) return;
+    
+    let inHud = false;
+    
+    messageElement.contents().each(function() {
+        const node = this;
+        const $el = $(node);
+        // Получаем текст узла (для текстовых узлов - nodeValue, для HTML - text())
+        const text = node.nodeType === 3 ? node.nodeValue : $el.text();
+        
+        // Как только видим начало JSON — включаем режим скрытия
+        if (text.includes('[HUD_CORE]') || text.includes('[HUD_PROG]') || text.includes('[HUD_CUSTOM]')) {
+            inHud = true;
+        }
+        
+        if (inHud) {
+            // ЖЕЛЕЗНАЯ ЗАЩИТА: Если внутри случайно попался блок <Extra> или <img> — отступаем!
+            if (node.nodeType === 1 && ($el.is('img, extra') || $el.find('img').length > 0)) {
+                inHud = false; 
+                return; // прерываем скрытие, чтобы не сломать генератор
+            }
+            
+            // Прячем элемент
+            if (node.nodeType === 3) {
+                if (node.nodeValue.trim() !== '') {
+                    $el.wrap('<span style="display:none;" class="nhud-hidden"></span>');
+                }
+            } else {
+                $el.css('display', 'none').addClass('nhud-hidden');
+            }
+        }
+        
+        // Как только видим конец JSON — выключаем режим скрытия
+        if (inHud && (text.includes('[/HUD_CORE]') || text.includes('[/HUD_PROG]') || text.includes('[/HUD_CUSTOM]'))) {
+            inHud = false;
+        }
+    });
+}
+
+/**
  * Собрать промпт для CORE-блока (трекеры, персонажи, время/погода).
  * Это обязательный блок — ИИ должен выдавать его в каждом ответе.
  */
 function buildCorePrompt(settings) {
     const lang = settings.prompts.language || 'Russian';
     let prompt = '';
+    
+    // Получаем имя игрока для жесткого разделения в промпте
+    const userName = getUserName() || 'Player'; 
 
     // Трекеры
     if (settings.modules?.trackers !== false) {
@@ -715,14 +833,29 @@ function buildCorePrompt(settings) {
         const live = getLive();
         const trackers = getChatTrackers();
         if (trackers && trackers.length > 0) {
-            const currentVals = trackers.map(t => `${t.label}: ${live.trackerValues[t.id] ?? t.max}/${t.max}`).join(', ');
-            prompt += `Current tracker values: ${currentVals}\n`;
+            // ИСПРАВЛЕНИЕ 1: Передаем ИИ ключ (id) вместе с названием, чтобы он понял, что "hunger" = "Сытость"
+            const currentVals = trackers.map(t => `"${t.id}" (${t.label}): ${live.trackerValues[t.id] ?? t.max}/${t.max}`).join(', ');
+            prompt += `Current tracker values for ${userName}: ${currentVals}\n`;
         }
     }
 
     // Персонажи
     if (settings.modules?.characters !== false) {
         prompt += settings.prompts.charsPrompt + "\n";
+        
+        // ДОБАВЛЕНО: Жесткий фильтр активных персонажей для ИИ
+        const live = getLive();
+        if (live && live.characters) {
+            const activeChars = Object.keys(live.characters).filter(c => 
+                !live.characters[c].isHiddenFromScene && 
+                !(live.ignoredCharacters && live.ignoredCharacters.includes(c))
+            );
+            if (activeChars.length > 0) {
+                prompt += `\nCRITICAL: ONLY generate JSON objects in the "characters" array for these currently ACTIVE characters: ${activeChars.join(', ')}. DO NOT include absent characters (e.g. asleep, far away, or in another location) to save tokens.\n`;
+            } else {
+                prompt += `\nCRITICAL: DO NOT generate any characters in the JSON array unless a new NPC explicitly enters the current scene.\n`;
+            }
+        }
     }
 
     // Время, локация, погода
@@ -737,7 +870,11 @@ function buildCorePrompt(settings) {
     // JSON-скелет для CORE
     const statsHint = settings.modules?.enableOutfitStats ? ' (add stats in parentheses, e.g. "Leather jacket (+10 Armor)")' : '';
     const outfitSchema = `"outfit": {"head": "description in ${lang}${statsHint}", "torso": "description in ${lang}${statsHint}", "legs": "description in ${lang}${statsHint}", "feet": "description in ${lang}${statsHint}", "accessories": "description in ${lang}${statsHint}"}`;
-    let skeleton = `{\n  "characters": [\n    {\n      "name": "CharacterName",\n      "state": "current state in ${lang}",\n      ${outfitSchema},\n      "thoughts": "thoughts about user in ${lang}",\n      "relationship": 50,\n      "relationship_status": "status in ${lang}",\n      "relationship_thoughts": "thoughts in ${lang}",\n      "relationship_hint": "hint in ${lang}",\n      "relationship_change_reason": "reason in ${lang}"\n    }\n  ]`;
+    
+    // ИСПРАВЛЕНИЕ 2: Прямо в скелете пишем, что брать нужно только ключи из памяти
+    const botTrackersHint = settings.modules?.botTrackers !== false ? ',\n      "trackers": { "ONLY_keys_from_memory": 85 }' : '';
+    
+    let skeleton = `{\n  "characters": [\n    {\n      "name": "CharacterName",\n      "in_scene": true,\n      "state": "current state in ${lang}",\n      ${outfitSchema},\n      "thoughts": "thoughts about user in ${lang}",\n      "relationship": 50,\n      "relationship_status": "status in ${lang}",\n      "relationship_thoughts": "thoughts in ${lang}",\n      "relationship_hint": "hint in ${lang}",\n      "relationship_change_reason": "reason in ${lang}"${botTrackersHint}\n    }\n  ]`;
 
     if (settings.modules?.trackers !== false) {
         const trackers = getChatTrackers();
@@ -751,16 +888,26 @@ function buildCorePrompt(settings) {
     if (settings.modules?.datetime !== false) {
         skeleton += `,\n  "datetime": "date and time in ${lang}",\n  "location": "location in ${lang}",\n  "weather": "weather in ${lang}"`;
     }
-    // ДОБАВЛЯЕМ ВОТ ЭТО:
     if (settings.modules?.map) {
-        skeleton += `,\n  "map_actions": [ { "action": "move", "entity": "Игрок", "zone": "zone_name", "anchor": "anchor_name" } ]`;
+        skeleton += `,\n  "map_actions": [ { "action": "move", "entity": "${userName}", "zone": "zone_name", "anchor": "anchor_name" } ]`;
     }
     
     skeleton += `\n}`;
 
     const tags = HUD_TAGS.core;
     prompt += `\n\nCRITICAL: All text values MUST be in ${lang}.`;
-    prompt += `\n\nYou MUST output this block in EVERY response. Wrap it in ${tags.open}...${tags.close} tags:\n${tags.open}\n${skeleton}\n${tags.close}`;
+    
+    // ИСПРАВЛЕНИЕ 3: Жесткое словесное разделение Игрока и NPC
+    if (settings.modules?.botTrackers !== false) {
+        prompt += `\nCRITICAL NPC TRACKERS: Do NOT invent trackers for NPCs in the "characters" array. ONLY use tracker keys explicitly listed in their [CURRENT DYNAMIC MEMORY] block. If an NPC has no trackers in memory, OMIT their "trackers" field entirely.`;
+    }
+    if (settings.modules?.trackers !== false) {
+        prompt += `\nCRITICAL PLAYER TRACKERS: The main "trackers" object at the root of [HUD_CORE] belongs EXCLUSIVELY to ${userName} (the Player). You MUST dynamically update ${userName}'s trackers based on the narrative. Ensure you map the labels (like "Сытость") to the correct JSON keys (like "hunger").`;
+    }
+
+    prompt += `\nCRITICAL PRESENCE RULE: The "in_scene" field determines if a character is currently visible on the player's HUD. If a character leaves the room, goes to sleep, or the scene changes and they are no longer present, you MUST output them one last time with "in_scene": false. This will clear them from the HUD.`;
+    
+    prompt += `\n\nYou MUST output this block in EVERY response. Wrap it EXACTLY like this to hide it from the user:\n<div style="display:none;">\n${tags.open}\n${skeleton}\n${tags.close}\n</div>`;
 
     return prompt;
 }
@@ -780,6 +927,7 @@ function buildProgressionPrompt(settings) {
     if (settings.modules?.quests && settings.prompts?.questsPrompt) prompt += settings.prompts.questsPrompt + "\n";
     if (settings.modules?.achievements && settings.prompts?.achievementsPrompt) prompt += settings.prompts.achievementsPrompt + "\n";
     if (settings.modules?.hero && settings.prompts?.heroPrompt) prompt += settings.prompts.heroPrompt + "\n";
+    if (settings.modules?.heroSkills !== false) prompt += "Did the user successfully use a specific skill? If YES: return JSON array 'skill_xp_gained' with objects {name(exact skill name), amount('small'|'medium'|'large')}. If NO: omit the field entirely.\n";
     if (settings.modules?.factions && settings.prompts?.factionsPrompt) prompt += settings.prompts.factionsPrompt + "\n";
 
     // Контекстные данные из chatData
@@ -802,9 +950,24 @@ function buildProgressionPrompt(settings) {
         if (settings.modules?.hero) {
             const sheet = chatData.heroSheet;
             if (sheet) {
-                prompt += `\n[User Character Stats: Level ${sheet.level} | ` +
+                let promptHero = `\n[User Character Stats: Level ${sheet.level} | ` +
                     Object.entries(sheet.stats).map(([k, v]) => `${k.replace(/[^а-яА-Яa-zA-Z\s]/g, '').trim()}: ${v}`).join(', ') +
                     `. Take these into account for action outcomes.]\n`;
+                
+                // НОВОЕ: Внедряем скиллы и дисциплины
+                if (sheet.skills && sheet.skills.length > 0) {
+                    promptHero += `[User Skills / Disciplines]\n`;
+                    sheet.skills.forEach(sk => {
+                        promptHero += `- ${sk.name} (Lvl ${sk.level}, XP: ${sk.xp || 0}/${sk.level * 100})`;
+                        // Если глазик включен, отправляем описание. Например: "Доминирование: Позволяет внушать мысли смертным..."
+                        if (sk.showDesc && sk.desc) {
+                            promptHero += `: ${sk.desc}`;
+                        }
+                        promptHero += `\n`;
+                    });
+                    promptHero += `[End Skills]\n`;
+                }
+                prompt += promptHero;
             }
         }
 
@@ -877,6 +1040,7 @@ function buildProgressionPrompt(settings) {
     if (settings.modules?.calendar !== false) progFields.push(`  "calendar_event": { "date": "DD.MM.YYYY", "desc": "Event description in ${lang}" }`);
     if (settings.modules?.achievements !== false) progFields.push(`  "achievement": { "title": "Achievement title", "desc": "Description", "icon": "🏆" }`);
     if (settings.modules?.hero !== false) progFields.push(`  "xp_gained": "small|medium|large"`);
+    if (settings.modules?.heroSkills !== false) progFields.push(`  "skill_xp_gained": [ { "name": "SkillName", "amount": "small|medium|large" } ]`);
     //if (settings.modules?.map) progFields.push(`  "map_actions": [ { "action": "move", "entity": "Игрок/Бот/NPC", "zone": "zone_name", "anchor": "anchor_name_or_null" }, { "action": "spawn", "entity": "NPC Name", "zone": "zone_name" }, { "action": "remove", "entity": "NPC Name" } ]`);
     if (settings.modules?.trackPlayerInventory || settings.modules?.trackBotInventory) progFields.push(`  "inventory_actions": [ { "action": "add", "entity": "Player", "item": "Item name in ${lang}" }, { "action": "remove", "entity": "Bot", "item": "Item name in ${lang}" } ]`);
     if (settings.modules?.notifications !== false) progFields.push(`  "notifications": [ { "sender": "Absent NPC Name or System", "text": "Message text in ${lang}" } ]`);
@@ -886,7 +1050,7 @@ function buildProgressionPrompt(settings) {
     }
 
     if (progFields.length > 0) {
-        prompt += `\n\nWhen a quest, achievement, codex, faction, calendar event, XP gain, map movement, inventory change, or notification occurs, output this block (ONLY when triggered, omit if nothing changed):\n${tags.open}\n${skeleton}\n${tags.close}`;
+        prompt += `\n\nWhen a quest, achievement, codex, faction, calendar event, XP gain, map movement, inventory change, or notification occurs, output this block (ONLY when triggered, omit if nothing changed):\n<div style="display:none;">\n${tags.open}\n${skeleton}\n${tags.close}\n</div>`;
     }
 
     return prompt;
@@ -901,18 +1065,23 @@ function buildCustomPrompt(settings) {
     let prompt = '';
     const tags = HUD_TAGS.custom;
 
-    // Кастомные промпт-блоки
     if (settings.promptBlocks && settings.promptBlocks.length > 0) {
         settings.promptBlocks.filter(b => b.enabled).forEach(block => {
             prompt += `For the field "${block.id}": ${block.prompt}\n`;
         });
     }
 
-    if (!prompt.trim()) return ''; // Нет кастомных блоков — не генерируем
+    if (settings.modules?.comics) {
+        const defaultComicsPrompt = `VISUAL PROMPT RULE: If the scene has a vivid cinematic moment, output a "comics" array containing exact prompts for an image generator (describe lighting, angle, character appearance, background).`;
+        const userComicsPrompt = settings.prompts?.comicsPrompt !== undefined ? settings.prompts.comicsPrompt : defaultComicsPrompt;
+        prompt += `\n${userComicsPrompt}\n`;
+    }
 
-    // JSON-скелет для CUSTOM
+    if (!prompt.trim()) return ''; 
+
     let skeleton = `{}`;
     const customFields = [];
+
     if (settings.promptBlocks) {
         settings.promptBlocks.filter(b => b.enabled).forEach(block => {
             if (block.id === 'comments') customFields.push(`  "comments": [ "comment 1", "comment 2" ]`);
@@ -927,8 +1096,7 @@ function buildCustomPrompt(settings) {
         skeleton = `{\n${customFields.join(',\n')}\n}`;
     }
 
-    prompt += `\n\nWhen relevant, output this block:\n${tags.open}\n${skeleton}\n${tags.close}`;
-
+    prompt += `\n\nWhen relevant, output this block:\n<div style="display:none;">\n${tags.open}\n${skeleton}\n${tags.close}\n</div>`;
     return prompt;
 }
 
@@ -1097,7 +1265,29 @@ jQuery(async () => {
                 e.preventDefault();
                 $("#narrative-hud-sidebar").fadeToggle(200);
                 $("#nhud-settings-panel").fadeOut(200); 
-                $("#nhud-widget").fadeToggle(200);
+                $("#nhud-widget-container").fadeToggle(200); // Пофиксил заодно скрытие контейнера кубика
+            });
+            
+            // --- НОВАЯ КНОПКА: Сброс кубика в центр ---
+            $(document).on("click", '[id="nhud-reset-widget-btn"]', (e) => {
+                e.preventDefault();
+                const widget = $("#nhud-widget-container");
+                if (widget.length) {
+                    // Вычисляем точный центр экрана минус половина ширины/высоты кубика
+                    const newLeft = (window.innerWidth / 2 - widget.outerWidth() / 2) + "px";
+                    const newTop = (window.innerHeight / 2 - widget.outerHeight() / 2) + "px";
+                    
+                    // Перемещаем кубик
+                    widget.css({ left: newLeft, top: newTop });
+                    
+                    // Обязательно сохраняем новые координаты в настройки, чтобы он там и остался после F5
+                    const settings = getSettings();
+                    if (!settings.ui) settings.ui = {};
+                    settings.ui.widgetPos = { left: newLeft, top: newTop };
+                    saveSettingsDebounced();
+                    
+                    toastr.success("Позиция кубика сброшена!");
+                }
             });
         }, 500);
 
@@ -1121,22 +1311,31 @@ jQuery(async () => {
         showNotification.__init = true; // флаг чтобы showNotification не дублировал DOM
         if (!notifStylesInjected) {
             $('<style id="nhud-notif-styles">').text(NOTIF_CSS).appendTo('head');
-            $('body').append(`
-                <div id="nhud-notif-container"></div>
-                <div id="nhud-notif-panel" style="display:none;">
-                <div id="nhud-notif-panel-header">
-                    <span>📨 Уведомления</span>
-                    <button id="nhud-notif-panel-close">✕</button>
-                </div>
-                <div id="nhud-notif-panel-body">
-                    <div id="nhud-notif-panel-empty">Нет уведомлений</div>
+            const savedTheme = typeof getSettings === 'function' ? (getSettings().ui?.notificationTheme || 'theme-pda') : 'theme-pda';
+        
+        $('body').append(`
+            <div id="nhud-notif-container" class="${savedTheme}"></div>
+            <div id="nhud-notif-panel" class="${savedTheme}" style="display:none;">
+                <div class="nhud-panel">
+                    <div class="nhud-corner tl"></div><div class="nhud-corner tr"></div>
+                    <div class="nhud-corner bl"></div><div class="nhud-corner br"></div>
+                    <div class="nhud-header" id="nhud-notif-panel-header">
+                        <div class="nhud-header-left">
+                            <div class="nhud-icon"></div>
+                            <div class="nhud-header-info">
+                                <span class="nhud-title">// УВЕДОМЛЕНИЯ</span>
+                            </div>
+                        </div>
+                        <button class="nhud-close" id="nhud-notif-panel-close">✕</button>
+                    </div>
+                    <div class="nhud-body" id="nhud-notif-panel-body">
+                        <div id="nhud-notif-panel-empty" style="text-align:center; padding:20px; opacity:0.5;">Нет уведомлений</div>
+                    </div>
                 </div>
             </div>
         `);
         $('#nhud-notif-panel-close').on('click', () => $('#nhud-notif-panel').fadeOut(200));
-        if (typeof makeWindowDraggable === "function") {
         makeWindowDraggable("nhud-notif-panel", "nhud-notif-panel-header");
-    }
         notifStylesInjected = true;
     }
 
@@ -1178,11 +1377,7 @@ jQuery(async () => {
                         if (cleanedText !== message.mes) {
                             message.mes = cleanedText;
                             const messageElement = $(`.mes[mesid="${lastIndex}"] .mes_text`);
-                            if (messageElement.length) {
-                                const html = messageElement.html();
-                                const cleanedHtml = removeAllHudTags(html, openTag, closeTag);
-                                if (cleanedHtml !== html) messageElement.html(cleanedHtml);
-                            }
+                            hideHudSurgically(messageElement);
                         }
                     }
                 } else if (settings.requestSettings.sendWithMain) {
@@ -1214,8 +1409,7 @@ jQuery(async () => {
                     // Удаляем теги из DOM и из message.mes
                     if (autoRemoveTags) {
                         if (messageElement.length) {
-                            const cleanedHtml = removeAllHudTags(rawHtml, openTag, closeTag);
-                            if (cleanedHtml !== rawHtml) messageElement.html(cleanedHtml);
+                            hideHudSurgically(messageElement);
                         }
                         if (message.mes.includes(openTag) || message.mes.includes('[HUD_CORE]')) {
                             message.mes = removeAllHudTags(message.mes, openTag, closeTag);

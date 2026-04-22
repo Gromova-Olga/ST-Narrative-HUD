@@ -12,7 +12,8 @@ export const defaultSettings = {
         hudWidth: 300,      
         tabsMode: "top-text",
         leftMode: "chat",
-        leftWidth: 300
+        leftWidth: 300,
+        notificationTheme: "theme-pda"
     },
     design: {
         hudBgColor: "#140a0f", hudBgOpacity: 0.95, hudBgImage: "",
@@ -48,9 +49,11 @@ export const defaultSettings = {
         enableOutfitStats: false,
         enableOutfitTracking: true,
         notifications: true,
-        trackPlayerInventory: false,
-        trackBotInventory: false,
-        injectPlayerOutfit: false
+        trackPlayerInventory: true,
+        trackBotInventory: true,
+        injectPlayerOutfit: true,
+        botTrackers: true,
+        map: true
     },
     trackers: [
         { id: "health",  label: "Здоровье", max: 100, color: "#e05252" },
@@ -59,6 +62,10 @@ export const defaultSettings = {
         { id: "hygiene", label: "Гигиена",  max: 100, color: "#52e0a3" },
         { id: "mood",    label: "Настроение", max: 100, color: "#e052a8" },
         { id: "mana",    label: "Мана",     max: 100, color: "#a352e0" }
+    ],
+    botTrackers: [
+        { id: "health_bot",  label: "Здоровье", max: 100, color: "#e05252" },
+        { id: "peckish",   label: "Голод", max: 100, color: "#8a0303" } 
     ],
     characters: [],
     liveData: {
@@ -89,7 +96,7 @@ export const defaultSettings = {
     prompts: {
         system: `You are a game master assistant analyzing a roleplay story. Your job is to extract and update ALL requested game data from the latest exchange. You MUST return a valid JSON object containing ALL fields listed in the structure below — do not skip any field unless it is explicitly marked as conditional. No markdown, no explanation, no code blocks. Raw JSON only.`,
         trackersPrompt: "Update ALL tracker values based on what happened. Even if change is small — update it. Return the full trackers object with current values.",
-        charsPrompt: "Update ALL characters present in this chat — their state, outfit, thoughts, and relationship with the user. ALWAYS include every known character, not just those active in the current scene.",
+        charsPrompt: "Update ALL characters present in this chat — their state, outfit, thoughts, and relationship with the user. ALWAYS include every known character, not just those active in the current scene.Keep adding/subtracting relationship points based on the current interaction, even if the value exceeds 100 or drops below 0 (e.g., output 105, 115).",
         datetimePrompt: "ALWAYS return current in-game date, time, weather, and location. Update based on what just happened.",
         achievementsPrompt: "Did the user do something surprising, clever, or memorable? If YES: return JSON field 'achievement': {title, desc, icon(emoji)}. If NO: omit the field entirely. Do not invent achievements for ordinary actions.",
         heroPrompt: "Did the user overcome a challenge, show skill, or advance the plot? If YES: return JSON field 'xp_gained' with value 'small', 'medium', or 'large'. If NO: omit the field entirely.",

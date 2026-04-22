@@ -251,9 +251,77 @@ export function renderHeroSheet() {
                 sheet.stats[s]++;
                 sheet.points--;
                 import('../../../../../script.js').then(sc => sc.saveSettingsDebounced());
-                renderHeroSheet(); // Перерисовываем
+                renderHeroSheet();
             });
             content.append(statRow);
+        }
+
+        // --- НОВЫЙ БЛОК: НАВЫКИ И ДИСЦИПЛИНЫ ---
+        const settings = m.getSettings();
+        if (settings.modules?.heroSkills !== false) {
+            if (!sheet.skills) sheet.skills = [];
+
+            content.append(`
+                <div style="border-top:1px dashed var(--nhud-border); margin:10px 0 5px 0;"></div>
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <span style="font-weight:bold; color:#52a8e0; font-size:13px;">🌀 Навыки / Дисциплины</span>
+                    <button id="nhud-add-skill-btn" style="background:#2a4060; border:1px solid #52a8e0; color:#fff; padding:2px 8px; border-radius:4px; cursor:pointer; font-size:11px;">+ Навык</button>
+                </div>
+                <div id="nhud-skills-list" style="display:flex; flex-direction:column; gap:8px;"></div>
+            `);
+
+            const sList = content.find("#nhud-skills-list");
+            
+            sheet.skills.forEach((sk, idx) => {
+                const xp = sk.xp || 0;
+            const nextXp = sk.level * 100;
+            const xpPct = Math.min(100, Math.max(0, Math.round((xp / nextXp) * 100)));
+
+            const sCard = $(`
+                <div style="background:rgba(0,0,0,0.3); border:1px solid #2a2040; border-radius:4px; padding:6px; position:relative;">
+                    <button class="nhud-del-skill" data-idx="${idx}" style="position:absolute; top:4px; right:4px; background:none; border:none; color:#806060; cursor:pointer; font-size:10px;">✕</button>
+                    <div style="display:flex; flex-direction:column; gap:4px; margin-bottom:6px; padding-right:15px;">
+                        <div style="display:flex; gap:6px; align-items:center;">
+                            <input class="nhud-input nhud-sk-name" value="${sk.name}" placeholder="Название" style="flex:1; font-size:12px; font-weight:bold; color:#e0d0a0;" />
+                            <span style="color:#606080; font-size:10px;">Lvl</span>
+                            <input type="number" class="nhud-input nhud-sk-lvl" value="${sk.level}" style="width:35px; text-align:center; font-size:12px;" />
+                            <button class="nhud-sk-eye ${sk.showDesc ? 'active' : ''}" style="background:none; border:none; font-size:14px; cursor:pointer; filter: grayscale(${sk.showDesc ? '0' : '100%'}); opacity:${sk.showDesc ? '1' : '0.5'};" title="Глазик: Отправлять описание ИИ">👁️</button>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <div style="flex:1; height:4px; background:#1a1628; border-radius:2px; overflow:hidden; border:1px solid #3a3050;">
+                                <div style="width:${xpPct}%; height:100%; background:linear-gradient(90deg, #b080e0, #d0a0e0); box-shadow:0 0 5px #b080e0;"></div>
+                            </div>
+                            <span style="font-size:9px; color:#806080; width:45px; text-align:right;">${xp} / ${nextXp}</span>
+                        </div>
+                    </div>
+                    <textarea class="nhud-textarea nhud-sk-desc" rows="2" placeholder="Описание навыка (Что он дает)..." style="font-size:11px; color:#a0b0c0; border-color:#3a3050;">${sk.desc || ''}</textarea>
+                </div>
+            `);
+
+                sCard.find('.nhud-sk-name').on('change', function() { sk.name = $(this).val(); import('../../../../../script.js').then(sc => sc.saveSettingsDebounced()); });
+                sCard.find('.nhud-sk-lvl').on('change', function() { sk.level = parseInt($(this).val()) || 1; import('../../../../../script.js').then(sc => sc.saveSettingsDebounced()); });
+                sCard.find('.nhud-sk-desc').on('change', function() { sk.desc = $(this).val(); import('../../../../../script.js').then(sc => sc.saveSettingsDebounced()); });
+                
+                sCard.find('.nhud-sk-eye').on('click', function() { 
+                    sk.showDesc = !sk.showDesc; 
+                    import('../../../../../script.js').then(sc => sc.saveSettingsDebounced());
+                    renderHeroSheet(); 
+                });
+                
+                sCard.find('.nhud-del-skill').on('click', function() {
+                    sheet.skills.splice(idx, 1);
+                    import('../../../../../script.js').then(sc => sc.saveSettingsDebounced());
+                    renderHeroSheet();
+                });
+                
+                sList.append(sCard);
+            });
+
+            content.find('#nhud-add-skill-btn').on('click', () => {
+                sheet.skills.push({ name: "Новый навык", level: 1, xp: 0, desc: "", showDesc: true });
+                import('../../../../../script.js').then(sc => sc.saveSettingsDebounced());
+                renderHeroSheet();
+            });
         }
     });
 }

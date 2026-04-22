@@ -310,3 +310,4 @@ export function renderCharacters() {
         });
         container.prepend(unifiedBtn);
     }
+}

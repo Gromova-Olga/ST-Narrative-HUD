@@ -85,18 +85,20 @@ export function openRelationshipJournal(charName) {
 export function openAnalyticsPopup() {
     let popup = $("#nhud-analytics-popup");
     if (!popup.length) {
+        // ДОБАВЛЕНО: resize:both, overflow:hidden и flexbox-структура для растягивания
         $("body").append(`
-            <div id="nhud-analytics-popup" style="display:none; position:fixed; top:15vh; left:calc(50% - 300px); width:600px; z-index:9997; background:var(--nhud-bg, #151220); border:1px solid #3a5a80; border-radius:8px; box-shadow:0 10px 40px rgba(0,0,0,0.9); flex-direction:column; overflow:hidden;">
-                <div id="nhud-analytics-header" style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(180deg, #101a25, #0a1015); padding:10px 15px; border-bottom:1px solid #2a4060; cursor:grab;">
+            <div id="nhud-analytics-popup" style="display:none; position:fixed; top:15vh; left:calc(50% - 300px); width:600px; min-width:400px; min-height:300px; resize:both; z-index:9997; background:var(--nhud-bg, #151220); border:1px solid #3a5a80; border-radius:8px; box-shadow:0 10px 40px rgba(0,0,0,0.9); flex-direction:column; overflow:hidden;">
+                <div id="nhud-analytics-header" style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(180deg, #101a25, #0a1015); padding:10px 15px; border-bottom:1px solid #2a4060; cursor:grab; flex-shrink:0;">
                     <span style="font-weight:bold; color:#80b0e0; font-size:14px;">📈 Динамика отношений (Аналитика)</span>
                     <button id="nhud-analytics-close" style="background:none; border:none; color:#e05252; cursor:pointer; padding:0; font-size:16px;">✕</button>
                 </div>
-                <div style="padding:10px; background:rgba(0,0,0,0.4); border-bottom:1px solid #2a4060; display:flex; justify-content:space-between; align-items:center;">
+                <div style="padding:10px; background:rgba(0,0,0,0.4); border-bottom:1px solid #2a4060; display:flex; justify-content:space-between; align-items:center; flex-shrink:0;">
                     <span style="color:#8080a0; font-size:12px;">Выберите персонажа для отрисовки:</span>
                     <select id="nhud-analytics-char-select" class="nhud-select" style="width:250px; background:#0a1015; border-color:#2a4060; color:#e0e0e0;"></select>
                 </div>
-                <div style="padding:15px; background:rgba(0,0,0,0.2); position:relative;">
-                    <canvas id="nhud-analytics-canvas" width="570" height="300" style="background:#0d1117; border:1px solid #1a2530; border-radius:4px; display:block;"></canvas>
+                
+                <div id="nhud-analytics-canvas-wrapper" style="flex:1; padding:15px; background:rgba(0,0,0,0.2); position:relative; overflow-x:auto; overflow-y:hidden; display:flex; flex-direction:column; min-height:0;">
+                    <canvas id="nhud-analytics-canvas" style="background:#0d1117; border:1px solid #1a2530; border-radius:4px; display:block; min-height:100%;"></canvas>
                     <div id="nhud-analytics-empty" style="display:none; position:absolute; top:0; left:0; right:0; bottom:0; align-items:center; justify-content:center; color:#8080a0; font-size:14px; background:rgba(13, 17, 23, 0.8);">Нет истории изменений для графика</div>
                 </div>
             </div>
@@ -109,6 +111,17 @@ export function openAnalyticsPopup() {
         });
         
         popup = $("#nhud-analytics-popup");
+
+        // ДОБАВЛЕНО: Слушатель изменения размеров окна, чтобы график перерисовывался при растягивании за уголок
+        if (typeof window.ResizeObserver !== 'undefined') {
+            const ro = new ResizeObserver(() => {
+                if (popup.is(":visible")) {
+                    const sel = $("#nhud-analytics-char-select").val();
+                    if (sel) renderAnalyticsChart(sel, false); // false = не скроллить при ресайзе
+                }
+            });
+            ro.observe(popup[0]);
+        }
     }
 
     const live = getLive();
@@ -132,23 +145,19 @@ export function openAnalyticsPopup() {
 
     popup.css("display", "flex").hide().fadeIn(150, () => {
         if (charsWithHistory.length > 0) {
-            renderAnalyticsChart(sel.val());
+            renderAnalyticsChart(sel.val(), true);
         }
     });
 }
 
-export function renderAnalyticsChart(charName) {
+export function renderAnalyticsChart(charName, scrollToRight = true) {
     if (!charName) return;
     const live = getLive();
     const history = live.relHistory?.[charName] || [];
     
     const canvas = document.getElementById("nhud-analytics-canvas");
-    if (!canvas) return;
-    const ctx = canvas.getContext("2d");
-    const w = canvas.width;
-    const h = canvas.height;
-    
-    ctx.clearRect(0, 0, w, h); 
+    const wrapper = document.getElementById("nhud-analytics-canvas-wrapper");
+    if (!canvas || !wrapper) return;
     
     if (history.length === 0) {
         $("#nhud-analytics-empty").css("display", "flex");
@@ -163,6 +172,33 @@ export function renderAnalyticsChart(charName) {
         points.push({ val: entry.val, label: "#" + entry.messageId });
     });
 
+    // --- ДОБАВЛЕНО: Динамический расчет ширины холста ---
+    const wrapperW = wrapper.clientWidth - 30; // Вычитаем padding (15px * 2)
+    const wrapperH = wrapper.clientHeight - 30;
+    
+    const minStepX = 40; // Минимальное расстояние между точками в пикселях
+    const padL = 35, padR = 20, padT = 20, padB = 30;
+    
+    // Если точек много, график будет шире экрана
+    const requiredW = padL + padR + ((points.length - 1) * minStepX);
+    const finalW = Math.max(wrapperW, requiredW);
+    
+    canvas.width = finalW;
+    canvas.height = Math.max(wrapperH, 200); // Минимум 200px в высоту
+    
+    // ЖЁСТКИЙ ФИКС CSS: Запрещаем ST сжимать график!
+    canvas.style.width = finalW + "px";
+    canvas.style.minWidth = finalW + "px";
+    canvas.style.maxWidth = "none";
+    canvas.style.height = canvas.height + "px";
+    // ----------------------------------------------------
+
+    const ctx = canvas.getContext("2d");
+    const w = canvas.width;
+    const h = canvas.height;
+    
+    ctx.clearRect(0, 0, w, h); 
+
     ctx.strokeStyle = "#1a2530"; 
     ctx.lineWidth = 1;
     ctx.fillStyle = "#607080";   
@@ -170,7 +206,6 @@ export function renderAnalyticsChart(charName) {
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
 
-    const padL = 35, padR = 20, padT = 20, padB = 30;
     const graphW = w - padL - padR;
     const graphH = h - padT - padB;
 
@@ -232,6 +267,11 @@ export function renderAnalyticsChart(charName) {
         ctx.textBaseline = "top";
         ctx.fillText(c.label, c.x, padT + graphH + 8);
     });
+
+    // ДОБАВЛЕНО: Автоматическая прокрутка к последним (самым свежим) данным при открытии/смене персонажа
+    if (scrollToRight && requiredW > wrapperW) {
+        setTimeout(() => { wrapper.scrollLeft = wrapper.scrollWidth; }, 10);
+    }
 }
 
 // ─── УМНАЯ ОЧИСТКА БАЗЫ ───────────────────────────────────────
