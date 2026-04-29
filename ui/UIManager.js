@@ -187,7 +187,7 @@ export function buildSidebar() {
     $("#nhud-open-settings").on("click", () => { import('./SettingsUI.js').then(m => m.openSettingsPanel()); $("#nhud-sidebar-dropdown").fadeOut(150); });
     $("#nhud-open-global-settings").on("click", () => { openGlobalSettings(); $("#nhud-sidebar-dropdown").fadeOut(150); });
     $("#nhud-open-map").on("click", () => { import('../map/MapRenderer.js').then(m => m.toggleMap(true)); $("#nhud-sidebar-dropdown").fadeOut(150); });
-    $("#nhud-toggle-widget-btn").on("click", () => { $("#nhud-widget").fadeToggle(200); $("#nhud-sidebar-dropdown").fadeOut(150); });
+    $("#nhud-toggle-widget-btn").on("click", () => { $("#nhud-widget-container").fadeToggle(200); $("#nhud-sidebar-dropdown").fadeOut(150); });
     $("#nhud-sidebar-close").on("click", () => { $("#narrative-hud-sidebar").fadeOut(200); $("#nhud-sidebar-dropdown").fadeOut(150); });
 
     renderTrackers(); renderCharacters(); renderInfoBlocks();
