@@ -288,3 +288,75 @@ export function extractDataFromText(messageId) {
         toastr.warning("Не найдено данных в формате 'ключ:Имя=значение'");
     }
 }
+
+// Функция вызова всплывашки кубика над конкретным сообщением
+export function toggleMessageCubeMenu(anchorElement) {
+    let menu = $("#nhud-msg-cube-menu");
+    
+    // Если меню еще нет в DOM - создаем
+    if (!menu.length) {
+        $("body").append(`
+            <div id="nhud-msg-cube-menu" style="display:none; position:absolute; z-index:9999; background:var(--nhud-prompt-bg, #140a0f); border:1px solid var(--nhud-border, #4a1525); border-radius:8px; padding:10px; display:grid; grid-template-columns: repeat(4, 1fr); gap:8px; box-shadow:0 5px 15px rgba(0,0,0,0.8);">
+                <div class="nhud-w-btn" id="msg-w-settings" title="Настройки" style="text-align:center; cursor:pointer;">⚙️</div>
+                <div class="nhud-w-btn" id="msg-w-hud" title="HUD" style="text-align:center; cursor:pointer;">📊</div>
+                <div class="nhud-w-btn" id="msg-w-sims" title="Отношения" style="text-align:center; cursor:pointer;">❤️</div>
+                <div class="nhud-w-btn" id="msg-w-conn" title="Подключение" style="text-align:center; cursor:pointer;">🔌</div>
+                <div class="nhud-w-btn nhud-w-btn-bots" id="msg-w-bots" title="Трекеры NPC" style="text-align:center; cursor:pointer;">🤖</div>
+                <div class="nhud-w-btn nhud-w-btn-hero" id="msg-w-hero" title="Прокачка" style="text-align:center; cursor:pointer;">🧬</div>
+                <div class="nhud-w-btn nhud-w-btn-inv" id="msg-w-inv" title="Инвентарь" style="text-align:center; cursor:pointer;">🎒</div>
+                <div class="nhud-w-btn nhud-w-btn-quests" id="msg-w-quests" title="Квесты" style="text-align:center; cursor:pointer;">📜</div>
+                <div class="nhud-w-btn nhud-w-btn-calendar" id="msg-w-calendar" title="Календарь" style="text-align:center; cursor:pointer;">📅</div>
+                <div class="nhud-w-btn nhud-w-btn-codex" id="msg-w-codex" title="Кодекс" style="text-align:center; cursor:pointer;">📖</div>
+                <div class="nhud-w-btn nhud-w-btn-notifs" id="msg-w-notifs" title="Уведомления" style="text-align:center; cursor:pointer;">🔔</div>
+                <div class="nhud-w-btn nhud-w-btn-infoblocks" id="msg-w-infoblocks" title="Инфоблоки" style="text-align:center; cursor:pointer;">🧩</div>
+                <div class="nhud-w-btn nhud-w-btn-comics" id="msg-w-comics" title="Генератор Артов" style="text-align:center; cursor:pointer;">🖼️</div>
+                <div class="nhud-w-btn nhud-w-btn-ach" id="msg-w-ach" title="Достижения" style="text-align:center; cursor:pointer;">🏆</div>
+            </div>
+        `);
+
+        menu = $("#nhud-msg-cube-menu");
+
+        // Биндим все функции кубика (импорты нужно будет прописать, если они в другом файле)
+        $("#msg-w-settings").on("click", () => { import('./SettingsUI.js').then(m => m.openSettingsPanel?.()); menu.hide(); });
+        $("#msg-w-hud").on("click", () => { $("#narrative-hud-sidebar").fadeToggle(200); menu.hide(); });
+        $("#msg-w-sims").on("click", () => { import('./Modules.js').then(m => m.toggleMiniSims()); menu.hide(); });
+        $("#msg-w-conn").on("click", () => { import('./Modules.js').then(m => m.toggleMiniConn()); menu.hide(); });
+        $("#msg-w-bots").on("click", () => { import('./components/panels/MiniPanels.js').then(m => m.toggleMiniBots()); menu.hide(); });
+        $("#msg-w-hero").on("click", () => { import('./Modules.js').then(m => m.toggleHeroSheet()); menu.hide(); });
+        $("#msg-w-inv").on("click", () => { import('./Modules.js').then(m => m.toggleInventory()); menu.hide(); });
+        $("#msg-w-quests").on("click", () => { import('./Modules.js').then(m => m.toggleQuestLog()); menu.hide(); });
+        $("#msg-w-calendar").on("click", () => { import('./Modules.js').then(m => m.toggleCalendar?.()); menu.hide(); });
+        $("#msg-w-codex").on("click", () => { import('./Modules.js').then(m => m.toggleCodex()); menu.hide(); });
+        $("#msg-w-notifs").on("click", () => { $("#nhud-notif-panel").fadeToggle(200); menu.hide(); });
+        $("#msg-w-infoblocks").on("click", () => { import('./UIManager.js').then(m => m.toggleMiniInfoBlocks?.()); menu.hide(); });
+        $("#msg-w-comics").on("click", () => { import('./UIManager.js').then(m => m.toggleMiniComics?.()); menu.hide(); });
+        $("#msg-w-ach").on("click", () => { import('./UIManager.js').then(m => m.toggleAchievementsWindow?.()); menu.hide(); });
+    }
+
+    // Логика позиционирования и скрытия/показа
+    if (menu.is(":visible")) {
+        menu.fadeOut(150);
+    } else {
+        const rect = anchorElement.getBoundingClientRect();
+        
+        // Позиционируем меню чуть ниже и левее кнопки
+        menu.css({
+            top: rect.bottom + window.scrollY + 8 + "px",
+            left: rect.left + window.scrollX - 80 + "px", 
+            display: "grid"
+        }).hide().fadeIn(150);
+
+        // Уничтожаем обработчик перед созданием нового, чтобы не было дублей
+        $(document).off('click.msgCubeHide');
+        
+        // Закрываем меню при клике в любое другое место
+        setTimeout(() => {
+            $(document).on('click.msgCubeHide', function(e) {
+                if (!$(e.target).closest('#nhud-msg-cube-menu, .nhud-msg-cube-trigger').length) {
+                    $('#nhud-msg-cube-menu').fadeOut(150);
+                    $(document).off('click.msgCubeHide');
+                }
+            });
+        }, 10);
+    }
+}

@@ -7,33 +7,47 @@ import { saveSettingsDebounced } from "../../../../../script.js";
 import { makeWindowDraggable } from "./Popups.js";
 
 export function toggleMiniSims() {
+    // Удаляем старое окно из DOM, если оно залипло с прошлым дизайном
+    if ($("#nhud-mini-sims").length && !$("#nhud-mini-sims").hasClass("nhud-v2-sims")) {
+        $("#nhud-mini-sims").remove();
+    }
+
     let popup = $("#nhud-mini-sims");
     if (!popup.length) {
         $("body").append(`
-            <div id="nhud-mini-sims" style="display:none; position:fixed; top:150px; left:100px; width:340px; min-width:260px; height:450px; min-height:200px; z-index:9993; background:#151220; border:1px solid var(--nhud-border, #4a1525); border-radius:8px; box-shadow:0 5px 20px rgba(0,0,0,0.9); flex-direction:column; resize:both; overflow:hidden;">
-                <div id="nhud-mini-sims-header" style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.8)); padding:8px 10px; border-bottom:1px solid var(--nhud-border, #4a1525); cursor:grab; flex-shrink:0;">
-                    <span style="font-weight:bold; color:var(--nhud-text-main, #e0c0c0); font-size:13px;">❤️ Отношения</span>
+            <div id="nhud-mini-sims" class="nhud-v2-sims" style="display:none; position:fixed; top:15vh; left:100px; width:380px; max-height:80vh; z-index:9993; background:#151220; border:1px solid var(--nhud-border, #4a1525); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.9); flex-direction:column; overflow:hidden;">
+                <div id="nhud-mini-sims-header" style="display:flex; justify-content:space-between; align-items:center; background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.8)); padding:10px; border-bottom:1px solid var(--nhud-border, #4a1525); cursor:grab; flex-shrink:0;">
+                    <span style="font-weight:bold; color:var(--nhud-text-main, #e0c0c0); font-size:14px;">❤️ Отношения с персонажами</span>
                     <button id="nhud-mini-sims-close" style="background:none; border:none; color:var(--nhud-accent, #d05070); cursor:pointer; padding:0; font-size:16px;">✕</button>
                 </div>
-                <div id="nhud-mini-sims-content" style="flex:1; overflow-y:auto; padding:10px; display:flex; flex-direction:column; gap:10px; background:rgba(0,0,0,0.2);"></div>
+                <div id="nhud-mini-sims-content" style="flex:1; overflow-y:auto; padding:12px; display:flex; flex-direction:column; gap:10px; background:rgba(0,0,0,0.2);"></div>
             </div>
         `);
-        makeWindowDraggable("nhud-mini-sims", "nhud-mini-sims-header");
+        import('./Popups.js').then(m => {
+            if(m.makeWindowDraggable) m.makeWindowDraggable("nhud-mini-sims", "nhud-mini-sims-header");
+        });
         $("#nhud-mini-sims-close").on("click", () => $("#nhud-mini-sims").fadeOut(150));
         popup = $("#nhud-mini-sims");
     }
-    if (popup.is(":visible")) popup.fadeOut(150);
-    else { renderMiniSims(); popup.fadeIn(150); }
+    
+    if (popup.is(":visible")) {
+        popup.fadeOut(150);
+    } else { 
+        renderMiniSims(); 
+        popup.css("display", "flex").hide().fadeIn(150); 
+    }
 }
 
 export function renderMiniSims() {
     const popup = $("#nhud-mini-sims-content");
     if (!popup.length) return;
     popup.empty();
+    
     const live = getLive();
     const settings = getSettings();
-    const relSettings = settings.relationshipSettings;
+    const relSettings = settings.relationshipSettings || {};
     const userName = getUserName();
+    
     const charNames = Object.keys(live.characters).filter(name => 
         name.toLowerCase() !== userName.toLowerCase() && 
         !name.toLowerCase().includes('system') && 
@@ -42,27 +56,59 @@ export function renderMiniSims() {
     );
 
     if (!charNames.length) {
-        popup.append('<div style="color:var(--nhud-text-muted); font-size:12px; text-align:center; margin-top:20px;">В этом чате пока нет персонажей</div>');
+        popup.append('<div style="color:var(--nhud-text-muted); font-size:12px; text-align:center; padding:20px;">В этом чате пока нет персонажей</div>');
         return;
     }
 
     charNames.forEach(name => {
         const char = live.characters[name];
         const relVal = char.relationship !== undefined ? char.relationship : 50;
-        let barColor = "#a090c0"; if (relVal < 30) barColor = "#e05252"; else if (relVal < 45) barColor = "#e0a352"; else if (relVal >= 80) barColor = "#e052a8"; else if (relVal >= 60) barColor = "#52e0a3";
+        let barColor = "#a090c0"; 
+        if (relVal < 30) barColor = "#e05252"; 
+        else if (relVal < 45) barColor = "#e0a352"; 
+        else if (relVal >= 80) barColor = "#e052a8"; 
+        else if (relVal >= 60) barColor = "#52e0a3";
+
+        const globalChar = settings.characters?.find(c => c.name?.toLowerCase() === name.toLowerCase()) || {};
+        const avatarHtml = globalChar.avatar 
+            ? `<img src="${globalChar.avatar}" style="width:100%;height:100%;object-fit:cover;" onerror="this.style.display='none'"/>`
+            : `<div style="width:100%;height:100%;background:#1a1628;color:#6060a0;display:flex;align-items:center;justify-content:center;font-weight:bold;">${name[0].toUpperCase()}</div>`;
+
+        const thoughts = char.relationship_thoughts || "";
+        const hint = char.relationship_hint || "";
 
         const card = $(`
             <div style="display:flex; flex-direction:column; gap:8px; background:rgba(255,255,255,0.03); padding:10px; border-radius:6px; border:1px solid #3a3050;">
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-weight:bold; color:#e0d0a0; font-size:0.95em;">${name}</span>
-                    <input class="nhud-input nhud-m-rel-status" value="${char.relationship_status || ""}" style="width:110px; padding:2px 4px; font-size:0.8em; text-align:right;" placeholder="Статус..." />
-                </div>
-                <div style="display:flex; align-items:center; gap:8px;">
-                    <div style="flex:1; height:8px; background:#1a1628; border-radius:4px; overflow:hidden; border:1px solid #2a2040;">
-                        <div class="nhud-m-rel-bar" style="width:${relVal}%; height:100%; background:${barColor}; transition:0.3s;"></div>
+                <div style="display:flex; gap:10px; align-items:flex-start;">
+                    <div style="width:42px; height:42px; border-radius:4px; overflow:hidden; border:1px solid #4a4060; flex-shrink:0;">
+                        ${avatarHtml}
                     </div>
-                    <input class="nhud-input nhud-m-rel-val" type="number" min="0" max="100" value="${relVal}" style="width:45px; padding:2px; font-size:0.8em; text-align:center;" />
+                    <div style="flex:1; min-width:0;">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+                            <span style="font-weight:bold; color:#e0d0a0; font-size:0.9em; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${name}</span>
+                            <div style="display:flex; gap:4px; align-items:center;">
+                                <input class="nhud-input nhud-m-rel-status" value="${char.relationship_status || ""}" style="width:110px; padding:2px 4px; font-size:0.75em; text-align:right; color:#c0b0a0; border-color:#4a3030; background:transparent;" placeholder="Статус..." />
+                            </div>
+                        </div>
+                        <div style="display:flex; align-items:center; gap:6px;">
+                            <div style="flex:1; height:6px; background:#1a1628; border-radius:3px; overflow:hidden; border:1px solid #2a2040;">
+                                <div class="nhud-m-rel-bar" style="width:${relVal}%; height:100%; background:${barColor}; transition:0.3s;"></div>
+                            </div>
+                            <input class="nhud-input nhud-m-rel-val" type="number" min="0" max="100" value="${relVal}" style="width:40px; padding:2px; font-size:0.75em; text-align:center;" />
+                        </div>
+                    </div>
                 </div>
+
+                <div>
+                    <div style="font-size:0.65em; color:#52a8e0; text-transform:uppercase; margin-bottom:2px; font-weight:bold;">💭 Отношение к тебе</div>
+                    <textarea class="nhud-textarea nhud-m-rel-thoughts" rows="2" style="font-size:0.75em; padding:4px; border-color:#203050; color:#a0c0e0;" placeholder="Что персонаж думает о тебе...">${thoughts}</textarea>
+                </div>
+
+                ${relSettings.hintsEnabled !== false ? `
+                <div style="margin-top:2px;">
+                    <div style="font-size:0.65em; color:#d0d0a0; text-transform:uppercase; margin-bottom:2px; font-weight:bold;">💡 Цель / Подсказка</div>
+                    <textarea class="nhud-textarea nhud-m-rel-hint" rows="2" style="font-size:0.75em; padding:4px; border-color:#606040; color:#e0e0b0; background:#202015;" placeholder="Возможное действие...">${hint}</textarea>
+                </div>` : ''}
             </div>
         `);
 
@@ -70,17 +116,19 @@ export function renderMiniSims() {
             const val = Math.min(Math.max(0, parseInt(e.target.value) || 0), 100);
             live.characters[name].relationship = val;
             card.find('.nhud-m-rel-bar').css('width', val + '%');
-            saveSettingsDebounced(); import('./UIManager.js').then(m => m.renderRelationships());
+            import('../../../../../script.js').then(m => m.saveSettingsDebounced());
         });
-        card.find('.nhud-m-rel-status').on('input', e => { live.characters[name].relationship_status = e.target.value; saveSettingsDebounced(); });
+        card.find('.nhud-m-rel-status').on('input', e => { live.characters[name].relationship_status = e.target.value; import('../../../../../script.js').then(m => m.saveSettingsDebounced()); });
+        card.find('.nhud-m-rel-thoughts').on('input', e => { live.characters[name].relationship_thoughts = e.target.value; import('../../../../../script.js').then(m => m.saveSettingsDebounced()); });
+        card.find('.nhud-m-rel-hint').on('input', e => { live.characters[name].relationship_hint = e.target.value; import('../../../../../script.js').then(m => m.saveSettingsDebounced()); });
+
         popup.append(card);
     });
-// --- БЛОК ФРАКЦИЙ В ОКНЕ ОТНОШЕНИЙ ---
+
     if (settings.modules?.factions !== false) {
         popup.append('<div style="border-top:1px dashed #4a1525; margin:10px 0 5px 0;"></div>');
         popup.append('<div style="font-size:13px; font-weight:bold; color:#e0c0a0; margin-bottom:10px;">🏴‍☠️ Фракции и Группировки</div>');
         
-        // ВОТ ФИКС ЗДЕСЬ ТОЖЕ
         const chatData = getSettings().chatData[NarrativeStorage.getCurrentChatId()];
         if (chatData && !chatData.factions) chatData.factions = [];
         const factions = chatData?.factions || [];
@@ -107,11 +155,13 @@ export function renderMiniSims() {
                 
                 fCard.find('.nhud-f-del').on('click', function() {
                     factions.splice(parseInt($(this).data('idx')), 1);
-                    saveSettingsDebounced(); popup.find('#nhud-factions-container').empty().append(renderFactionsList());
+                    import('../../../../../script.js').then(m => m.saveSettingsDebounced()); 
+                    popup.find('#nhud-factions-container').empty().append(renderFactionsList());
                 });
                 fCard.find('.nhud-f-val').on('change', function() {
                     factions[parseInt($(this).data('idx'))].rep = parseInt($(this).val()) || 0;
-                    saveSettingsDebounced(); popup.find('#nhud-factions-container').empty().append(renderFactionsList());
+                    import('../../../../../script.js').then(m => m.saveSettingsDebounced()); 
+                    popup.find('#nhud-factions-container').empty().append(renderFactionsList());
                 });
                 fList.append(fCard);
             });
@@ -131,7 +181,7 @@ export function renderMiniSims() {
             const name = addFBlock.find('#nhud-f-new-name').val().trim();
             if (name) {
                 factions.push({ name: name, rep: 50 });
-                saveSettingsDebounced();
+                import('../../../../../script.js').then(m => m.saveSettingsDebounced());
                 addFBlock.find('#nhud-f-new-name').val('');
                 popup.find('#nhud-factions-container').empty().append(renderFactionsList());
             }
@@ -576,6 +626,121 @@ export function renderCodex() {
             });
             content.append(card);
         });
+    });
+}
+
+// =========================================================================
+// ИНЖЕКТ КНОПКИ В СООБЩЕНИЯ И ОКНО КУБИКА
+// =========================================================================
+
+export function toggleCubeModal() {
+    let popup = $("#nhud-cube-modal");
+    
+    if (!popup.length) {
+        $("body").append(`
+            <div id="nhud-cube-modal" style="display:none; position:fixed; top:20vh; left:calc(50% - 160px); width:320px; z-index:9998; background:var(--nhud-prompt-bg, #151220); border:1px solid var(--nhud-border, #4a1525); border-radius:8px; box-shadow:0 10px 30px rgba(0,0,0,0.9); flex-direction:column; overflow:hidden;">
+                <div id="nhud-cube-modal-header" style="display:flex; justify-content:space-between; align-items:center; background:var(--nhud-prompt-header, #2a101a); padding:10px; border-bottom:1px solid var(--nhud-border); cursor:grab;">
+                    <span style="font-weight:bold; color:var(--nhud-accent, #d05070); font-size:14px;">🧊 Меню Narrative HUD</span>
+                    <button id="nhud-cube-modal-close" style="background:none; border:none; color:var(--nhud-accent); cursor:pointer; padding:0; font-size:16px;">✕</button>
+                </div>
+                <div style="padding:15px; display:grid; grid-template-columns: repeat(4, 1fr); gap:10px; background:rgba(0,0,0,0.3);">
+                    <div class="nhud-w-btn" id="mod-w-settings" title="Настройки">⚙️</div>
+                    <div class="nhud-w-btn" id="mod-w-hud" title="HUD">📊</div>
+                    <div class="nhud-w-btn" id="mod-w-sims" title="Отношения">❤️</div>
+                    <div class="nhud-w-btn" id="mod-w-conn" title="Подключение">🔌</div>
+                    <div class="nhud-w-btn" id="mod-w-bots" title="Трекеры NPC">🤖</div>
+                    <div class="nhud-w-btn" id="mod-w-hero" title="Прокачка">🧬</div>
+                    <div class="nhud-w-btn" id="mod-w-inv" title="Инвентарь">🎒</div>
+                    <div class="nhud-w-btn" id="mod-w-quests" title="Квесты">📜</div>
+                    <div class="nhud-w-btn" id="mod-w-calendar" title="Календарь">📅</div>
+                    <div class="nhud-w-btn" id="mod-w-codex" title="Кодекс">📖</div>
+                    <div class="nhud-w-btn" id="mod-w-notifs" title="Уведомления">🔔</div>
+                    <div class="nhud-w-btn" id="mod-w-infoblocks" title="Инфоблоки">🧩</div>
+                    <div class="nhud-w-btn" id="mod-w-comics" title="Генератор Артов">🖼️</div>
+                    <div class="nhud-w-btn" id="mod-w-ach" title="Достижения">🏆</div>
+                </div>
+                
+                <style>
+                    #nhud-cube-modal .nhud-w-btn {
+                        background: rgba(255,255,255,0.05); border: 1px solid var(--nhud-border);
+                        border-radius: 6px; padding: 12px 0; text-align: center; cursor: pointer;
+                        transition: 0.2s; font-size: 18px;
+                    }
+                    #nhud-cube-modal .nhud-w-btn:hover {
+                        background: var(--nhud-border); transform: scale(1.05);
+                    }
+                </style>
+            </div>
+        `);
+        
+        import('./Popups.js').then(m => {
+            if(m.makeWindowDraggable) m.makeWindowDraggable("nhud-cube-modal", "nhud-cube-modal-header");
+        });
+
+        $("#nhud-cube-modal-close").on("click", () => $("#nhud-cube-modal").fadeOut(150));
+        
+        // Бинды кнопок
+        $("#mod-w-settings").on("click", () => { import('./SettingsUI.js').then(m => m.openSettingsPanel?.()); });
+        $("#mod-w-hud").on("click", () => { $("#narrative-hud-sidebar").fadeToggle(200); });
+        $("#mod-w-sims").on("click", () => { toggleMiniSims(); });
+        $("#mod-w-conn").on("click", () => { toggleMiniConn(); });
+        $("#mod-w-bots").on("click", () => { import('./components/panels/MiniPanels.js').then(m => m.toggleMiniBots?.()); });
+        $("#mod-w-hero").on("click", () => { toggleHeroSheet(); });
+        $("#mod-w-inv").on("click", () => { toggleInventory(); });
+        $("#mod-w-quests").on("click", () => { toggleQuestLog(); });
+        $("#mod-w-calendar").on("click", () => { import('./_UIManager.internal.js').then(m => m.toggleCalendar?.()); });
+        $("#mod-w-codex").on("click", () => { toggleCodex(); });
+        $("#mod-w-notifs").on("click", () => { $("#nhud-notif-panel").fadeToggle(200); });
+        $("#mod-w-infoblocks").on("click", () => { import('./UIManager.js').then(m => m.toggleMiniInfoBlocks?.()); });
+        $("#mod-w-comics").on("click", () => { import('./UIManager.js').then(m => m.toggleMiniComics?.()); });
+        $("#mod-w-ach").on("click", () => { import('./UIManager.js').then(m => m.toggleAchievementsWindow?.()); });
+
+        popup = $("#nhud-cube-modal");
+    }
+    
+    if (popup.is(":visible")) {
+        popup.fadeOut(150);
+    } else {
+        popup.css("display", "flex").hide().fadeIn(150);
+    }
+}
+
+export function initMessageCubeInjector() {
+    if (window.nhudMsgInjectorActive) return;
+    window.nhudMsgInjectorActive = true;
+
+    // Функция, которая проверяет все сообщения и добавляет кнопку
+    const injectButtons = () => {
+        $(".mes_buttons").each(function() {
+            // Ищем, есть ли уже наша кнопка, чтобы не дублировать
+            if ($(this).find(".nhud-msg-cube-trigger").length === 0) {
+                // Добавляем в начало блока с кнопками
+                $(this).prepend('<div class="mes_button interactable nhud-msg-cube-trigger" title="Narrative HUD Меню" tabindex="0" role="button">🧊</div>');
+            }
+        });
+    };
+
+    // Запускаем первый раз
+    injectButtons();
+
+    // Слушаем добавление новых сообщений в чат (MutationObserver)
+    const chatObserver = new MutationObserver((mutations) => {
+        let needsInject = false;
+        mutations.forEach(m => {
+            if (m.addedNodes.length > 0) needsInject = true;
+        });
+        if (needsInject) injectButtons();
+    });
+
+    const chatNode = document.getElementById("chat");
+    if (chatNode) {
+        chatObserver.observe(chatNode, { childList: true, subtree: true });
+    }
+
+    // Обработчик клика по этой кнопке
+    $(document).off("click", ".nhud-msg-cube-trigger").on("click", ".nhud-msg-cube-trigger", function(e) {
+        e.stopPropagation();
+        toggleCubeModal();
     });
 }
 
