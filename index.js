@@ -899,7 +899,7 @@ function buildCorePrompt(settings) {
     
     // ИСПРАВЛЕНИЕ 3: Жесткое словесное разделение Игрока и NPC
     if (settings.modules?.botTrackers !== false) {
-        prompt += `\nCRITICAL NPC TRACKERS: Do NOT invent trackers for NPCs in the "characters" array. ONLY use tracker keys explicitly listed in their [CURRENT DYNAMIC MEMORY] block. If an NPC has no trackers in memory, OMIT their "trackers" field entirely.`;
+        prompt += `\nCRITICAL NPC TRACKERS: You MUST dynamically calculate and update the trackers for NPCs based on narrative events. Do NOT invent new trackers in the "characters" array. ONLY use tracker keys explicitly listed in their [CURRENT DYNAMIC MEMORY] block. If an NPC has no trackers in memory, OMIT their "trackers" field entirely.`;
     }
     if (settings.modules?.trackers !== false) {
         prompt += `\nCRITICAL PLAYER TRACKERS: The main "trackers" object at the root of [HUD_CORE] belongs EXCLUSIVELY to ${userName} (the Player). You MUST dynamically update ${userName}'s trackers based on the narrative. Ensure you map the labels (like "Сытость") to the correct JSON keys (like "hunger").`;
@@ -1163,7 +1163,8 @@ export function buildDynamicPrompt(settings) {
     // МОДУЛЬ 3: Инвентарь
     if (settings.modules?.trackPlayerInventory || settings.modules?.trackBotInventory) {
         finalPrompt += `\n\nINVENTORY RULES:`;
-        finalPrompt += `\n- Track inventory carefully. If someone picks up/buys an item — add it. If drops/spends — remove it. DO NOT invent items from thin air.`;
+        finalPrompt += `\n- CRITICAL: You MUST actively evaluate inventory changes on EVERY turn. If the Player or Bot picks up, buys, receives, drops, gives away, uses up, or loses ANY item, you MUST output the "inventory_actions" array to reflect this. DO NOT ignore item transfers!`;
+        finalPrompt += `\n- Track inventory carefully. DO NOT invent items from thin air.`;
         if (settings.modules?.trackBotInventory) {
             const wealth = (settings.prompts?.botWealthStatus || '').trim();
             if (wealth) {
