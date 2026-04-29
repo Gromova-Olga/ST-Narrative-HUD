@@ -711,21 +711,8 @@ export function injectPromptIntoRequest() {
     try {
         setExtensionPrompt('narrative-hud-parser', finalPrompt ? finalPrompt : '', extension_prompt_types.IN_CHAT, 0, false, extension_prompt_roles.USER);
 
-        let lorePrompt = "";
-        if (settings.modules?.loreInjection) {
-            lorePrompt = buildMemoryInjectionBlock();
-        }
-
-        if (lorePrompt) {
-            const mode = settings.modules?.loreMode || 'system';
-            let depth = 1;
-            let role = extension_prompt_roles.SYSTEM;
-            if (mode === 'user') { depth = 0; role = extension_prompt_roles.USER; }
-            else if (mode === 'note') { depth = 4; role = extension_prompt_roles.SYSTEM; }
-            setExtensionPrompt('narrative-hud-lore', lorePrompt, extension_prompt_types.IN_CHAT, depth, false, role);
-        } else {
-            setExtensionPrompt('narrative-hud-lore', '', extension_prompt_types.IN_CHAT, 1, false, extension_prompt_roles.SYSTEM);
-        }
+        // Отключаем старый отдельный промпт памяти, так как теперь он вшит в narrative-hud-parser
+        setExtensionPrompt('narrative-hud-lore', '', extension_prompt_types.IN_CHAT, 1, false, extension_prompt_roles.SYSTEM);
 
         // 🗺️ Интерактивная карта — инжекция контекста позиции игрока
         if (settings.modules?.map) {
@@ -1123,6 +1110,14 @@ export function buildDynamicPrompt(settings) {
     finalPrompt += corePrompt;
     if (progPrompt) finalPrompt += "\n" + progPrompt;
     if (customPrompt) finalPrompt += "\n" + customPrompt;
+
+    // ---> НОВОЕ: Внедряем память NPC и трекеры прямо в тело основного промпта <---
+    if (settings.modules?.loreInjection) {
+        const memoryBlock = buildMemoryInjectionBlock();
+        if (memoryBlock) {
+            finalPrompt += "\n" + memoryBlock;
+        }
+    }
 
     // МОДУЛЬ: Ручной гардероб игрока (read-only для ИИ)
     if (settings.modules?.injectPlayerOutfit && settings.liveData?.playerOutfitText) {
