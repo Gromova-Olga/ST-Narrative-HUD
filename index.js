@@ -17,6 +17,9 @@ import * as UI from "./ui/UIManager.js";
 import * as MsgUI from "./ui/MessageActions.js";
 import * as SetUI from "./ui/SettingsUI.js";
 
+// ДОБАВЛЯЕМ ИМПОРТ НАШЕГО ИНЖЕКТОРА ОТСЮДА:
+import { initMessageCubeInjector } from "./ui/Modules.js";
+
 // ========================================================================
 // МОДУЛЬ 2: Toast-уведомления
 // ========================================================================
@@ -1307,6 +1310,8 @@ jQuery(async () => {
         UI.buildSidebar();
         UI.buildFloatingWidget();
         UI.applyDesignTheme();
+
+        initMessageCubeInjector();
 
         // Инициализация панели уведомлений (создаём DOM сразу, а не при первом уведомлении)
         showNotification.__init = true; // флаг чтобы showNotification не дублировал DOM
