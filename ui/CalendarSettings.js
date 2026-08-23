@@ -72,7 +72,8 @@ export function renderSettingsCalendar(forceYear = null, forceMonth = null) {
 
         // Кнопка показа всех событий
         gridHtml += `
-        <div style="margin-bottom:10px; text-align:right;">
+        <div style="margin-bottom:10px; text-align:right; display:flex; gap:6px; justify-content:flex-end;">
+            <button id="nhud-cal-copy-all" style="background:rgba(80,60,140,0.3); border:1px solid #4a3880; color:#a090c0; border-radius:4px; font-size:10px; padding:4px 8px; cursor:pointer; transition:0.2s;">📋 Копировать все</button>
             <button id="nhud-cal-show-all" style="background:rgba(80,60,140,0.3); border:1px solid #4a3880; color:#a090c0; border-radius:4px; font-size:10px; padding:4px 8px; cursor:pointer; transition:0.2s;">👁️ Показать все записи</button>
         </div>
         <div id="nhud-cal-events-wrap"></div>`;
@@ -85,6 +86,17 @@ export function renderSettingsCalendar(forceYear = null, forceMonth = null) {
         wrap.find("#nhud-cal-show-all").on("click", () => {
             wrap.find('.nhud-cal-day').css('border-color', 'transparent'); // Сброс обводки
             renderEventsForDate(null);
+        });
+        wrap.find("#nhud-cal-copy-all").on("click", () => {
+            if (!calendar.length) return;
+            const text = calendar
+                .map(ev => `"${ev.date}" : ${ev.desc}`)
+                .join("\n\n");
+            navigator.clipboard.writeText(text).then(() => {
+                const btn = wrap.find("#nhud-cal-copy-all");
+                btn.text("✓ Скопировано");
+                setTimeout(() => btn.text("📋 Копировать все"), 1500);
+            });
         });
 
         const eventsWrap = wrap.find("#nhud-cal-events-wrap");

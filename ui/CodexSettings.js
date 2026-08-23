@@ -18,10 +18,11 @@ export function renderSettingsCodex() {
     content.empty();
 
     content.append(`
-        <div style="display:flex; gap:6px; margin-bottom:10px;">
-            <input id="nhud-s-c-add-title" class="nhud-input" style="flex:1;" placeholder="Заголовок статьи..." />
-            <button id="nhud-s-c-add-btn" class="nhud-add-btn" style="margin:0; padding:6px 12px;">+</button>
-        </div>
+    <div style="display:flex; gap:6px; margin-bottom:10px;">
+        <input id="nhud-s-c-add-title" class="nhud-input" style="flex:1;" placeholder="Заголовок статьи..." />
+        <button id="nhud-s-c-add-btn" class="nhud-add-btn" style="margin:0; padding:6px 12px;">+</button>
+        <button id="nhud-s-c-copy-btn" class="nhud-add-btn" style="margin:0; padding:6px 12px; background:rgba(255,255,255,0.08); border-color:rgba(255,255,255,0.15);" title="Скопировать все записи">📋</button>
+    </div>
     `);
 
     codex.forEach((entry, idx) => {
@@ -59,4 +60,16 @@ export function renderSettingsCodex() {
         const title = $("#nhud-s-c-add-title").val().trim();
         if (title) { codex.unshift({ title, text: "Текст статьи...", active: true }); saveSettingsDebounced(); renderSettingsCodex(); }
     });
-}
+
+    $("#nhud-s-c-copy-btn").on("click", () => {
+    if (!codex.length) return;
+    const text = codex
+        .map(entry => `"${entry.title}" : ${entry.text}`)
+        .join("\n\n");
+    navigator.clipboard.writeText(text).then(() => {
+        const btn = $("#nhud-s-c-copy-btn");
+        btn.text("✓");
+        setTimeout(() => btn.text("📋"), 1500);
+        });
+    });
+}
